@@ -29,9 +29,9 @@ test('invitation flow preserves fragment-only proof and backend inspection', asy
   assert.match(page, /location\.hash\.slice\(1\)/);
   assert.match(page, /invitation_id/);
   assert.match(page, /invitation_token/);
-  assert.match(page, /previousProof \\?\\?/);
-  assert.match(page, /return \\(\\) => \\{ active = false; \\}/);
-  assert.doesNotMatch(page, /return \\(\\) => \\{ active = false; proofRef\\.current = null/);
+  assert.ok(page.includes('previousProof ??'));
+  assert.ok(page.includes('return () => { active = false; };'));
+  assert.ok(!page.includes('return () => { active = false; proofRef.current = null'));
   assert.match(page, /history\.replaceState\(null, '', window\.location\.pathname\)/);
   assert.match(page, /\/api\/invitations\/.*action/);
   assert.match(page, /credentials: 'same-origin'/);
