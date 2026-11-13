@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 const root = new URL('../', import.meta.url);
 const load = async (path) => readFile(new URL(path, root), 'utf8');
 const sha = (bytes) => createHash('sha1')
-  .update(Buffer.from('blob ' + bytes.length + '\\0'))
+  .update(Buffer.concat([Buffer.from('blob ' + bytes.length), Buffer.from([0])]))
   .update(bytes).digest('hex');
 
 test('customer invite CSS is the original apart from the Turbopack-breaking font import', async () => {
