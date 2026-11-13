@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import {
   DEFAULT_AUTH_COPY,
   type ApplicationContext,
@@ -70,10 +71,8 @@ export function AuthPage({ appCode }: AuthPageProps) {
   useEffect(() => {
     if (!appCode) return;
     let active = true;
-    setContextReady(false);
-    setErrorMessage('');
-    setOrganizations([]);
-    setOrganizationId('');
+    // State initializes on mount; the dynamic page keys this component by
+    // app code, avoiding synchronous state updates in the effect.
 
     // The old Express page independently gated the page route. That control
     // must be ported to Fastify before application login goes live.
@@ -172,7 +171,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
       <div className="auth-shade" aria-hidden="true" />
       <div className="auth-layout">
         <header className="auth-header">
-          <a className="brand-text" href="/" aria-label="VSPH Control Center">VSPH</a>
+          <Link className="brand-text" href="/" aria-label="VSPH Control Center">VSPH</Link>
           <a id="backLink" className="auth-back" href="/dashboard" hidden={!isApplicationLogin}>
             ← Back to dashboard
           </a>

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-css-tags -- The VSPH Inter font is served from an immutable public stylesheet shared with the legacy portal. */
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './auth.css';

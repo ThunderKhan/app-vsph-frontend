@@ -63,3 +63,13 @@ not an application release.
 
 Source baseline: `ThunderKhan/vsph-control-center`
 `3b3a1535873aa0517aea41da32a407f3d9680547`.
+
+## November 13 Windows verification corrections
+
+The first run on the organization fork found four independent porting issues:
+- `tests/migration-source.test.mjs` incorrectly wrote `blob <bytes> \\0` (an extra ASCII space before NUL) when computing Git object SHA-1. The header is now `blob <bytes>\\0` and original binary/CSS hashes remain untouched.
+- The starter layout depended on Next's generated `LayoutProps<'/'>` type; the site layout now uses an explicit ReactNode prop type that works before generating route types.
+- React 19's hooks lint disallows synchronous state resets in the app-lookup effect. Initial state is already correct; the dynamic route keys `AuthPage` by app code to remount for a different application. The brand link uses Next `Link` to satisfy Next's route lint.
+- With `cacheComponents: true` and partial prefetching unchanged, the dynamic product login must allow request-time `params`: `export const instant = false` on this route only. No organization-wide cache config is disabled.
+
+The original static Inter stylesheet still comes from `/fonts.css` and the auth-layout ESLint exception is narrowly scoped to that single legacy public resource. These are **candidate fixes** until Node tests, lint, typecheck, and production build all pass on the contributor's Node 24 machine.

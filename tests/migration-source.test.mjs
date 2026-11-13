@@ -6,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const utf8 = async (path) => readFile(new URL(path, root), 'utf8');
 const gitSha = (bytes) => createHash('sha1')
-  .update(Buffer.concat([Buffer.from('blob ' + bytes.length + ' '), Buffer.from([0])]))
+  .update(Buffer.concat([Buffer.from('blob ' + bytes.length), Buffer.from([0])]))
   .update(bytes).digest('hex');
 
 test('original Inter font and VSPH login styling are preserved', async () => {
