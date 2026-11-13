@@ -92,3 +92,40 @@ configuration remain untouched for future frontend modules.
 
 This changes the frontend entry point only. Sign-in still requires a separately
 reviewed, session-backed API and must not be represented as production-ready.
+
+## Stale Next.js route validators after moving `/` (13 November 2026)
+
+After moving the starter `src/app/(site)/page.tsx` to the authentic
+`src/app/(auth)/page.tsx`, Next.js 16.4.6 retained old generated imports in
+`.next/types/validator.ts` and `.next/dev/types/validator.ts`. Those are
+**generated caches**, not application route files. A stale validator can cause
+`TS2307 Cannot find module '.../(site)/page.js'` and
+`__InvalidParamMatchingKeys` during both `tsc` and `next build`, even
+when `GET /` works and the source is valid.
+
+`scripts/clean-next-route-types.mjs` now deletes only the two generated
+route-type directories; `npm run typecheck` re-generates current declarations
+with `next typegen`, and `npm run build` re-generates them during
+`next build`. The original Next.js 16.4.6, React 19.3.0, Tailwind 4.3.3,
+`tsconfig.json`, package lockfile, and existing Turbopack configuration are
+unchanged. Cached compiled assets under `.next/cache` are preserved.
+
+**Stop any running `npm run dev` process with Ctrl+C** before invoking
+typecheck or build, to avoid deleting generated declarations while Next is
+writing them. During development Next regenerates the route types itself.
+The script is safe and idempotent after a clean checkout.
+
+Run in sequence:
+
+```powershell
+# Exit npm run dev first (Ctrl+C)
+git pull --ff-only
+npm run test:migration
+npm run typecheck
+npm run lint
+npm run build
+npm run dev
+```
+
+After the build, the route `/` should be under the `(auth)` root layout.
+Do not restore the `(site)` starter page to bypass stale generated errors.

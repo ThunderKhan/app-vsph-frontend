@@ -1,7 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { cleanNextRouteTypes } from '../scripts/clean-next-route-types.mjs';
 
 const root = new URL('../', import.meta.url);
 const utf8 = async (path) => readFile(new URL(path, root), 'utf8');
@@ -59,4 +62,36 @@ test('root / is the original VSPH login, not a Next.js starter or a redirect', a
   assert.doesNotMatch(root, /next\/image|redirect\(/);
   // Keep the site layout for future routes, but prevent a duplicate / route.
   await assert.rejects(() => readFile(new URL('src/app/(site)/page.tsx', new URL('../', import.meta.url))));
+});
+
+test('deleted routes cannot poison future Next.js typechecks and builds', async () => {
+  const fixture = await mkdtemp(join(tmpdir(), 'vsph-stale-next-types-'));
+  try {
+    const prod = join(fixture, '.next', 'types');
+    const dev = join(fixture, '.next', 'dev', 'types');
+    const preserved = join(fixture, '.next', 'cache', 'keep.txt');
+    await mkdir(prod, { recursive: true });
+    await mkdir(dev, { recursive: true });
+    await mkdir(join(fixture, '.next', 'cache'), { recursive: true });
+    await writeFile(join(prod, 'validator.ts'),
+      "import '../../src/app/(site)/page.js';");
+    await writeFile(join(dev, 'validator.ts'),
+      "import '../../../src/app/(site)/page.js';");
+    await writeFile(preserved, 'cached build content');
+
+    await cleanNextRouteTypes(fixture);
+    await assert.rejects(() => readFile(join(prod, 'validator.ts')));
+    await assert.rejects(() => readFile(join(dev, 'validator.ts')));
+    assert.equal(await readFile(preserved, 'utf8'), 'cached build content');
+    await cleanNextRouteTypes(fixture); // idempotent on clean checkout
+
+    const pkg = JSON.parse(await utf8('package.json'));
+    assert.match(pkg.scripts.typecheck, /clean-next-route-types\.mjs && next typegen && tsc --noEmit/);
+    assert.match(pkg.scripts.build, /clean-next-route-types\.mjs && next build/);
+    const tsconfig = JSON.parse(await utf8('tsconfig.json'));
+    assert.ok(tsconfig.include.includes('.next/types/**/*.ts'));
+    assert.ok(tsconfig.include.includes('.next/dev/types/**/*.ts'));
+  } finally {
+    await rm(fixture, { recursive: true, force: true });
+  }
 });
