@@ -1,0 +1,327 @@
+(() => {
+  'use strict';
+
+  // Product cards are derived from the server's authorized application list.
+  // Nothing is displayed as "live" telemetry or inferred from demo fixtures.
+  const productPresentation = {
+    CRM: {
+      category: 'CUSTOMER MANAGEMENT',
+      description: 'Customer contacts and relationship management.',
+      icon: 'icon-crm'
+    },
+    OUTREACH: {
+      category: 'INTERNAL OUTREACH',
+      description: 'Campaign approvals and governed email workflows.',
+      icon: 'icon-generic'
+    },
+    MUSIC: {
+      category: 'VENUE OPERATIONS',
+      description: 'Music requests and guest-facing experiences.',
+      icon: 'icon-music'
+    }
+  };
+
+  const byId = id => document.getElementById(id);
+  const grid = byId('appGrid');
+  const accessGrid = byId('accessGrid');
+  const isApplicationsView = /^\/applications\/?$/.test(window.location.pathname);
+  const search = byId('appSearch');
+  const error = byId('errorMessage');
+  const empty = byId('emptyMessage');
+  let authorizedApps = [];
+  let loaded = false;
+
+  function element(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function icon(symbol) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('icon');
+    svg.setAttribute('aria-hidden', 'true');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', '#' + symbol);
+    svg.append(use);
+    return svg;
+  }
+
+  function showError(text) {
+    error.textContent = text || '';
+    error.hidden = !text;
+  }
+
+  function appCard(app) {
+    const code = String(app.code || '').toUpperCase();
+    const details = productPresentation[code] || {
+      category: 'BUSINESS APPLICATION',
+      description: 'Your assigned business workspace.',
+      icon: 'icon-generic'
+    };
+    const card = element('article', 'app-card');
+    const top = element('div', 'app-card-upper');
+    const mark = element('span', 'app-symbol');
+    mark.append(icon(details.icon));
+    const status = element('span', 'app-status', 'Available');
+    top.append(mark, status);
+
+    const category = element('p', 'app-category', details.category);
+    const heading = element('h3', '', app.name || code);
+    const description = element('p', 'app-description', details.description);
+    const link = element('a', 'app-open', 'Open application');
+
+    // Never trust a product's database-provided URL as an arbitrary destination.
+    // Construct a same-origin application route from a validated product code.
+    link.href = '/apps/' + code.toLowerCase() + '/launch';
+    link.setAttribute('aria-label', 'Open ' + (app.name || code));
+    card.append(top, category, heading, description, link);
+    if (code === 'MUSIC') {
+      // The supplied Vercel address is a PUBLIC DEMO, not an authenticated SSO endpoint.
+      // Keep this deliberately separate from the tenant-checked launch flow.
+      const preview = element('a', 'app-preview', 'View deployed Music demo');
+      preview.href = 'https://vsph-music-system.vercel.app/';
+      preview.target = '_blank';
+      preview.rel = 'noopener noreferrer';
+      preview.setAttribute('aria-label', 'View public Music demo in a new tab (not VSPH sign-in)');
+      card.append(preview);
+    }
+    addSpotlight(card);
+    return card;
+  }
+
+  function renderApps() {
+    if (!loaded || !isApplicationsView) return;
+    const term = search.value.trim().toLocaleLowerCase();
+    const matches = authorizedApps.filter(app =>
+      (String(app.name || '') + ' ' + String(app.code || '')).toLocaleLowerCase().includes(term)
+    );
+
+    grid.replaceChildren();
+    grid.setAttribute('aria-busy', 'false');
+    byId('libraryCount').textContent = matches.length + (matches.length === 1 ? ' product' : ' products');
+    empty.hidden = matches.length > 0;
+    empty.textContent = authorizedApps.length === 0
+      ? 'No applications have been assigned to your account yet.'
+      : 'No applications match your search.';
+
+    for (const app of matches) grid.append(appCard(app));
+  }
+
+  function accessRow(app, contexts, failed = false, internalRole = null) {
+    const code = String(app.code).toUpperCase();
+    const item = element('article', 'access-row');
+    const identity = element('div', 'access-row-product');
+    const name = element('strong', '', app.name || code);
+    const status = element('span', 'access-row-caption',
+      failed ? 'Unable to retrieve product access' :
+      internalRole ? 'Internal employee workspace' :
+      (contexts.length === 1 ? '1 customer workspace' : contexts.length + ' customer workspaces'));
+    identity.append(name, status);
+
+    const detail = element('div', 'access-row-details');
+    if (!failed && internalRole) {
+      detail.append(element('strong', 'access-role-label', internalRole.replaceAll('_',' ')));
+      detail.append(element('span', 'access-org-label', 'VSPH Internal'));
+    } else if (!failed && contexts.length) {
+      const roles = [...new Set(contexts.map(org => String(org.role || 'user').replaceAll('_',' ')))];
+      detail.append(element('strong', 'access-role-label', roles.join(', ')));
+      const names = contexts.slice(0, 3).map(org => String(org.name || 'Customer')).join(' · ');
+      detail.append(element('span', 'access-org-label', names + (contexts.length > 3 ? ' · +' + (contexts.length - 3) + ' more' : '')));
+    } else {
+      detail.append(element('span', 'access-org-label',
+        failed ? 'Product access details are temporarily unavailable.' : 'No active customer assignments'));
+    }
+
+    if (!failed && (contexts.length || internalRole)) {
+      const open = element('a', 'access-open', 'Open');
+      open.href = '/apps/' + code.toLowerCase() + '/launch';
+      open.setAttribute('aria-label', 'Open ' + (app.name || code));
+      item.append(identity, detail, open);
+    } else {
+      item.append(identity, detail, element('span', 'access-unavailable', 'Unavailable'));
+    }
+    return item;
+  }
+
+  async function renderAccessOverview() {
+    const tasks = authorizedApps.map(async app => {
+      try {
+        const result = await responseJson('/api/apps/' + encodeURIComponent(app.code) + '/contexts');
+        if (!result) return {app, contexts:[], failed:true};
+        return {app, contexts:Array.isArray(result.organizations) ? result.organizations : [], internalRole:result.internal?.role||null, failed:false};
+      } catch {
+        return {app, contexts:[], failed:true};
+      }
+    });
+    const results = await Promise.all(tasks);
+    accessGrid.replaceChildren();
+    accessGrid.setAttribute('aria-busy', 'false');
+    if (!results.length) {
+      accessGrid.append(element('p','access-empty','No products are currently assigned to your account.'));
+      return;
+    }
+    for (const item of results) accessGrid.append(accessRow(item.app,item.contexts,item.failed,item.internalRole));
+  }
+
+  function addSpotlight(surface) {
+    if (!surface || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    surface.addEventListener('pointermove', event => {
+      if (event.pointerType === 'touch') return;
+      const bounds = surface.getBoundingClientRect();
+      surface.style.setProperty('--pointer-x', (event.clientX - bounds.left) + 'px');
+      surface.style.setProperty('--pointer-y', (event.clientY - bounds.top) + 'px');
+    }, { passive: true });
+  }
+
+  async function responseJson(url) {
+    const response = await fetch(url, {
+      credentials: 'same-origin',
+      cache: 'no-store'
+    });
+    if (response.status === 401) {
+      window.location.replace('/login');
+      return null;
+    }
+    if (!response.ok) {
+      const failure=await response.json().catch(()=>({}));
+      if(response.status===503&&failure.code==='SCHEMA_NOT_READY')throw new Error('This database has not been upgraded for the current portal. An operator must review the required migrations; refreshing will not resolve this.');
+      throw new Error('Could not load workspace details. Please refresh and try again.');
+    }
+    return response.json();
+  }
+
+  async function loadDashboard() {
+    try {
+      const identity = await responseJson('/api/auth/me');
+      if (!identity) return;
+      const user = identity.user;
+      if (!user) throw new Error('Your account details are unavailable. Please refresh.');
+
+      const name = String(user.name || 'Account').trim();
+      const firstName = name.split(/\s+/)[0];
+      byId('sideName').textContent = name;
+      byId('sideRole').textContent = user.platformRole === 'super_admin' ? 'Platform administrator' : 'Workspace member';
+      byId('avatar').textContent = firstName.charAt(0).toUpperCase() || 'V';
+      byId('topAccount').textContent = name;
+      byId('welcomeMessage').textContent = 'Welcome back, ' + firstName + '. Your applications are ready when you are.';
+      const isPlatformAdmin = user.platformRole === 'super_admin';
+      // Employee activity is authorized by the current session-bound HR access RPC,
+      // never by matching a display name to a roster record.
+      if (!isApplicationsView && !isPlatformAdmin) {
+        let accessFlags = null;
+        try {
+          const r = await fetch('/api/hrms/access', {
+            credentials: 'same-origin', cache: 'no-store',
+            signal: AbortSignal.timeout(8000)
+          });
+          if (r.status === 401) { window.location.replace('/login'); return; }
+          if (r.ok) accessFlags = await r.json();
+        } catch {
+          // Fail closed: a failed permission query must not unlock employee data.
+        }
+        if (accessFlags?.employee === true) {
+          for (const section of document.querySelectorAll('[data-view="overview"]')) section.hidden = true;
+          byId('employeeDashboard').hidden = false;
+          byId('workActivity').hidden = false;
+          byId('employeeDashboardWork').hidden = false;
+          window.VSPHHRMS?.mountEmployee();
+          if (window.location.hash === '#employeeDashboardWork') byId('employeeDashboardWork').scrollIntoView?.({ block: 'start' });
+          byId('employeeDashboardWelcome').textContent = 'Welcome back, ' + firstName + '. Your work, at a glance.';
+          document.title = 'My dashboard | VSPH Control Center';
+          window.VSPHWorkActivity?.load();
+          byId('employeeCalendar').hidden = false;
+          window.VSPHCalendar?.mount();
+          return;
+        }
+
+        // The self-only identity inbox distinguishes accepted onboarding links
+        // from customer accounts. Onboarding never gains access to private tasks.
+        if (accessFlags && (accessFlags.pendingLink === true || accessFlags.employee === false)) {
+          try {
+            const r = await fetch('/api/employee-identity/mine', {
+              credentials: 'same-origin', cache: 'no-store',
+              signal: AbortSignal.timeout(8000)
+            });
+            if (r.status === 401) { window.location.replace('/login'); return; }
+            if (r.ok) {
+              const inbox = await r.json();
+              const employment = Array.isArray(inbox.employment) ? inbox.employment : [];
+              const requests = Array.isArray(inbox.requests) ? inbox.requests : [];
+              const onboarding = employment.find(record => record.status === 'onboarding');
+              const pending = requests.length > 0;
+              if (onboarding || pending) {
+                for (const section of document.querySelectorAll('[data-view="overview"]')) section.hidden = true;
+                byId('employeeDashboard').hidden = false;
+                byId('employeeDashboardWelcome').textContent = 'Welcome back, ' + firstName + '. Your employee account is being set up.';
+                byId('employeeActivitySetup').hidden = false;
+                byId('employeeActivitySetupTitle').textContent = onboarding
+                  ? 'Your employee record is still onboarding'
+                  : 'Your employee account link needs acceptance';
+                byId('employeeActivitySetupMessage').textContent = onboarding
+                  ? 'Your account link is accepted, but HR must change your roster status to Active. Work activity is unavailable until then.'
+                  : 'Review and accept your employee account-link invitation to enable authorized work activity.';
+                byId('employeeActivitySetupAction').textContent = onboarding
+                  ? 'View your employment record' : 'Review your account-link request';
+                document.title = 'My dashboard | VSPH Control Center';
+                return;
+              }
+            }
+          } catch {
+            // The inbox is private and read-only. Failure leaves the ordinary
+            // workspace visible rather than assuming an employee identity.
+          }
+        }
+      }
+      byId('adminOverviewPanel').hidden = !isPlatformAdmin;
+      byId('overviewDetails').hidden = !isPlatformAdmin;
+      byId('topbarOnboard').hidden = !isPlatformAdmin;
+      // Owner defaults to persisted facts. The preserved fictional preview is
+      // opt-in, and neither owner view borrows customer-product permissions.
+      if (isPlatformAdmin && !isApplicationsView) {
+        if (new URLSearchParams(window.location.search).get('preview') === 'executive' && window.VSPHExecutiveDashboard?.activate?.()) return;
+        if (window.VSPHOwnerOverview?.activate?.()) return;
+      }
+
+      const workspaceRequest = responseJson('/api/workspaces').catch(() => null);
+      const result = await responseJson('/api/apps');
+      if (!result) return;
+      authorizedApps = (Array.isArray(result.applications) ? result.applications : [])
+        .filter(app => /^[A-Z][A-Z0-9_]{1,39}$/i.test(String(app.code || '')) && app.status === 'active');
+
+      const count = String(authorizedApps.length);
+      byId('appCount').textContent = count;
+      byId('featureAppCount').textContent = count;
+
+      void workspaceRequest.then(workspaces => {if (workspaces) {
+        const number = Number(workspaces.count);
+        byId('workspaceCount').textContent = Number.isSafeInteger(number) && number >= 0 ? String(number) : '—';
+      }});
+
+      loaded = true;
+      if (isApplicationsView) renderApps();
+      else await renderAccessOverview();
+    } catch (failure) {
+      if (isApplicationsView) {
+        grid.replaceChildren();
+        grid.setAttribute('aria-busy', 'false');
+      } else {
+        accessGrid.replaceChildren();
+        accessGrid.setAttribute('aria-busy', 'false');
+      }
+      loaded = true;
+      empty.hidden = true;
+      showError(failure.message || 'The workspace could not be loaded.');
+    }
+  }
+
+  // A shared page shell, two different route-specific views.
+  document.title = (isApplicationsView ? 'Applications' : 'Overview') + ' | VSPH Control Center';
+  for (const section of document.querySelectorAll('[data-view]')) {
+    section.hidden = section.getAttribute('data-view') !== (isApplicationsView ? 'applications' : 'overview');
+  }
+  addSpotlight(byId('spotlightPanel'));
+  search.addEventListener('input', renderApps);
+  loadDashboard();
+})();
