@@ -9,14 +9,19 @@ The organization frontend is the **canonical target**:
   from validated source `ThunderKhan/vsph-control-center-v3` main.
 - Original Inter font binary with SIL license, exact active `auth.css` and
   `crm-auth.css`, and original copy/MFA/UI interactions.
-- `/login` and `/apps/[app]/login` UI routes.
+- `/`, `/login`, and `/apps/[app]/login` UI routes. Root `/` now directly renders
+  the original sign-in component through the `(auth)` root layout, without
+  redirecting the browser to `/login`. The unused Next.js starter homepage
+  was removed; the existing `(site)` layout and Geist + Tailwind stack remain
+  available for future workspace pages.
 - Two separate **root layouts** in Next.js App Router:
   - `src/app/(site)/layout.tsx`: the pre-existing Geist and Tailwind v4
     root layout for the organization's current homepage and future pages.
   - `src/app/(auth)/layout.tsx`: the original VSPH Inter/font/styles
     for sign-in pages; it does not import Tailwind preflight or Geist.
-- The existing homepage, `src/app/globals.css`, `next.config.ts`,
-  `package-lock.json` and every existing dependency version are preserved.
+- The existing `src/app/globals.css`, `next.config.ts`, `package-lock.json`
+  and every existing dependency version are preserved. The default generated
+  Next.js homepage is deliberately replaced by the original portal login.
 
 ### Important: no live authentication yet
 The Auth UI still sends requests to the original same-origin `/api/*`
@@ -73,3 +78,17 @@ The first run on the organization fork found four independent porting issues:
 - With `cacheComponents: true` and partial prefetching unchanged, the dynamic product login must allow request-time `params`: `export const instant = false` on this route only. No organization-wide cache config is disabled.
 
 The original static Inter stylesheet still comes from `/fonts.css` and the auth-layout ESLint exception is narrowly scoped to that single legacy public resource. These are **candidate fixes** until Node tests, lint, typecheck, and production build all pass on the contributor's Node 24 machine.
+
+## Root URL compatibility
+
+The original portal served its sign-in interface at `/`. The first incremental
+fork port left the generated Next.js starter at `/` and displayed the migrated
+screen only at `/login`. This no longer matches user expectations.
+
+Now `src/app/(auth)/page.tsx` renders `AuthPage` directly at `/`, alongside
+`/login`. The starter `src/app/(site)/page.tsx` was deleted to avoid two
+routes competing for the same root URL. The site layout, Tailwind v4 and Geist
+configuration remain untouched for future frontend modules.
+
+This changes the frontend entry point only. Sign-in still requires a separately
+reviewed, session-backed API and must not be represented as production-ready.

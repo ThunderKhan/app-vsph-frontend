@@ -49,3 +49,14 @@ test('auth copy, MFA and API paths remain original, without mock success', async
   assert.match(copy, /Welcome back/);
   assert.match(await utf8('src/app/(auth)/crm-auth.css'), /\.auth-intro\{display:none\}/);
 });
+
+test('root / is the original VSPH login, not a Next.js starter or a redirect', async () => {
+  const root = await utf8('src/app/(auth)/page.tsx');
+  const login = await utf8('src/app/(auth)/login/page.tsx');
+  assert.match(root, /return <AuthPage \/>/);
+  assert.match(login, /return <AuthPage \/>/);
+  assert.match(root, /Sign in \| VSPH Control Center/);
+  assert.doesNotMatch(root, /next\/image|redirect\(/);
+  // Keep the site layout for future routes, but prevent a duplicate / route.
+  await assert.rejects(() => readFile(new URL('src/app/(site)/page.tsx', new URL('../', import.meta.url))));
+});
