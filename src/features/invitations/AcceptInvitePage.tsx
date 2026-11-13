@@ -44,6 +44,11 @@ export function AcceptInvitePage() {
 
   useEffect(() => {
     let active = true;
+    // React StrictMode can replay effects during development. Retain the
+    // capability in this component's ephemeral ref across effect replay;
+    // otherwise the first effect removes the fragment before the second
+    // inspection can read it. Never persist it outside component memory.
+    const previousProof = proofRef.current;
     const fields = new URLSearchParams(window.location.hash.slice(1));
     const invitationId = fields.get('invitation_id');
     const token = fields.get('invitation_token');
@@ -51,8 +56,8 @@ export function AcceptInvitePage() {
     // Remove sensitive URL fragments before any network request. A token
     // MUST NOT enter page request paths, referrers, history or analytics.
     window.history.replaceState(null, '', window.location.pathname);
-    const proof: Proof | null = invitationId && token
-      ? { invitationId, token } : null;
+    const proof: Proof | null = previousProof ?? (invitationId && token
+      ? { invitationId, token } : null);
     proofRef.current = proof;
 
     const inspect = async () => {
@@ -77,7 +82,10 @@ export function AcceptInvitePage() {
       }
     };
     void inspect();
-    return () => { active = false; proofRef.current = null; };
+    // Do not clear proofRef here: React's development-mode effect replay
+    // must still be able to inspect the original private capability.
+    // The ref is discarded naturally when the component really unmounts.
+    return () => { active = false; };
   }, []);
 
   const canSubmit = stage === 'new-account' || stage === 'existing-account';
