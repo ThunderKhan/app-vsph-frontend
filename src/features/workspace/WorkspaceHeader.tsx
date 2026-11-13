@@ -14,10 +14,10 @@ function Icon({ name }: { name: string }) {
   return <svg className="icon" aria-hidden="true"><use href={'/portal-icons.svg#icon-' + name} /></svg>;
 }
 
-function NavItemLink({ label, href, onActivate, pathname }: NavItem & {
-  onActivate: () => void; pathname: string;
+function NavItemLink({ label, href, onActivate, pathname, previewMode }: NavItem & {
+  onActivate: () => void; pathname: string; previewMode: boolean;
 }) {
-  if (!activePages.has(href)) {
+  if (previewMode || !activePages.has(href)) {
     // Do not provide a working link to a not-yet-ported protected page.
     return <span className="portal-link portal-pending" aria-disabled="true" title="Page migration pending">{label}</span>;
   }
@@ -26,10 +26,11 @@ function NavItemLink({ label, href, onActivate, pathname }: NavItem & {
     href={href} onClick={onActivate}>{label}</Link>;
 }
 
-export function WorkspaceHeader({ user, flags, accessFailed }: {
+export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false }: {
   user: PortalUser;
   flags: HrAccess | null;
   accessFailed: boolean;
+  previewMode?: boolean;
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -78,7 +79,7 @@ export function WorkspaceHeader({ user, flags, accessFailed }: {
   ];
 
   async function logout() {
-    if (logoutBusy) return;
+    if (logoutBusy || previewMode) return;
     setLogoutBusy(true);
     setFeedback('');
     try {
@@ -104,7 +105,9 @@ export function WorkspaceHeader({ user, flags, accessFailed }: {
             aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
             aria-expanded={menuOpen} aria-controls="workspaceNavigation"
             onClick={() => setMenuOpen(!menuOpen)}><Icon name="menu" /></button>
-          <Link className="crm-brand" href="/dashboard">VSPH<span>CONTROL CENTER</span></Link>
+          {previewMode
+            ? <span className="crm-brand">VSPH<span>CONTROL CENTER</span></span>
+            : <Link className="crm-brand" href="/dashboard">VSPH<span>CONTROL CENTER</span></Link>}
         </div>
         <div className="crm-global-search" role="search" aria-label="Workspace search">
           <Icon name="search" />
@@ -113,9 +116,13 @@ export function WorkspaceHeader({ user, flags, accessFailed }: {
           <button type="button" disabled>Search</button>
         </div>
         <div className="crm-header-actions">
-          <Link className="crm-header-icon" href="/applications" aria-label="Open application launcher">
-            <Icon name="apps" />
-          </Link>
+          {previewMode
+            ? <span className="crm-header-icon" aria-label="Application launcher is not connected">
+                <Icon name="apps" />
+              </span>
+            : <Link className="crm-header-icon" href="/applications" aria-label="Open application launcher">
+                <Icon name="apps" />
+              </Link>}
           <details className="portal-disclosure portal-account">
             <summary aria-label="Account menu">
               <span className="crm-header-avatar-wrap"><span className="crm-header-avatar" id="avatar">
@@ -131,8 +138,10 @@ export function WorkspaceHeader({ user, flags, accessFailed }: {
               </div>
               <span className="portal-link portal-pending" aria-disabled="true">Your profile</span>
               <span className="portal-link portal-pending" aria-disabled="true">Security &amp; sessions</span>
-              <button id="logoutButton" type="button" className="portal-link portal-signout"
-                disabled={logoutBusy} onClick={() => void logout()}>Sign out</button>
+              {previewMode
+                ? <span className="portal-link portal-pending" aria-disabled="true">Sign out unavailable in preview</span>
+                : <button id="logoutButton" type="button" className="portal-link portal-signout"
+                    disabled={logoutBusy} onClick={() => void logout()}>Sign out</button>}
             </div>
           </details>
         </div>
@@ -141,9 +150,11 @@ export function WorkspaceHeader({ user, flags, accessFailed }: {
         data-mobile-open={menuOpen} onKeyDown={(e) => {
           if (e.key === 'Escape') { e.currentTarget.querySelectorAll('details').forEach((d) => {d.open = false;});closeMenu(); }
         }}>
-        <Link className={'portal-link' + (pathname === '/dashboard' ? ' is-active' : '')}
-          aria-current={pathname === '/dashboard' ? 'page' : undefined}
-          href="/dashboard" onClick={closeMenu}>Overview</Link>
+        {previewMode
+          ? <span className="portal-link is-active" aria-current="page">Overview</span>
+          : <Link className={'portal-link' + (pathname === '/dashboard' ? ' is-active' : '')}
+              aria-current={pathname === '/dashboard' ? 'page' : undefined}
+              href="/dashboard" onClick={closeMenu}>Overview</Link>}
         {groups.filter(group => group.show !== false).map(group => {
           const hasActive = group.items.some(item => item.href === pathname);
           return (
@@ -152,7 +163,7 @@ export function WorkspaceHeader({ user, flags, accessFailed }: {
               <summary>{group.label}<span aria-hidden="true" className="nav-chevron" /></summary>
               <div className="portal-dropdown">
                 {group.items.filter(item => item.show !== false).map(item =>
-                  <NavItemLink key={item.label} {...item} pathname={pathname} onActivate={closeMenu} />
+                  <NavItemLink key={item.label} {...item} pathname={pathname} previewMode={previewMode} onActivate={closeMenu} />
                 )}
               </div>
             </details>

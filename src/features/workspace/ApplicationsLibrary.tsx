@@ -34,7 +34,7 @@ function ProductIcon({ name }: { name: string }) {
   </svg>;
 }
 
-export function ApplicationsLibrary({ apps }: { apps: PortalApp[] }) {
+export function ApplicationsLibrary({ apps, previewMode = false }: { apps: PortalApp[]; previewMode?: boolean }) {
   const [query, setQuery] = useState('');
   const matches = apps.filter((app) =>
     (app.name + ' ' + app.code).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
@@ -79,8 +79,10 @@ export function ApplicationsLibrary({ apps }: { apps: PortalApp[] }) {
               <p className="app-category">{display.category}</p>
               <h3>{app.name}</h3>
               <p className="app-description">{display.description}</p>
-              <Link className="app-open" href={launchPath(app.code)}
-                aria-label={'Open ' + app.name}>Open application</Link>
+              {previewMode
+                ? <span className="app-open" aria-disabled="true">Preview only</span>
+                : <Link className="app-open" href={launchPath(app.code)}
+                    aria-label={'Open ' + app.name}>Open application</Link>}
             </article>;
           })}
         </div>
@@ -89,7 +91,9 @@ export function ApplicationsLibrary({ apps }: { apps: PortalApp[] }) {
   );
 }
 
-export function AccessOverview({ entries }: { entries: ProductAccess[] }) {
+export function AccessOverview({ entries, previewMode = false }: {
+  entries: ProductAccess[]; previewMode?: boolean;
+}) {
   return (
     <section className="access-overview" aria-labelledby="accessTitle">
       <div className="apps-section-header">
@@ -100,7 +104,9 @@ export function AccessOverview({ entries }: { entries: ProductAccess[] }) {
             See your customer workspaces and roles in each product.
           </p>
         </div>
-        <Link className="secondary-link" href="/applications">Browse applications</Link>
+        {previewMode
+          ? <span className="secondary-link" aria-disabled="true">Browse applications</span>
+          : <Link className="secondary-link" href="/applications">Browse applications</Link>}
       </div>
       <div id="accessGrid" className="access-grid" aria-live="polite" aria-busy="false">
         {entries.length === 0 && <p className="access-empty">
@@ -139,8 +145,10 @@ export function AccessOverview({ entries }: { entries: ProductAccess[] }) {
                 </span>}
               </div>
               {!failed && (internalRole || organizations.length > 0) ?
-                <Link className="access-open" href={launchPath(app.code)}
-                  aria-label={'Open ' + app.name}>Open</Link> :
+                (previewMode
+                  ? <span className="access-unavailable" aria-disabled="true">Preview only</span>
+                  : <Link className="access-open" href={launchPath(app.code)}
+                      aria-label={'Open ' + app.name}>Open</Link>) :
                 <span className="access-unavailable">Unavailable</span>}
             </article>
           );
