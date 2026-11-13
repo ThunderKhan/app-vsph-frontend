@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "node scripts/clean-next-route-types.mjs && next typegen && tsc --noEmit",
-    "test:migration": "node --test tests/migration-source.test.mjs tests/invitation-entry.test.mjs",
+    "test:migration": "node --test tests/migration-source.test.mjs tests/invitation-entry.test.mjs tests/employee-entry.test.mjs",
     "check": "npm run test:migration && npm run typecheck && npm run lint && npm run build"
   },
   "dependencies": {
