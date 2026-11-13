@@ -20,7 +20,9 @@ export function DashboardSummary({ appCount, workspaces, access, previewMode = f
             <h2>Your tools, organized.</h2>
             <p>Open the products assigned to your account. Every application has its own
               secure sign-in and permissions.</p>
-            <Link className="feature-link" href="/applications">View applications</Link>
+            {previewMode
+              ? <span className="feature-link" aria-disabled="true">View applications</span>
+              : <Link className="feature-link" href="/applications">View applications</Link>}
           </div>
           <div className="feature-summary" aria-label="Products available to you">
             <span id="featureAppCount">{appCount}</span>
