@@ -1,17 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('../', import.meta.url);
-const read = (path) => readFile(new URL(path, root), 'utf8');
+// Resolve literal filesystem names instead of interpreting %5F as a URL escape.
+// Using new URL(relativePath, root) decodes %5F_preview into __preview.
+const root = fileURLToPath(new URL('../', import.meta.url));
+const read = (path) => readFile(join(root, path), 'utf8');
 
 test('local preview uses URL-encoded underscore route segment, not a private directory', async () => {
   // Next.js excludes folders whose names START with '_'. To serve /__preview,
   // encode the first underscore as %5F, then retain the second literal '_'.
-  const { readdir } = await import('node:fs/promises');
-  const entries = await readdir(new URL('src/app/(preview)/', root));
+  const entries = await readdir(join(root, 'src/app/(preview)/'));
   assert.ok(entries.includes('%5F_preview'), 'encoded /__preview route segment missing');
   assert.ok(!entries.includes('__preview'), 'private-folder route is ignored by Next.js');
+  // Regression: the reader must preserve the physical %5F directory name.
+  const page = await read('src/app/(preview)/%5F_preview/workspace/page.tsx');
+  assert.match(page, /export default function PreviewWorkspacePage/);
 });
 
 test('local preview has an explicit production 404 guard', async () => {
