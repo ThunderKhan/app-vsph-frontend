@@ -9,7 +9,8 @@ Run the fork branch `migration/workspace-shell-applications` using Node 24:
 
 ```powershell
 git fetch origin
-git switch --track origin/migration/workspace-shell-applications
+git switch migration/workspace-shell-applications
+git pull --ff-only
 npm run check
 npm run dev
 ```
@@ -32,7 +33,12 @@ whose actual dashboards have not been ported are not fabricated here.
 ## Hard security boundary
 
 The preview lives at `/__preview/workspace`, **outside** the
-`(workspace)` authenticated route group. It is guarded by
+`(workspace)` authenticated route group. The physical folder is
+`src/app/(preview)/%5F_preview/workspace/`: Next.js treats a literal
+leading underscore in a folder name as a private, *non-routable* directory.
+`%5F_preview` encodes the first underscore and preserves the public URL
+`/__preview/workspace`. Do not rename it to `__preview` (which caused
+a 404 in development despite all previous source tests passing). It is guarded by
 
 ```ts
 if (process.env.NODE_ENV !== 'development') notFound();
@@ -47,6 +53,10 @@ private URL parameters or auth tokens. Its shared components disable sign-out,
 application-launch links, account shortcuts and navigation actions when
 `previewMode` is enabled. The server-side API helper is not imported by
 this preview route.
+
+The `npm run check` command now also verifies the **actual Next.js
+production route manifest** includes `/__preview/workspace`. This prevents
+false positives from source-only tests that merely check file existence.
 
 Always verify the production guard before deployment: after `npm run check`,
 run `npm run start` and request `/__preview/workspace` in a separate

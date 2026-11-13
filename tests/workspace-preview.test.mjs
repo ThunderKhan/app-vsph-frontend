@@ -5,8 +5,17 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
+test('local preview uses URL-encoded underscore route segment, not a private directory', async () => {
+  // Next.js excludes folders whose names START with '_'. To serve /__preview,
+  // encode the first underscore as %5F, then retain the second literal '_'.
+  const { readdir } = await import('node:fs/promises');
+  const entries = await readdir(new URL('src/app/(preview)/', root));
+  assert.ok(entries.includes('%5F_preview'), 'encoded /__preview route segment missing');
+  assert.ok(!entries.includes('__preview'), 'private-folder route is ignored by Next.js');
+});
+
 test('local preview has an explicit production 404 guard', async () => {
-  const page = await read('src/app/(preview)/__preview/workspace/page.tsx');
+  const page = await read('src/app/(preview)/%5F_preview/workspace/page.tsx');
   assert.match(page, /if \(process\.env\.NODE_ENV !== 'development'\) notFound\(\)/);
   assert.match(page, /return <WorkspacePreview \/>/);
   assert.match(page, /robots: \{ index: false, follow: false \}/);
