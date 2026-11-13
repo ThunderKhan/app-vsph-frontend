@@ -145,9 +145,9 @@ export function AcceptInvitePage() {
           <form id="inviteForm" hidden={!canSubmit} onSubmit={(event) => void accept(event)}>
             {stage === 'existing-account' && (
               <>
-                <a href="/login" target="_blank" rel="noopener noreferrer">
+                <Link href="/login" target="_blank" rel="noopener noreferrer">
                   Sign in to your existing account
-                </a>
+                </Link>
                 <p role="status">
                   Existing account: sign into the portal in another tab, then accept here.
                   Your password will not be changed.
