@@ -25,7 +25,7 @@ function approvedInternalOrigin(): string | null {
 
 export async function portalApi(path: string): Promise<ApiResult> {
   // Never allow arbitrary paths to turn this helper into a public proxy.
-  if (!/^\/api\/(auth\/me|hrms\/access|apps|workspaces)(?:\/[A-Z][A-Z0-9_]{1,39}\/contexts)?$/.test(path)) {
+  if (!/^\/api\/(?:auth\/me|hrms\/access|apps|workspaces|apps\/[A-Z][A-Z0-9_]{1,39}\/contexts)$/.test(path)) {
     return { kind: 'unavailable' };
   }
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;

@@ -9,6 +9,7 @@ import { WorkspaceHeader } from '@/features/workspace/WorkspaceHeader';
 import './dashboard.css';
 import './portal-navigation.css';
 import './crm-workspace.css';
+import './workspace-overrides.css';
 
 export const metadata: Metadata = {
   title: 'Workspace | VSPH Control Center',

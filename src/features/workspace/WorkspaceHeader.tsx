@@ -14,12 +14,16 @@ function Icon({ name }: { name: string }) {
   return <svg className="icon" aria-hidden="true"><use href={'/portal-icons.svg#icon-' + name} /></svg>;
 }
 
-function NavItemLink({ label, href, onActivate }: NavItem & { onActivate: () => void }) {
+function NavItemLink({ label, href, onActivate, pathname }: NavItem & {
+  onActivate: () => void; pathname: string;
+}) {
   if (!activePages.has(href)) {
     // Do not provide a working link to a not-yet-ported protected page.
     return <span className="portal-link portal-pending" aria-disabled="true" title="Page migration pending">{label}</span>;
   }
-  return <Link className="portal-link" href={href} onClick={onActivate}>{label}</Link>;
+  return <Link className={'portal-link' + (pathname === href ? ' is-active' : '')}
+    aria-current={pathname === href ? 'page' : undefined}
+    href={href} onClick={onActivate}>{label}</Link>;
 }
 
 export function WorkspaceHeader({ user, flags, accessFailed }: {
@@ -148,7 +152,7 @@ export function WorkspaceHeader({ user, flags, accessFailed }: {
               <summary>{group.label}<span aria-hidden="true" className="nav-chevron" /></summary>
               <div className="portal-dropdown">
                 {group.items.filter(item => item.show !== false).map(item =>
-                  <NavItemLink key={item.label} {...item} onActivate={closeMenu} />
+                  <NavItemLink key={item.label} {...item} pathname={pathname} onActivate={closeMenu} />
                 )}
               </div>
             </details>

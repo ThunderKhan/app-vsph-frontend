@@ -1,0 +1,13 @@
+/* Integration-only adjustments. Frozen legacy CSS remains untouched.
+ * React drives the mobile menu via an attribute instead of body classList.
+ * Incomplete migration routes are displayed as noninteractive labels.
+ */
+@media(max-width:950px) {
+  .portal-navigation[data-mobile-open="true"] {display:flex}
+}
+.portal-pending {cursor:default;opacity:.55}
+.portal-pending:hover {background:transparent;color:#D9E7F5}
+.crm-global-search input:disabled,.crm-global-search button:disabled {
+  cursor:not-allowed;opacity:.7
+}
+.crm-header-actions .portal-pending {color:#CFDEEF}
