@@ -4,8 +4,9 @@ import { mkdir } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { chromium } from 'playwright';
 
-const origin = 'http://127.0.0.1:3100';
-const server = spawn('npm', ['run', 'dev', '--', '-p', '3100'], {
+// Match Next dev's hostname. Cross-origin /_next/ asset requests block hydration.
+const origin = 'http://localhost:3100';
+const server = spawn('npm', ['run', 'dev', '--', '-p', '3100', '-H', 'localhost'], {
   stdio: 'inherit',
   env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
 });
