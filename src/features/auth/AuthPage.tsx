@@ -287,10 +287,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
             </form>
             <div id="inviteEntry" className="invite-entry" hidden={isApplicationLogin}>
               <span>Invited to VSPH?</span>
-              <span className="invite-pending" aria-disabled="true"
-                title="The invitation entry page is in a separate, unmerged migration branch">
-                Account activation page pending integration
-              </span>
+              <Link href="/accept-invite">How to activate your account</Link>
             </div>
           </section>
         </main>

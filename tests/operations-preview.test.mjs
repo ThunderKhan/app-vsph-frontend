@@ -110,7 +110,7 @@ test('role switch never retains privileged visual screens and demo fixtures stay
   assert.ok(preview.includes('<'+label),'preview missing '+label);
  }
  assert.match(header,/if \(logoutBusy \|\| previewMode\) return/);
- assert.match(header,/if \(previewMode && onPreviewNavigate\)/);
+ assert.match(header,/if \(previewMode && onPreviewNavigate && canPreviewNavigate/);
  assert.match(route,/if \(process\.env\.NODE_ENV !== 'development'\) notFound\(\)/);
  assert.match(preview,/Synthetic data only/);
  assert.match(preview,/const roleProjects = role === 'customer'/);
