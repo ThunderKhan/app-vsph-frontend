@@ -32,6 +32,12 @@ was modified. The user requested one combined verification at the end.
   that do not save or deliver.
 - **Profile/security:** preview profile display name, bio, time zone, avatar
   tone; illustrative sessions with revocation disabled.
+- **Outreach access:** employee and role selector, existing grant directory,
+  sample lifecycle; all granting and revoking is disabled.
+- **Employee account & access:** sample identity link status/readiness with
+  no identity operations or private enrollment information.
+- **Music launch chooser:** sample customer workspace selection. Continue is
+  disabled until SSO and product access can be verified server-side.
 - **Search:** project, task and milestone sample search.
 
 All screens use shared, read-only React components and sample data isolated
@@ -45,11 +51,14 @@ and **Navigation role** selectors. Top navigation also switches the synthetic
 preview screens without visiting any protected web route.
 
 ## Original-source fidelity and CSS
-32 original files, including the Admin HTML/JS, Finance, HRMS, Employees,
+32 original operational files, including the Admin HTML/JS, Finance, HRMS, Employees,
 Organizations, Customers, account, notifications, reports, product and
 provisioning sources, are archived under
 `docs/reference/operations/{views,public}`. Their Git blob IDs are checked
 against the frozen source in `docs/reference/operations/manifest.json`.
+A further 12 original Outreach, identity, SSO chooser and search sources
+are preserved at `docs/reference/operations-extra/` with an independent
+manifest. The employee-identity stylesheet is byte-identical to its original.
 Employee, Finance and project-utilities CSS are copied byte-identically.
 Account profile and HRMS CSS remove only their legacy root import, since
 Next/Turbopack cannot resolve those root-absolute CSS imports; the original
@@ -108,7 +117,8 @@ Open the development preview URL and check:
 4. Organization roles/product terms; Admin tabs, onboarding steps, audit.
 5. Finance ledger and journal date/search filters; reports, notifications.
 6. Account profile and security, 390px mobile and wide desktop layouts.
-7. Confirm all mutations remain disabled and no example data is transmitted.
+7. Check Outreach access, employee identity and the Music chooser; confirm all mutations
+   remain disabled and no example data is transmitted.
 8. In a production server (`npm run start`), the development preview route
    must return HTTP 404. Actual `/dashboard` must never show protected data
    without an authenticated backend session.

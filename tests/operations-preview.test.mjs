@@ -134,3 +134,29 @@ test('all active UI CSS imports and original stack remain intact',async()=>{
  assert.match(pkg.scripts.check,/verify:preview-route/);
  assert.match(pkg.scripts['test:migration'],/tests\/projects-preview\.test\.mjs/);
 });
+
+test('Outreach, employee identity and launch previews never create access or credentials',async()=>{
+ const snapshot=JSON.parse(await read('docs/reference/operations-extra/manifest.json'));
+ assert.equal(snapshot.frozen,'3b3a1535873aa0517aea41da32a407f3d9680547');
+ const entries=Object.entries(snapshot.files);
+ assert.equal(entries.length,12);
+ for(const [path,sha] of entries){
+  assert.equal(blob(await readFile(join(root,path))),sha,'extra source changed: '+path);
+ }
+ assert.equal(await read('src/app/(preview)/employee-identity.css'),
+   await read('docs/reference/operations-extra/public/employee-identity.css'));
+ const access=await read('src/features/operations/AccessPreview.tsx');
+ const preview=await read('src/features/workspace/WorkspacePreview.tsx');
+ for(const s of ['Outreach Access','Grant employee access','Existing grants',
+   'Employee account &','Access readiness','Open Music','Continue to Music']){
+  assert.ok(access.includes(s),'missing access/launch section '+s);
+ }
+ assert.match(access,/disabled>Grant access/);
+ assert.match(access,/disabled>Continue to Music/);
+ assert.match(access,/disabled>Request account link/);
+ assert.match(preview,/id: 'outreach-access'/);
+ assert.match(preview,/id: 'employee-identity'/);
+ assert.match(preview,/id: 'music-launch'/);
+ assert.match(preview,/<AccessPreview mode=\{view\}/);
+ assert.doesNotMatch(access,/fetch\(|\/api\/|document\.cookie|localStorage|sessionStorage/);
+});
