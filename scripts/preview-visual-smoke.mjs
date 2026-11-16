@@ -45,17 +45,28 @@ try {
     await page.goto(origin + '/__preview/workspace', { waitUntil: 'domcontentloaded' });
     await page.locator('#previewRole').waitFor({ timeout: 30000 });
     await page.getByText('Synthetic data only').first().waitFor();
+    // A visible SSR select is not proof React has hydrated. Require a
+    // handled click before exercising controlled stateful inputs.
+    await page.getByRole('button', { name: 'Applications', exact: true }).click();
+    await page.waitForFunction(() =>
+      document.querySelector('[data-development-preview]')?.getAttribute('data-preview-view') === 'applications');
     for (const [role, views] of Object.entries(screens)) {
       await page.selectOption('#previewRole', role);
+      await page.waitForFunction((expected) =>
+        document.querySelector('[data-development-preview]')?.getAttribute('data-preview-role') === expected,
+        role);
       for (const view of views) {
         await page.selectOption('#previewScreen', view);
+        await page.waitForFunction((expected) =>
+          document.querySelector('[data-development-preview]')?.getAttribute('data-preview-view') === expected,
+          view);
         await page.locator('main#mainContent').first().waitFor();
         const overflow = await page.evaluate(() =>
           Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
             document.documentElement.clientWidth);
         assert.ok(overflow <= 2,
           `Horizontal page overflow at ${viewport.width}px, role ${role}, view ${view}: ${overflow}px`);
-        if ([390, 1440].includes(viewport.width)) {
+        if ([320, 390, 1440].includes(viewport.width)) {
           await page.screenshot({
             path: `artifacts/ui/${viewport.width}-${role}-${view}.png`,
             fullPage: true,
@@ -71,6 +82,8 @@ try {
     }
     if (viewport.width === 1440) {
       await page.selectOption('#previewRole', 'owner');
+      await page.waitForFunction(() =>
+        document.querySelector('[data-development-preview]')?.getAttribute('data-preview-role') === 'owner');
       await page.locator('#workspaceNavigation').getByText('Administration', { exact: true }).click();
       await page.locator('#workspaceNavigation').getByRole('button',
         { name: 'Roles & permissions', exact: true }).click();

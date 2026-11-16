@@ -61,3 +61,11 @@ test('Outreach navigation renders the outreach panel, not the Music chooser', as
  assert.match(access, /type Mode='outreach-access'\|'employee-identity'\|'music-launch'/);
  assert.match(access, /mode==='outreach-access'\?<section className="ops-access-shell">/);
 });
+
+test('preview exposes rendered visual role and screen for hydration-aware checks', async () => {
+ const preview = await read('src/features/workspace/WorkspacePreview.tsx');
+ const browser = await read('scripts/preview-visual-smoke.mjs');
+ assert.match(preview, /data-preview-role=\{role\} data-preview-view=\{view\}/);
+ assert.match(browser, /getAttribute\('data-preview-role'\)/);
+ assert.match(browser, /getAttribute\('data-preview-view'\)/);
+});

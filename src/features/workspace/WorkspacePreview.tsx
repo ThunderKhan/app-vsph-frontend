@@ -176,7 +176,8 @@ export function WorkspacePreview() {
     }
   };
   return (
-    <div className="workspace-shell" data-development-preview="true">
+    <div className="workspace-shell" data-development-preview="true"
+      data-preview-role={role} data-preview-view={view}>
       <div className="workspace-main">
         <a className="skip-link" href="#mainContent">Skip to content</a>
         <WorkspaceHeader user={user} flags={flags} accessFailed={false} previewMode
