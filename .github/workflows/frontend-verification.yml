@@ -54,3 +54,31 @@ jobs:
             302|303|307|308) echo "Anonymous dashboard redirects: $dashboard_status" ;;
             *) echo "Anonymous dashboard must redirect; got $dashboard_status"; exit 1 ;;
           esac
+
+  browser-preview:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install app and ephemeral browser tester
+        run: |
+          npm ci
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Exercise preview roles and responsive layouts in Chromium
+        run: node scripts/preview-visual-smoke.mjs
+      - name: Upload screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsph-frontend-preview-screenshots
+          path: artifacts/ui/
+          if-no-files-found: warn
+          retention-days: 7
