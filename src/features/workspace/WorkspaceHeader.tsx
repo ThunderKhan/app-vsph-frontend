@@ -81,6 +81,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
       { label: 'Provisioning recovery', href: '/admin/provisioning' },
       { label: 'Finance', href: '/admin/finance' },
       { label: 'Finance journal', href: '/admin/finance/journal' },
+      { label: 'Outreach access', href: '/admin/outreach-access' },
       { label: 'Audit logs', href: '/admin?tab=audit&view=removals' },
     ] },
   ];

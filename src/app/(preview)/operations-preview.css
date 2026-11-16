@@ -172,3 +172,34 @@
  .ops-admin-banner{display:block}
  .ops-preview-root .finance-grid .ops-form-grid{grid-template-columns:1fr}
 }
+
+/* SSO/identity/outreach previews use scoped adaptations of the archived styles.
+ * The originals have global :root/header/button resets and must not be imported. */
+.ops-access-shell{width:min(1120px,100%);margin:auto;padding:32px 24px}
+.ops-access-shell .ops-panel{margin-bottom:18px}
+.ops-access-shell .ops-panel button{display:inline-flex;min-height:44px;align-items:center;
+ background:#fff;border:1px solid #B9C9D9;border-radius:8px;padding:10px 14px;color:#00255A}
+.ops-access-shell h2{font-size:19px;margin:0 0 18px}
+.ops-music-launch{min-height:calc(100dvh - 320px);display:flex;align-items:center;
+ justify-content:center;padding:30px}
+.ops-music-card{width:min(490px,100%);border:1px solid #DBE5EF;border-radius:14px;
+ background:#fff;padding:clamp(24px,5vw,44px)}
+.ops-music-card h1{font-size:clamp(30px,5vw,40px);letter-spacing:-.04em;
+ margin:0 0 15px}
+.ops-music-lead,.ops-music-caption{font-size:13px;line-height:1.65;color:#53677F}
+.ops-music-lead{margin:0 0 20px}
+.ops-music-card button{display:block;width:100%;min-height:48px;background:#0069C8;
+ border:0;color:white;border-radius:8px;margin-top:18px}
+.ops-music-card button:disabled{opacity:.55;cursor:not-allowed}
+.ops-music-caption{margin-top:15px}
+.ops-preview-root .identity-dashboard-hero{display:flex;align-items:center;gap:16px;
+ background:#fff;border:1px solid #DDE5EF;border-radius:12px;padding:24px}
+.ops-preview-root .identity-dashboard-hero h2{margin:0 0 5px}
+.ops-preview-root .identity-avatar{display:grid;place-items:center;width:56px;height:56px;
+ border-radius:50%;background:#00255A;color:white;flex:none}
+.ops-preview-root .identity-readiness{padding:22px;border:1px solid #DDE5EF;border-radius:12px}
+@media(max-width:600px){
+ .ops-access-shell{padding:18px 14px}
+ .ops-music-launch{padding:12px}
+ .ops-preview-root .identity-dashboard-hero{padding:16px}
+}
