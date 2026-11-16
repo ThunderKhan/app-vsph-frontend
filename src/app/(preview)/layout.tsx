@@ -13,6 +13,12 @@ import './role-dashboard.css';
 import './projects.css';
 import './project-detail-v2.css';
 import './projects-preview.css';
+import './employees.css';
+import './finance.css';
+import './account-profile.css';
+import './hrms.css';
+import './project-utilities.css';
+import './operations-preview.css';
 
 export default function PreviewRootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
