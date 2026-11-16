@@ -8,6 +8,8 @@ export function ProjectsPreview({projects}:{projects:ProjectModel[]}) {
  const [selected,setSelected]=useState<string|null>(null);
  const project=selected?projects.find(p=>p.id===selected):null;
  return project
-   ? <ProjectDetails key={project.id} project={project} onBack={()=>setSelected(null)}/>
+   ? <div className="project-detail-route">
+       <ProjectDetails key={project.id} project={project} onBack={()=>setSelected(null)}/>
+     </div>
    : <ProjectPortfolio projects={projects} onOpen={setSelected}/>;
 }

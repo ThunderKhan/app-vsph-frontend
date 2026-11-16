@@ -7,6 +7,8 @@ import { WorkspaceHeader } from './WorkspaceHeader';
 import { OwnerDashboard } from './OwnerDashboard';
 import { EmployeeDashboard } from './EmployeeDashboard';
 import { ownerPreviewData, employeePreviewData } from './RoleDashboardFixtures';
+import { ProjectsPreview } from '@/features/projects/ProjectsPreview';
+import { exampleProjects } from '@/features/projects/ProjectFixtures';
 import type { HrAccess, PortalApp, PortalUser, ProductAccess } from './contracts';
 
 // Deliberately synthetic. Never embed a real employee, tenant, credential,
@@ -26,7 +28,7 @@ const access: ProductAccess[] = [
 ];
 
 type PreviewRole = 'owner' | 'employee' | 'customer';
-type PreviewView = 'overview' | 'applications' | 'role-dashboard';
+type PreviewView = 'overview' | 'applications' | 'role-dashboard' | 'projects';
 
 function previewIdentity(role: PreviewRole): { user: PortalUser; flags: HrAccess } {
   const defaults = { employee: false, pendingLink: false, management: false, governHr: false };
@@ -75,6 +77,8 @@ export function WorkspacePreview() {
                 onClick={() => setView('applications')}>Applications</button>
               <button type="button" aria-pressed={view === 'role-dashboard'}
                 onClick={() => setView('role-dashboard')}>Role dashboard</button>
+              <button type="button" aria-pressed={view === 'projects'}
+                onClick={() => setView('projects')}>Projects</button>
             </div>
           </div>
         </section>
@@ -101,6 +105,7 @@ export function WorkspacePreview() {
               <DashboardSummary appCount={fixtures.length} workspaces={2}
                 access={access} previewMode />
             </main>
+          : view === 'projects' ? <ProjectsPreview projects={exampleProjects}/>
           : <ApplicationsLibrary apps={fixtures} previewMode />}
       </div>
     </div>
