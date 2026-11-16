@@ -154,18 +154,20 @@ export function WorkspacePreview() {
     // Prevent privileged screens remaining visible under a different visual role.
     setView('role-dashboard');
   };
+  const canNavigatePreview = (href: string) => {
+    const target = navViews[href];
+    return Boolean(target && screens.some(s => s.id === target && s.roles.includes(role)));
+  };
   const navigatePreview = (href: string) => {
     const target = navViews[href];
-    if (target && screens.some(s => s.id === target && s.roles.includes(role))) {
-      setView(target);
-    }
+    if (target && canNavigatePreview(href)) setView(target);
   };
   return (
     <div className="workspace-shell" data-development-preview="true">
       <div className="workspace-main">
         <a className="skip-link" href="#mainContent">Skip to content</a>
         <WorkspaceHeader user={user} flags={flags} accessFailed={false} previewMode
-          onPreviewNavigate={navigatePreview} />
+          onPreviewNavigate={navigatePreview} canPreviewNavigate={canNavigatePreview} />
         <section className="workspace-preview-toolbar" role="note"
           aria-label="Local preview; synthetic data only">
           <div className="workspace-preview-disclaimer">

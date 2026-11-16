@@ -14,11 +14,13 @@ function Icon({ name }: { name: string }) {
   return <svg className="icon" aria-hidden="true"><use href={'/portal-icons.svg#icon-' + name} /></svg>;
 }
 
-function NavItemLink({ label, href, onActivate, pathname, previewMode, onPreviewNavigate }: NavItem & {
+function NavItemLink({ label, href, onActivate, pathname, previewMode,
+  onPreviewNavigate, canPreviewNavigate }: NavItem & {
   onActivate: () => void; pathname: string; previewMode: boolean;
   onPreviewNavigate?: (href: string) => void;
+  canPreviewNavigate?: (href: string) => boolean;
 }) {
-  if (previewMode && onPreviewNavigate) {
+  if (previewMode && onPreviewNavigate && canPreviewNavigate?.(href) !== false) {
     return <button type="button" className="portal-link portal-preview-link"
       onClick={() => { onPreviewNavigate(href); onActivate(); }}>{label}</button>;
   }
@@ -32,12 +34,13 @@ function NavItemLink({ label, href, onActivate, pathname, previewMode, onPreview
 }
 
 export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false,
-  onPreviewNavigate }: {
+  onPreviewNavigate, canPreviewNavigate }: {
   user: PortalUser;
   flags: HrAccess | null;
   accessFailed: boolean;
   previewMode?: boolean;
   onPreviewNavigate?: (href: string) => void;
+  canPreviewNavigate?: (href: string) => boolean;
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -120,9 +123,14 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
         </div>
         <div className="crm-global-search" role="search" aria-label="Workspace search">
           <Icon name="search" />
-          <input aria-label="Search work" placeholder="Search work" disabled
-            title="Search is unavailable until the secured search route is migrated" />
-          <button type="button" disabled>Search</button>
+          {previewMode
+            ? <button type="button" className="portal-preview-search"
+                onClick={() => onPreviewNavigate?.('/search')}>Search project work</button>
+            : <>
+                <input aria-label="Search work" placeholder="Search work" disabled
+                  title="Search is unavailable until the secured search route is migrated" />
+                <button type="button" disabled>Search</button>
+              </>}
         </div>
         <div className="crm-header-actions">
           {previewMode
@@ -185,7 +193,8 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
               <div className="portal-dropdown">
                 {group.items.filter(item => item.show !== false).map(item =>
                   <NavItemLink key={item.label} {...item} pathname={pathname} previewMode={previewMode}
-                    onPreviewNavigate={onPreviewNavigate} onActivate={closeMenu} />
+                    onPreviewNavigate={onPreviewNavigate}
+                    canPreviewNavigate={canPreviewNavigate} onActivate={closeMenu} />
                 )}
               </div>
             </details>
