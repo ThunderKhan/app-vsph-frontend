@@ -1,0 +1,14 @@
+{
+  "frozenCommit": "3b3a1535873aa0517aea41da32a407f3d9680547",
+  "files": {
+    "docs/reference/workspace/dashboard.html": "309ff12ca8609f183dc062b718b1609fc3299f70",
+    "docs/reference/workspace/dashboard.js": "63d8994f6d29acd9e2be0effa89178d3e4877aab",
+    "docs/reference/workspace/dashboard.css": "4e8909325edc435504f5c8803ef3b07694289c93",
+    "docs/reference/workspace/portal-navigation.css": "c56d06df459342456ce25874644a20c69da4c719",
+    "docs/reference/workspace/portal-navigation.js": "f9932f240ea73dc876eb630161c63de5c0e4aa66",
+    "docs/reference/workspace/crm-workspace.css": "af4840ca0dcd469f9601b9777edfdd35d2de0c29",
+    "docs/reference/workspace/portal-navigation.html": "a1a6772d9e1bff18a9953f47deba4eb657b99b0c",
+    "docs/reference/workspace/portal-icons.html": "1bddb011be8dde5c454075a33f9e2826b86fb2fa",
+    "docs/reference/workspace/workspace-header.js": "b999cce05d6435d58585fdc653b5c9aca786bba3"
+  }
+}
