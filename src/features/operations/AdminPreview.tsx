@@ -194,11 +194,11 @@ function ManagerOverview({projects}:{projects:ProjectModel[]}) {
  <Disabled>Refresh manager overview</Disabled></section>;
 }
 
-export function AdminPreview({mode,organizations,products,employees,audit,projects}:{
+export function AdminPreview({mode,organizations,products,employees,audit,projects,initialTab='overview'}:{
  mode:Mode;organizations:Organization[];products:ProductRecord[];
- employees:Employee[];audit:AuditEvent[];projects:ProjectModel[];
+ employees:Employee[];audit:AuditEvent[];projects:ProjectModel[];initialTab?:Tab;
 }){
- const [tab,setTab]=useState<Tab>('overview');
+ const [tab,setTab]=useState<Tab>(initialTab);
  const heading=mode==='platform'?'Platform administration':
   mode==='products'?'Product catalog':
   mode==='onboarding'?'Customer onboarding':

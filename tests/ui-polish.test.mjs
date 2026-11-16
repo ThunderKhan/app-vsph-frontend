@@ -44,3 +44,12 @@ test('operations selections and mobile preview controls remain in sync', async (
  assert.match(hr, /No employees match your search/);
  assert.match(previewCss, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
+
+test('administration navigation opens the requested preview subtab', async () => {
+ const workspace = await read('src/features/workspace/WorkspacePreview.tsx');
+ const admin = await read('src/features/operations/AdminPreview.tsx');
+ assert.match(workspace, /setAdminTab\(href\.includes\('tab=permissions'\)/);
+ assert.match(workspace, /href\.includes\('tab=audit'\)/);
+ assert.match(workspace, /key=\{view \+ adminTab\} initialTab=\{adminTab\}/);
+ assert.match(admin, /const \[tab,setTab\]=useState<Tab>\(initialTab\)/);
+});

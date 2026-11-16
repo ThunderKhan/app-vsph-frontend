@@ -133,11 +133,14 @@ function previewIdentity(role: PreviewRole): { user: PortalUser; flags: HrAccess
 export function WorkspacePreview() {
   const [role, setRole] = useState<PreviewRole>('owner');
   const [view, setView] = useState<PreviewView>('role-dashboard');
+  const [adminTab, setAdminTab] = useState<'overview' | 'permissions' | 'audit'>('overview');
   const { user, flags } = previewIdentity(role);
   const available = screens.filter(x => x.roles.includes(role));
-  const activePreviewHref = Object.entries(navViews).find(
-    ([href, target]) => target === view && !href.includes('?')
-  )?.[0] ?? '';
+  const activePreviewHref = view === 'admin' && adminTab !== 'overview'
+    ? '/admin?tab=' + adminTab + (adminTab === 'audit' ? '&view=removals' : '')
+    : Object.entries(navViews).find(
+      ([href, target]) => target === view && !href.includes('?')
+    )?.[0] ?? '';
   // Presentation scoping only: these sample slices are not authorization.
   // Actual project/org visibility must come from the backend's tenant checks.
   const roleProjects = role === 'customer'
@@ -156,6 +159,7 @@ export function WorkspacePreview() {
     setRole(nextRole);
     // Prevent privileged screens remaining visible under a different visual role.
     setView('role-dashboard');
+    setAdminTab('overview');
   };
   const canNavigatePreview = (href: string) => {
     const target = navViews[href];
@@ -163,7 +167,13 @@ export function WorkspacePreview() {
   };
   const navigatePreview = (href: string) => {
     const target = navViews[href];
-    if (target && canNavigatePreview(href)) setView(target);
+    if (target && canNavigatePreview(href)) {
+      if (target === 'admin') {
+        setAdminTab(href.includes('tab=permissions') ? 'permissions' :
+          href.includes('tab=audit') ? 'audit' : 'overview');
+      }
+      setView(target);
+    }
   };
   return (
     <div className="workspace-shell" data-development-preview="true">
@@ -189,7 +199,10 @@ export function WorkspacePreview() {
             </select>
             <label htmlFor="previewScreen">Preview screen</label>
             <select id="previewScreen" value={view}
-              onChange={event => setView(event.target.value as PreviewView)}>
+              onChange={event => {
+                setView(event.target.value as PreviewView);
+                setAdminTab('overview');
+              }}>
               {available.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
             <div className="workspace-preview-toggle" role="group" aria-label="Preview section">
@@ -239,7 +252,7 @@ export function WorkspacePreview() {
                 mode={view === 'customers' ? 'customers' : 'organizations'}/>
           : view === 'admin' || view === 'products' || view === 'customer-onboarding' ||
             view === 'provisioning' || view === 'managers'
-            ? <AdminPreview key={view} mode={view === 'admin' ? 'platform' : view === 'products' ? 'products' :
+            ? <AdminPreview key={view + adminTab} initialTab={adminTab} mode={view === 'admin' ? 'platform' : view === 'products' ? 'products' :
                 view === 'customer-onboarding' ? 'onboarding' : view === 'provisioning' ?
                   'provisioning' : 'managers'}
                 organizations={exampleOrganizations} products={exampleProducts}
