@@ -9,7 +9,7 @@ type ApiResult =
   | { kind: 'unauthorized' }
   | { kind: 'unavailable' };
 
-function approvedInternalOrigin(): string | null {
+export function approvedInternalOrigin(): string | null {
   const raw = process.env.VSPH_INTERNAL_API_ORIGIN;
   if (!raw) return null;
   try {
