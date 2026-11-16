@@ -19,6 +19,7 @@ import './account-profile.css';
 import './hrms.css';
 import './project-utilities.css';
 import './operations-preview.css';
+import './employee-identity.css';
 
 export default function PreviewRootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
