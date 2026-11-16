@@ -69,7 +69,7 @@ test('project sample records render only in dev preview and never grant real acc
  const layout=await read('src/app/(preview)/layout.tsx');
  assert.match(route,/if \(process\.env\.NODE_ENV !== 'development'\) notFound\(\)/);
  assert.match(view,/view === 'projects'/);
- assert.match(view,/<ProjectsPreview projects=\{exampleProjects\}/);
+ assert.match(view,/<ProjectsPreview projects=\{roleProjects\}/);
  assert.match(view,/Synthetic data only/);
  assert.match(preview,/<ProjectPortfolio projects=\{projects\}/);
  assert.match(preview,/<ProjectDetails key=\{project\.id\}/);

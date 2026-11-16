@@ -62,7 +62,7 @@ test('customers, account and finance keep explicit independent access boundaries
   'Members and access','Recent','invitations','lifecycle']){
   assert.ok(org.toLowerCase().includes(s.toLowerCase()),'missing organization UI '+s);
  }
- assert.match(org,/disabled>Review and save entitlement/);
+ assert.match(org,/disabled>\s*Review and save entitlement/);
  assert.match(acct,/Security & sessions/);
  assert.match(acct,/Revoking a session also terminates linked product sessions/);
  assert.match(acct,/disabled>Revoke other sessions/);
@@ -113,6 +113,8 @@ test('role switch never retains privileged visual screens and demo fixtures stay
  assert.match(header,/if \(previewMode && onPreviewNavigate\)/);
  assert.match(route,/if \(process\.env\.NODE_ENV !== 'development'\) notFound\(\)/);
  assert.match(preview,/Synthetic data only/);
+ assert.match(preview,/const roleProjects = role === 'customer'/);
+ assert.match(preview,/const roleOrganizations = role === 'customer'/);
  assert.match(fixtures,/example\.invalid/);
  assert.doesNotMatch(fixtures+preview,/fetch\(|document\.cookie|localStorage|sessionStorage|\/api\//);
  assert.doesNotMatch(real,/OperationsFixtures|PeopleDirectory|AdminPreview|FinancePreview|exampleEmployees/);

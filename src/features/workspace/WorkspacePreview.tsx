@@ -135,6 +135,20 @@ export function WorkspacePreview() {
   const [view, setView] = useState<PreviewView>('role-dashboard');
   const { user, flags } = previewIdentity(role);
   const available = screens.filter(x => x.roles.includes(role));
+  // Presentation scoping only: these sample slices are not authorization.
+  // Actual project/org visibility must come from the backend's tenant checks.
+  const roleProjects = role === 'customer'
+    ? exampleProjects.filter(p => p.id === 'sample-1')
+    : role === 'employee' || role === 'hr'
+      ? exampleProjects.filter(p => p.status !== 'archived')
+      : exampleProjects;
+  const roleOrganizations = role === 'customer'
+    ? exampleOrganizations.filter(o => o.id === 'org1')
+    : exampleOrganizations;
+  const roleApps = role === 'customer'
+    ? fixtures.filter(app => app.code !== 'OUTREACH')
+    : fixtures;
+  const roleAccess = access.filter(item => roleApps.some(app => app.id === item.app.id));
   const changeRole = (nextRole: PreviewRole) => {
     setRole(nextRole);
     // Prevent privileged screens remaining visible under a different visual role.
@@ -205,17 +219,17 @@ export function WorkspacePreview() {
                 <h1 id="pageTitle">Your workspace<span className="title-period">.</span></h1>
                 <p className="page-lead">Applications and access, all in one place.</p>
               </section>
-              <DashboardSummary appCount={fixtures.length} workspaces={2}
-                access={access} previewMode />
+              <DashboardSummary appCount={roleApps.length} workspaces={roleOrganizations.length}
+                access={roleAccess} previewMode />
             </main>
-          : view === 'projects' ? <ProjectsPreview projects={exampleProjects}/>
+          : view === 'projects' ? <ProjectsPreview projects={roleProjects}/>
           : view === 'people' ? <PeopleDirectory employees={exampleEmployees}/>
           : view === 'hr-workspace' || view === 'hr-access' || view === 'employee-onboarding'
             ? <HrPreview key={view} mode={view === 'hr-workspace' ? 'workspace' :
                 view === 'hr-access' ? 'access' : 'onboarding'}
                 employees={exampleEmployees} leave={exampleLeaves} attendance={exampleAttendance}/>
           : view === 'customers' || view === 'organizations'
-            ? <OrganizationsPreview key={view} organizations={exampleOrganizations}
+            ? <OrganizationsPreview key={view} organizations={roleOrganizations}
                 mode={view === 'customers' ? 'customers' : 'organizations'}/>
           : view === 'admin' || view === 'products' || view === 'customer-onboarding' ||
             view === 'provisioning' || view === 'managers'
@@ -227,15 +241,15 @@ export function WorkspacePreview() {
           : view === 'finance' || view === 'journal'
             ? <FinancePreview key={view} invoices={exampleInvoices} receipts={exampleReceipts}
                 mode={view === 'finance' ? 'ledger' : 'journal'}/>
-          : view === 'reports' ? <ReportsPreview projects={exampleProjects}/>
+          : view === 'reports' ? <ReportsPreview projects={roleProjects}/>
           : view === 'notifications' ? <NotificationsPreview notices={exampleNotices}/>
           : view === 'profile' || view === 'security'
             ? <AccountPreview key={view} mode={view} role={role}/>
-          : view === 'search' ? <SearchPreview projects={exampleProjects}/>
+          : view === 'search' ? <SearchPreview projects={roleProjects}/>
           : view === 'outreach-access' || view === 'employee-identity' || view === 'music-launch'
             ? <AccessPreview mode={view} employees={exampleEmployees}
-                organizations={exampleOrganizations}/>
-          : <ApplicationsLibrary apps={fixtures} previewMode />}
+                organizations={roleOrganizations}/>
+          : <ApplicationsLibrary apps={roleApps} previewMode />}
       </div>
     </div>
   );
