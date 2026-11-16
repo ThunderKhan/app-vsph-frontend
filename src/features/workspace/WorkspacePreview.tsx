@@ -17,6 +17,7 @@ import { FinancePreview } from '@/features/operations/FinancePreview';
 import { ReportsPreview, NotificationsPreview } from '@/features/operations/WorkUtilitiesPreview';
 import { AccountPreview } from '@/features/operations/AccountPreview';
 import { SearchPreview } from '@/features/operations/SearchPreview';
+import { AccessPreview } from '@/features/operations/AccessPreview';
 import { exampleEmployees, exampleLeaves, exampleAttendance,
   exampleOrganizations, exampleProducts, exampleInvoices, exampleReceipts,
   exampleAudit, exampleNotices } from '@/features/operations/OperationsFixtures';
@@ -43,7 +44,8 @@ type PreviewView = 'overview' | 'applications' | 'role-dashboard' | 'projects' |
  'people' | 'hr-workspace' | 'hr-access' | 'employee-onboarding' |
  'customers' | 'organizations' | 'admin' | 'products' | 'customer-onboarding' |
  'provisioning' | 'managers' | 'finance' | 'journal' | 'reports' |
- 'notifications' | 'profile' | 'security' | 'search';
+ 'notifications' | 'profile' | 'security' | 'search' |
+ 'outreach-access' | 'employee-identity' | 'music-launch';
 
 type Screen = { id: PreviewView; label: string; roles: readonly PreviewRole[] };
 const everyone: PreviewRole[] = ['owner', 'employee', 'hr', 'customer'];
@@ -72,6 +74,9 @@ const screens: Screen[] = [
   { id: 'journal', label: 'Finance journal', roles: ownerOnly },
   { id: 'profile', label: 'Your profile', roles: everyone },
   { id: 'security', label: 'Security & sessions', roles: everyone },
+  { id: 'outreach-access', label: 'Outreach Access', roles: ownerOnly },
+  { id: 'employee-identity', label: 'Employee account & access', roles: ['owner','hr','employee'] },
+  { id: 'music-launch', label: 'Music application chooser', roles: everyone },
 ];
 
 const navViews: Record<string, PreviewView> = {
@@ -84,7 +89,8 @@ const navViews: Record<string, PreviewView> = {
   '/search': 'search',
   '/organizations': 'organizations',
   '/employees': 'people',
-  '/employment': 'role-dashboard',
+  '/employment': 'employee-identity',
+  '/apps/music/launch': 'music-launch',
   '/hr': 'hr-workspace',
   '/admin/customers': 'customers',
   '/admin/onboarding': 'customer-onboarding',
@@ -96,6 +102,7 @@ const navViews: Record<string, PreviewView> = {
   '/admin/provisioning': 'provisioning',
   '/admin/finance': 'finance',
   '/admin/finance/journal': 'journal',
+  '/admin/outreach-access': 'outreach-access',
   '/account/profile': 'profile',
   '/account/security': 'security',
 };
@@ -225,6 +232,9 @@ export function WorkspacePreview() {
           : view === 'profile' || view === 'security'
             ? <AccountPreview key={view} mode={view} role={role}/>
           : view === 'search' ? <SearchPreview projects={exampleProjects}/>
+          : view === 'outreach-access' || view === 'employee-identity' || view === 'music-launch'
+            ? <AccessPreview mode={view} employees={exampleEmployees}
+                organizations={exampleOrganizations}/>
           : <ApplicationsLibrary apps={fixtures} previewMode />}
       </div>
     </div>
