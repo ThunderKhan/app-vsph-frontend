@@ -1,7 +1,7 @@
 'use client';
 import {useState} from 'react';
 import type {Employee,Organization} from './OperationsModels';
-type Mode='outreach'|'employee-identity'|'music-launch';
+type Mode='outreach-access'|'employee-identity'|'music-launch';
 const outreachRoles=['representative','manager','administrator','analyst'] as const;
 
 export function AccessPreview({mode,employees,organizations}:{
@@ -18,7 +18,7 @@ export function AccessPreview({mode,employees,organizations}:{
   {id:'g3',name:'Example Analyst',role:'analyst',status:'revoked'},
  ].filter(g=>g.name.toLowerCase().includes(filter.toLowerCase()));
  return <main className="workspace-content ops-preview-root" id="mainContent" tabIndex={-1}>
-  {mode==='outreach'?<section className="ops-access-shell">
+  {mode==='outreach-access'?<section className="ops-access-shell">
    <header className="ops-title-row"><div>
     <p className="utility-eyebrow">INTERNAL APPLICATION</p><h1>Outreach Access</h1></div></header>
    <p className="ops-preview-caption">Example access grants only. Actual Outreach permissions

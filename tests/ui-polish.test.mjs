@@ -53,3 +53,11 @@ test('administration navigation opens the requested preview subtab', async () =>
  assert.match(workspace, /key=\{view \+ adminTab\} initialTab=\{adminTab\}/);
  assert.match(admin, /const \[tab,setTab\]=useState<Tab>\(initialTab\)/);
 });
+
+test('Outreach navigation renders the outreach panel, not the Music chooser', async () => {
+ const preview = await read('src/features/workspace/WorkspacePreview.tsx');
+ const access = await read('src/features/operations/AccessPreview.tsx');
+ assert.match(preview, /view === 'outreach-access' \|\| view === 'employee-identity'/);
+ assert.match(access, /type Mode='outreach-access'\|'employee-identity'\|'music-launch'/);
+ assert.match(access, /mode==='outreach-access'\?<section className="ops-access-shell">/);
+});
