@@ -65,8 +65,21 @@ try {
         const overflow = await page.evaluate(() =>
           Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
             document.documentElement.clientWidth);
-        assert.ok(overflow <= 2,
-          `Horizontal page overflow at ${viewport.width}px, role ${role}, view ${view}: ${overflow}px`);
+        if (overflow > 2) {
+          const offenders = await page.evaluate(() =>
+            [...document.querySelectorAll('body *')].map(element => {
+              const rect = element.getBoundingClientRect();
+              return { tag: element.tagName.toLowerCase(),
+                className: typeof element.className === 'string' ? element.className.slice(0, 100) : '',
+                left: Math.round(rect.left), right: Math.round(rect.right) };
+            }).filter(row => row.right > innerWidth + 2 || row.left < -2).slice(0, 12));
+          await page.screenshot({
+            path: `artifacts/ui/overflow-${viewport.width}-${role}-${view}.png`,
+            fullPage: true,
+          });
+          throw new Error(`Horizontal page overflow at ${viewport.width}px, role ${role},
+            view ${view}: ${overflow}px. Offenders: ${JSON.stringify(offenders)}`);
+        }
         if ([320, 390, 1440].includes(viewport.width)) {
           await page.screenshot({
             path: `artifacts/ui/${viewport.width}-${role}-${view}.png`,

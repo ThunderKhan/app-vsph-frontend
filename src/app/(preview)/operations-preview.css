@@ -237,3 +237,18 @@
  .ops-preview-root .ops-history li small {margin-left:0}
  .ops-preview-root .ops-page-controls {justify-content:space-between}
 }
+
+/* Small-screen employee identity: long synthetic emails must not expand the page. */
+[data-development-preview] .identity-dashboard-hero > div:last-child {
+ min-width:0;overflow-wrap:anywhere
+}
+[data-development-preview] .identity-dashboard-hero p {
+ overflow-wrap:anywhere;word-break:break-word
+}
+[data-development-preview] .identity-actions {
+ display:flex;flex-wrap:wrap;gap:10px
+}
+@media(max-width:360px){
+ [data-development-preview] .identity-dashboard-hero{flex-wrap:wrap}
+ [data-development-preview] .identity-dashboard-hero > div:last-child{flex:1 1 100%}
+}

@@ -69,3 +69,10 @@ test('preview exposes rendered visual role and screen for hydration-aware checks
  assert.match(browser, /getAttribute\('data-preview-role'\)/);
  assert.match(browser, /getAttribute\('data-preview-view'\)/);
 });
+
+test('long employee identity text wraps without creating horizontal page overflow', async () => {
+ const css = await read('src/app/(preview)/operations-preview.css');
+ assert.match(css, /\.identity-dashboard-hero > div:last-child/);
+ assert.match(css, /overflow-wrap:anywhere/);
+ assert.match(css, /@media\(max-width:360px\)/);
+});
