@@ -204,11 +204,11 @@ export function WorkspacePreview() {
           : view === 'projects' ? <ProjectsPreview projects={exampleProjects}/>
           : view === 'people' ? <PeopleDirectory employees={exampleEmployees}/>
           : view === 'hr-workspace' || view === 'hr-access' || view === 'employee-onboarding'
-            ? <HrPreview mode={view === 'hr-workspace' ? 'workspace' :
+            ? <HrPreview key={view} mode={view === 'hr-workspace' ? 'workspace' :
                 view === 'hr-access' ? 'access' : 'onboarding'}
                 employees={exampleEmployees} leave={exampleLeaves} attendance={exampleAttendance}/>
           : view === 'customers' || view === 'organizations'
-            ? <OrganizationsPreview organizations={exampleOrganizations}
+            ? <OrganizationsPreview key={view} organizations={exampleOrganizations}
                 mode={view === 'customers' ? 'customers' : 'organizations'}/>
           : view === 'admin' || view === 'products' || view === 'customer-onboarding' ||
             view === 'provisioning' || view === 'managers'
@@ -218,12 +218,12 @@ export function WorkspacePreview() {
                 organizations={exampleOrganizations} products={exampleProducts}
                 employees={exampleEmployees} audit={exampleAudit} projects={exampleProjects}/>
           : view === 'finance' || view === 'journal'
-            ? <FinancePreview invoices={exampleInvoices} receipts={exampleReceipts}
+            ? <FinancePreview key={view} invoices={exampleInvoices} receipts={exampleReceipts}
                 mode={view === 'finance' ? 'ledger' : 'journal'}/>
           : view === 'reports' ? <ReportsPreview projects={exampleProjects}/>
           : view === 'notifications' ? <NotificationsPreview notices={exampleNotices}/>
           : view === 'profile' || view === 'security'
-            ? <AccountPreview mode={view} role={role}/>
+            ? <AccountPreview key={view} mode={view} role={role}/>
           : view === 'search' ? <SearchPreview projects={exampleProjects}/>
           : <ApplicationsLibrary apps={fixtures} previewMode />}
       </div>

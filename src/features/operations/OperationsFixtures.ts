@@ -18,7 +18,7 @@ export const exampleEmployees:Employee[]=[
 ].map(([id,fullName,department,jobTitle,status,isHr],index)=>({
  id:String(id),fullName:String(fullName),
  email:String(id)+'@example.invalid',department:String(department),jobTitle:String(jobTitle),
- employmentType:index===9?'intern':index===6?'contract':'full_time',
+ employmentType:(index===9?'intern':index===6?'contract':'full_time') as Employee['employmentType'],
  startDate:'2026-0'+(index%8+1)+'-05',
  status:status as Employee['status'],isHr:Boolean(isHr),
 }));

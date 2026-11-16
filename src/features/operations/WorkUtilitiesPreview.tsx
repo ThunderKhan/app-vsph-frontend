@@ -30,8 +30,8 @@ export function ReportsPreview({projects}:{projects:ProjectModel[]}) {
      <option value="">All states</option>
      {['planned','active','paused','completed','archived'].map(x=><option key={x}>{x}</option>)}
     </select></label>
-    <label>Created from<input type="date" value={from} onChange={e=>setFrom(e.target.value)}/></label>
-    <label>Created through<input type="date" value={to} onChange={e=>setTo(e.target.value)}/></label>
+    <label>Due from<input type="date" value={from} onChange={e=>setFrom(e.target.value)}/></label>
+    <label>Due through<input type="date" value={to} onChange={e=>setTo(e.target.value)}/></label>
     <button type="submit">Filter report</button></form>
    <p role="status" className="ops-preview-caption">{rows.length} example projects match</p>
    <button type="button" disabled>Download project summary CSV (up to 100 projects)</button>
