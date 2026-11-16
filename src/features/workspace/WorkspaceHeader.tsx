@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { HrAccess, PortalUser } from './contracts';
 
 const activePages = new Set(['/dashboard', '/applications', '/projects']);
@@ -19,9 +19,12 @@ function NavItemLink({ label, href, onActivate, pathname, previewMode,
   onActivate: () => void; pathname: string; previewMode: boolean;
   onPreviewNavigate?: (href: string) => void;
   canPreviewNavigate?: (href: string) => boolean;
+  previewActiveHref?: string;
 }) {
   if (previewMode && onPreviewNavigate && canPreviewNavigate?.(href) !== false) {
-    return <button type="button" className="portal-link portal-preview-link"
+    return <button type="button" className={'portal-link portal-preview-link' +
+      (pathname === href ? ' is-active' : '')}
+      aria-current={pathname === href ? 'page' : undefined}
       onClick={() => { onPreviewNavigate(href); onActivate(); }}>{label}</button>;
   }
   if (previewMode || !activePages.has(href)) {
@@ -34,7 +37,7 @@ function NavItemLink({ label, href, onActivate, pathname, previewMode,
 }
 
 export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false,
-  onPreviewNavigate, canPreviewNavigate }: {
+  onPreviewNavigate, canPreviewNavigate, previewActiveHref }: {
   user: PortalUser;
   flags: HrAccess | null;
   accessFailed: boolean;
@@ -43,6 +46,9 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
   canPreviewNavigate?: (href: string) => boolean;
 }) {
   const pathname = usePathname();
+  const activePath = previewMode ? previewActiveHref ?? '' : pathname;
+  const navigationRef = useRef<HTMLElement>(null);
+  const accountRef = useRef<HTMLDetailsElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutBusy, setLogoutBusy] = useState(false);
   const [feedback, setFeedback] = useState(accessFailed ?
@@ -107,7 +113,15 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
     }
   }
 
-  const closeMenu = () => setMenuOpen(false);
+  const closeMenu = () => {
+    setMenuOpen(false);
+    navigationRef.current?.querySelectorAll('details').forEach(item => { item.open = false; });
+  };
+  const previewAccount = (href: string) => {
+    onPreviewNavigate?.(href);
+    if (accountRef.current) accountRef.current.open = false;
+    closeMenu();
+  };
   return (
     <header className="workspace-topbar crm-topbar">
       <div className="crm-header-row">
@@ -118,7 +132,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
             onClick={() => setMenuOpen(!menuOpen)}><Icon name="menu" /></button>
           {previewMode
             ? <button type="button" className="crm-brand portal-preview-brand"
-                onClick={() => onPreviewNavigate?.('/dashboard')}>VSPH<span>CONTROL CENTER</span></button>
+                onClick={() => { onPreviewNavigate?.('/dashboard'); closeMenu(); }}>VSPH<span>CONTROL CENTER</span></button>
             : <Link className="crm-brand" href="/dashboard">VSPH<span>CONTROL CENTER</span></Link>}
         </div>
         <div className="crm-global-search" role="search" aria-label="Workspace search">
@@ -142,7 +156,13 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
             : <Link className="crm-header-icon" href="/applications" aria-label="Open application launcher">
                 <Icon name="apps" />
               </Link>}
-          <details className="portal-disclosure portal-account">
+          <details ref={accountRef} className="portal-disclosure portal-account"
+            onKeyDown={event => {
+              if (event.key === 'Escape') {
+                if (accountRef.current) accountRef.current.open = false;
+                event.stopPropagation();
+              }
+            }}>
             <summary aria-label="Account menu">
               <span className="crm-header-avatar-wrap"><span className="crm-header-avatar" id="avatar">
                 {initial}
@@ -158,9 +178,9 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
               {previewMode
                 ? <>
                     <button type="button" className="portal-link portal-preview-link"
-                      onClick={() => onPreviewNavigate?.('/account/profile')}>Your profile</button>
+                      onClick={() => previewAccount('/account/profile')}>Your profile</button>
                     <button type="button" className="portal-link portal-preview-link"
-                      onClick={() => onPreviewNavigate?.('/account/security')}>Security &amp; sessions</button>
+                      onClick={() => previewAccount('/account/security')}>Security &amp; sessions</button>
                   </>
                 : <>
                     <span className="portal-link portal-pending" aria-disabled="true">Your profile</span>
@@ -174,25 +194,27 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
           </details>
         </div>
       </div>
-      <nav id="workspaceNavigation" className="portal-navigation" aria-label="Main"
-        data-mobile-open={menuOpen} onKeyDown={(e) => {
-          if (e.key === 'Escape') { e.currentTarget.querySelectorAll('details').forEach((d) => {d.open = false;});closeMenu(); }
+      <nav ref={navigationRef} id="workspaceNavigation" className="portal-navigation" aria-label="Main"
+        data-mobile-open={menuOpen} onKeyDown={(event) => {
+          if (event.key === 'Escape') closeMenu();
         }}>
         {previewMode
-          ? <button type="button" className="portal-link portal-preview-link"
-              onClick={() => onPreviewNavigate?.('/dashboard')}>Overview</button>
+          ? <button type="button" className={'portal-link portal-preview-link' +
+                (activePath === '/dashboard' ? ' is-active' : '')}
+              aria-current={activePath === '/dashboard' ? 'page' : undefined}
+              onClick={() => { onPreviewNavigate?.('/dashboard'); closeMenu(); }}>Overview</button>
           : <Link className={'portal-link' + (pathname === '/dashboard' ? ' is-active' : '')}
               aria-current={pathname === '/dashboard' ? 'page' : undefined}
               href="/dashboard" onClick={closeMenu}>Overview</Link>}
         {groups.filter(group => group.show !== false).map(group => {
-          const hasActive = group.items.some(item => item.href === pathname);
+          const hasActive = group.items.some(item => item.href === activePath);
           return (
             <details className={'portal-disclosure' + (hasActive ? ' has-active-page' : '')}
               key={group.label}>
               <summary>{group.label}<span aria-hidden="true" className="nav-chevron" /></summary>
               <div className="portal-dropdown">
                 {group.items.filter(item => item.show !== false).map(item =>
-                  <NavItemLink key={item.label} {...item} pathname={pathname} previewMode={previewMode}
+                  <NavItemLink key={item.label} {...item} pathname={activePath} previewMode={previewMode}
                     onPreviewNavigate={onPreviewNavigate}
                     canPreviewNavigate={canPreviewNavigate} onActivate={closeMenu} />
                 )}

@@ -47,7 +47,7 @@ export function OrganizationsPreview({organizations,mode}:{
    {!selected&&<section className="ops-panel" aria-label="Organization directory">
     <h2>{owner?'Customer directory':'Organization membership'}</h2>
     {visible.map(org=><button type="button" key={org.id} className="ops-org-row"
-      onClick={()=>{setId(org.id);setPanel('overview');}}>
+      onClick={()=>{setId(org.id);setPanel('overview');setMemberPage(0);}}>
       <strong>{org.name}</strong><span>{org.slug} · {org.status}</span>
       <small>{org.members.length} members · {org.subscriptions.length} product terms</small>
     </button>)}

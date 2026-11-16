@@ -62,9 +62,9 @@ export function PeopleDirectory({employees}:{employees:Employee[]}) {
      <div className="people-filters">
        <label htmlFor="employeeSearch">Search employees<input id="employeeSearch" type="search"
          placeholder="Name, email, department or title" maxLength={80} autoComplete="off"
-         value={query} onChange={e=>{setQuery(e.target.value);setPage(0);}}/></label>
+         value={query} onChange={e=>{setQuery(e.target.value);setPage(0);setSelected(null);}}/></label>
        {!archived&&<label htmlFor="employeeStatus">Employee status
-         <select id="employeeStatus" value={state} onChange={e=>{setState(e.target.value as typeof state);setPage(0);}}>
+         <select id="employeeStatus" value={state} onChange={e=>{setState(e.target.value as typeof state);setPage(0);setSelected(null);}}>
            <option value="all">All statuses</option>
            {states.map(s=><option value={s} key={s}>{display(s)}</option>)}
          </select></label>}

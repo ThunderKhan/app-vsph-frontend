@@ -135,6 +135,9 @@ export function WorkspacePreview() {
   const [view, setView] = useState<PreviewView>('role-dashboard');
   const { user, flags } = previewIdentity(role);
   const available = screens.filter(x => x.roles.includes(role));
+  const activePreviewHref = Object.entries(navViews).find(
+    ([href, target]) => target === view && !href.includes('?')
+  )?.[0] ?? '';
   // Presentation scoping only: these sample slices are not authorization.
   // Actual project/org visibility must come from the backend's tenant checks.
   const roleProjects = role === 'customer'
@@ -167,7 +170,8 @@ export function WorkspacePreview() {
       <div className="workspace-main">
         <a className="skip-link" href="#mainContent">Skip to content</a>
         <WorkspaceHeader user={user} flags={flags} accessFailed={false} previewMode
-          onPreviewNavigate={navigatePreview} canPreviewNavigate={canNavigatePreview} />
+          onPreviewNavigate={navigatePreview} canPreviewNavigate={canNavigatePreview}
+          previewActiveHref={activePreviewHref} />
         <section className="workspace-preview-toolbar" role="note"
           aria-label="Local preview; synthetic data only">
           <div className="workspace-preview-disclaimer">
@@ -235,7 +239,7 @@ export function WorkspacePreview() {
                 mode={view === 'customers' ? 'customers' : 'organizations'}/>
           : view === 'admin' || view === 'products' || view === 'customer-onboarding' ||
             view === 'provisioning' || view === 'managers'
-            ? <AdminPreview mode={view === 'admin' ? 'platform' : view === 'products' ? 'products' :
+            ? <AdminPreview key={view} mode={view === 'admin' ? 'platform' : view === 'products' ? 'products' :
                 view === 'customer-onboarding' ? 'onboarding' : view === 'provisioning' ?
                   'provisioning' : 'managers'}
                 organizations={exampleOrganizations} products={exampleProducts}

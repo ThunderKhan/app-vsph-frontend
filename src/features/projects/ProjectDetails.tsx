@@ -19,8 +19,9 @@ export function ProjectDetails({project,onBack}:{
  const [filter,setFilter]=useState<'all'|'open'|'done'>('all');
  const work=activeTasks(project);
  const done=completed(project);
- const overdue=work.filter(t=>t.status!=='done'&&t.dueOn&&t.dueOn<'2026-11-16').length+
-   project.milestones.filter(m=>m.status!=='done'&&m.dueOn&&m.dueOn<'2026-11-16').length;
+ const today=new Date().toISOString().slice(0,10);
+ const overdue=work.filter(t=>t.status!=='done'&&t.dueOn&&t.dueOn<today).length+
+   project.milestones.filter(m=>m.status!=='done'&&m.dueOn&&m.dueOn<today).length;
  const blocked=work.filter(t=>t.status==='blocked');
  const needsAttention=work.filter(t=>t.status==='blocked'||t.priority==='urgent')
    .sort((a,b)=>dueRank(a.status)-dueRank(b.status));

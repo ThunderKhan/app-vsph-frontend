@@ -58,9 +58,11 @@ export function HrPreview({mode,employees,leave,attendance}:{
           <td>{e.isHr?'HR manager':'Standard employee'}</td>
           <td><button type="button" className="secondary" disabled>Review permission change</button></td>
         </tr>)}</tbody></table></div>
+      {access.length===0&&<p role="status">No employees match your search.</p>}
       <div className="hr-actions">
        <button type="button" className="secondary" disabled={page===0}
          onClick={()=>setPage(page-1)}>Previous</button>
+       <span aria-live="polite">Showing {access.length?1+page*8:0}–{Math.min(access.length,(page+1)*8)} of {access.length}</span>
        <button type="button" className="secondary" disabled={(page+1)*8>=access.length}
          onClick={()=>setPage(page+1)}>Next</button></div>
      </section></div>:<div className="hr-grid">

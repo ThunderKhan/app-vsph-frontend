@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { loadLiveProjects } from '@/features/projects/project-server';
 import '../../(preview)/projects.css';
+import '../projects-live.css';
 
 export const metadata: Metadata = {
   title: 'Projects | VSPH Control Center',
@@ -43,7 +44,7 @@ async function ProjectList({ searchParams }: { searchParams: Promise<Filters> })
         <p id="projectSubtitle">Internal work and customer delivery, with explicit project access.</p>
       </div>
       <div className="actions">
-        <Link href={url(q, status)}>Refresh</Link>
+        <Link className="project-live-refresh" href={url(q, status)}>Refresh</Link>
         {canCreate && <button type="button" disabled title="Creation awaits the approved backend">
           New project
         </button>}
@@ -63,8 +64,9 @@ async function ProjectList({ searchParams }: { searchParams: Promise<Filters> })
         </label>
         <button type="submit">Filter</button>
       </form>
-      <p role="status" className="project-preview-count">Showing {projects.length} authorized projects</p>
-      <div className="project-table-wrap" id="projectList">
+      <p role="status" className="project-live-count">Showing {projects.length} authorized projects</p>
+      <div className="project-table-wrap" id="projectList" role="region"
+        aria-label="Project portfolio table, horizontally scrollable" tabIndex={0}>
         <table><thead><tr>{['Project','Ownership','State','Priority','Progress','Due']
           .map(label => <th key={label} scope="col">{label}</th>)}</tr></thead>
           <tbody>{projects.map(project => <tr key={project.id}>
@@ -74,9 +76,9 @@ async function ProjectList({ searchParams }: { searchParams: Promise<Filters> })
             <td>{project.due_on || '—'}</td>
           </tr>)}</tbody>
         </table>
-        {!projects.length && <p className="project-preview-empty">No projects match these filters.</p>}
+        {!projects.length && <p className="project-live-empty">No projects match these filters.</p>}
       </div>
-      {hasMore && page < 10 && <Link className="project-preview-more"
+      {hasMore && page < 10 && <Link className="project-live-more"
         href={url(q, status, page + 1)}>Load more projects</Link>}
       {hasMore && page === 10 &&
         <p role="status">Showing the first 500 projects. Refine your search for more.</p>}
