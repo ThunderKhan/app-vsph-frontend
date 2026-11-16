@@ -60,7 +60,7 @@ test('employee preview ports original tasks, attendance, leave, heatmap and cale
   assert.match(employee,/setCategory\(e\.target\.value\)/);
   assert.match(employee,/setQuery\(e\.target\.value\)/);
   assert.match(employee,/disabled>Request leave/);
-  assert.match(employee,/disabled>New event/);
+  assert.match(employee,/disabled title="Event creation needs the backend">New event/);
   assert.doesNotMatch(employee,/fetch\(|\/api\/|localStorage|sessionStorage/);
 });
 

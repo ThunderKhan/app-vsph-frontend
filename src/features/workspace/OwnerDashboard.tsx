@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 export type OwnerDashboardModel = {
   cashCollected: number; invoiced: number; outstanding: number; pastDue: number;
@@ -14,7 +14,7 @@ export type OwnerDashboardModel = {
   activity: { label: string; detail: string; when: string }[];
 };
 const money = (n:number) => '₹' + new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(n);
-const DisabledLink=({children}:{children:React.ReactNode})=>
+const DisabledLink=({children}:{children:ReactNode})=>
   <span className="owner-text-control role-disabled-link" aria-disabled="true">{children}</span>;
 
 /** Reusable, read-only original VSPH owner overview. Fixtures live elsewhere. */
@@ -51,8 +51,8 @@ export function OwnerDashboard({data}:{data:OwnerDashboardModel}) {
         <div className="owner-company-metrics" aria-label="Operating metrics">
           {([['Active customers',data.customers],['Active projects',data.activeProjects],
             ['Active employees',data.employees],['Active products',data.products.length]] as const)
-            .map(([name,value])=><a key={name} aria-disabled="true">
-            <span className="owner-label">{name}</span><strong>{value}</strong></a>)}
+            .map(([name,value])=><div key={name} className="role-owner-metric">
+            <span className="owner-label">{name}</span><strong>{value}</strong></div>)}
         </div>
       </article>
       <article className="owner-tile owner-products" aria-labelledby="ownerProductsTitle">
