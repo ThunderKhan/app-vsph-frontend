@@ -1,0 +1,29 @@
+/* Local preview toolbar does not modify the frozen legacy CSS. */
+.workspace-preview-toolbar {
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:16px;padding:15px clamp(20px,4.2vw,64px);
+  background:#FFF8DF;border-bottom:2px solid #D6AA31;color:#493900;
+}
+.workspace-preview-disclaimer{display:flex;gap:8px;flex-direction:column}
+.workspace-preview-disclaimer strong{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:12px}
+.workspace-preview-disclaimer span{font-size:12px}
+.workspace-preview-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.workspace-preview-controls label{font-size:12px;font-weight:600}
+.workspace-preview-controls select,.workspace-preview-controls button{
+  font:500 13px Inter,Arial,sans-serif;min-height:40px;padding:8px 12px;
+  border:1px solid #8E7D47;border-radius:6px;background:#fff;color:#00255A
+}
+.workspace-preview-toggle{display:flex;gap:8px}
+.workspace-preview-toggle button[aria-pressed="true"]{background:#00255A;color:white}
+.workspace-preview-toggle button:focus-visible,.workspace-preview-controls select:focus-visible{
+  outline:3px solid #0069C8;outline-offset:2px
+}
+[data-development-preview] .portal-pending,[data-development-preview] .app-open[aria-disabled]{
+  cursor:default
+}
+@media(max-width:680px){
+  .workspace-preview-controls{width:100%}
+  .workspace-preview-controls select{flex:1}
+  .workspace-preview-toggle{width:100%}
+  .workspace-preview-toggle button{flex:1}
+}
