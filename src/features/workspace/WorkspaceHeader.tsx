@@ -19,7 +19,6 @@ function NavItemLink({ label, href, onActivate, pathname, previewMode,
   onActivate: () => void; pathname: string; previewMode: boolean;
   onPreviewNavigate?: (href: string) => void;
   canPreviewNavigate?: (href: string) => boolean;
-  previewActiveHref?: string;
 }) {
   if (previewMode && onPreviewNavigate && canPreviewNavigate?.(href) !== false) {
     return <button type="button" className={'portal-link portal-preview-link' +
@@ -44,6 +43,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
   previewMode?: boolean;
   onPreviewNavigate?: (href: string) => void;
   canPreviewNavigate?: (href: string) => boolean;
+  previewActiveHref?: string;
 }) {
   const pathname = usePathname();
   const activePath = previewMode ? previewActiveHref ?? '' : pathname;
