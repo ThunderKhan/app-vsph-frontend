@@ -216,6 +216,53 @@ try {
   await adminPage.locator('#milestones').getByText('Acceptance milestone',{exact:true}).waitFor({timeout:18000});
   check(true,'Browser reload shows persisted task and milestone');
 
+  // Exercise actual client-side forms against real Express and native PostgreSQL,
+  // not only manually constructed HTTP calls.
+  await adminPage.getByRole('button',{name:'Add private comment',exact:true}).click();
+  await adminPage.getByRole('textbox',{name:'Comment',exact:true}).fill('Private acceptance note');
+  await adminPage.getByRole('button',{name:'Post private comment',exact:true}).click();
+  await adminPage.locator('#delivery').getByText('Private acceptance note',{exact:true})
+    .waitFor({timeout:18000});
+  check(await version(id)===11,'Comment UI write must commit as version 11');
+  await adminPage.getByRole('button',{name:'Add evidence link',exact:true}).click();
+  await adminPage.getByRole('textbox',{name:'Evidence title',exact:true})
+    .fill('Acceptance evidence link');
+  await adminPage.getByRole('textbox',{name:'HTTPS evidence URL',exact:true})
+    .fill('https://example.com/build-report');
+  await adminPage.getByRole('button',{name:'Save evidence link',exact:true}).click();
+  await adminPage.locator('#delivery').getByText('Acceptance evidence link',{exact:true})
+    .waitFor({timeout:18000});
+  const deliveryStored=await pool.query(
+    'select p.version,c.body,c.shared comment_shared,d.title,d.url,d.shared delivery_shared '+
+    'from public.projects p join public.project_comments c on c.project_id=p.id '+
+    'join public.project_deliverables d on d.project_id=p.id where p.id=$1',
+    [id]
+  );
+  check(deliveryStored.rowCount===1&&deliveryStored.rows[0].version===12 &&
+    deliveryStored.rows[0].body==='Private acceptance note' &&
+    deliveryStored.rows[0].comment_shared===false &&
+    deliveryStored.rows[0].title==='Acceptance evidence link' &&
+    deliveryStored.rows[0].url==='https://example.com/build-report' &&
+    deliveryStored.rows[0].delivery_shared===false,
+    'Real browser comments and evidence remain private and persist with version 12');
+  await expectStatus('/api/projects/'+id+'/comments',{
+    method:'POST',token:tokens.viewer,body:{version:12,body:'Denied comment'},
+  },403,'Viewer cannot post project comment');
+  await expectStatus('/api/projects/'+id+'/deliverables',{
+    method:'POST',token:tokens.viewer,
+    body:{version:12,title:'Denied evidence',url:'https://example.com/denied'},
+  },403,'Viewer cannot create delivery evidence');
+  await expectStatus('/api/projects/'+id+'/comments',{
+    method:'POST',token:tokens.outsider,body:{version:12,body:'Denied outsider comment'},
+  },403,'Outsider cannot post project comment');
+  await expectStatus('/api/projects/'+id+'/deliverables',{
+    method:'POST',token:tokens.admin,
+    body:{version:11,title:'Stale evidence',url:'https://example.com/stale'},
+  },409,'Stale delivery evidence version conflicts');
+
+  console.log('Acceptance stage 7: browser-posted private comment and HTTPS evidence persisted securely');
+
+
   await pool.query("update public.project_memberships set status='revoked' where project_id=$1 and user_id=$2",[id,viewer]);
   await viewerPage.reload({waitUntil:'domcontentloaded'});
   await viewerPage.getByText('Project details unavailable.',{exact:false}).waitFor({timeout:18000});
@@ -223,7 +270,7 @@ try {
     'Revoked member immediately loses access in browser');
   await expectStatus('/api/projects/'+id+'/tasks',{
     method:'POST',token:tokens.viewer,
-    body:{version:10,title:'After revocation',description:'',priority:'normal',dueOn:''},
+    body:{version:12,title:'After revocation',description:'',priority:'normal',dueOn:''},
   },403,'Revoked member cannot mutate');
 
   console.log('NATIVE POSTGRESQL FULL-STACK ACCEPTANCE PASSED',JSON.stringify({
