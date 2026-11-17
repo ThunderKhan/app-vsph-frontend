@@ -271,6 +271,131 @@ try {
   console.log('Acceptance stage 7: browser-posted private comment and HTTPS evidence persisted securely');
 
 
+
+  // Stage 8: real internal employee assignment and task-threading against a
+  // linked HRMS fixture identity; neither hosted accounts nor production records.
+  const staffIdentity=await pool.query(
+    "select id from public.profiles where email='staff-desktop@fixture.test'");
+  check(staffIdentity.rowCount===1,'Disposable HRMS fixture must have linked employee');
+  const staffId=staffIdentity.rows[0].id;
+  const staffToken=randomBytes(32).toString('base64url');
+  tokens.staff=staffToken;
+  await pool.query(
+    "insert into public.portal_sessions(token_hash,user_id,expires_at) values($1,$2,now()+interval '90 minutes')",
+    [hashToken(staffToken),staffId]
+  );
+  const staffDirectory=await expectStatus('/api/projects/'+id+'/workforce', {
+    token:tokens.admin
+  },404,'Only server-side workforce reads are allowed; no public GET proxy');
+  // Browser-rendered directory is obtained using portalApi on the server.
+  await adminPage.reload({waitUntil:'domcontentloaded'});
+  await adminPage.getByRole('heading',{name:'Add or update a project contributor',exact:true})
+    .waitFor({timeout:18000});
+  await adminPage.getByLabel('Eligible employee').selectOption(staffId);
+  await adminPage.getByLabel('Access',{exact:true}).selectOption('contributor');
+  await adminPage.getByLabel('Team (optional)').fill('Platform');
+  await adminPage.getByRole('button',{name:'Save employee access',exact:true}).click();
+  await adminPage.locator('.project-workforce-member').getByText('staff desktop',{exact:false})
+    .waitFor({timeout:18000});
+  check(await version(id)===13,'Browser staff assignment increments persisted project version');
+  const assignedRow=await pool.query(
+    'select role,team,status from public.project_memberships where project_id=$1 and user_id=$2',
+    [id,staffId]);
+  check(assignedRow.rows[0].role==='contributor'&&assignedRow.rows[0].team==='Platform'&&
+    assignedRow.rows[0].status==='active','Browser team assignment persisted');
+  await expectStatus('/api/projects/'+id+'/workforce/assign',{
+    method:'POST',token:tokens.staff,
+    body:{version:13,userId:staffId,role:'contributor',team:'Platform'},
+  },403,'Contributor cannot change team assignments');
+  await expectStatus('/api/projects/'+id+'/workforce/assign',{
+    method:'POST',token:tokens.admin,
+    body:{version:13,userId:staffId,role:'manager',team:'Platform'},
+  },400,'Browser gateway cannot grant managers via ordinary assignment');
+
+  const delegated=await expectStatus('/api/projects/'+id+'/tasks',{
+    method:'POST',token:tokens.admin,
+    body:{version:13,title:'Delegated acceptance task',description:'Assigned work',
+      priority:'normal',dueOn:''},
+  },200,'Manager creates a new assignable task');
+  check(delegated.data.version===14&&uuid.test(delegated.data.id),
+    'Assignability test task created in PostgreSQL');
+  const delegatedId=delegated.data.id;
+  await expectStatus('/api/projects/'+id+'/tasks/'+delegatedId+'/assignment',{
+    method:'PATCH',token:tokens.outsider,
+    body:{version:14,assigneeId:staffId},
+  },403,'Outsider cannot assign project task');
+  const delegatedAssign=await expectStatus('/api/projects/'+id+'/tasks/'+delegatedId+'/assignment',{
+    method:'PATCH',token:tokens.admin,
+    body:{version:14,assigneeId:staffId},
+  },200,'Manager assigns real task to linked contributor');
+  check(delegatedAssign.data.version===15&&delegatedAssign.data.id===delegatedId,
+    'Task assignment produces versioned real task');
+  const taskRow=await pool.query('select assignee_id from public.project_tasks where id=$1',[delegatedId]);
+  check(taskRow.rows[0].assignee_id===staffId,'Task assignee persisted in PostgreSQL');
+
+  const staffPage=await browserPage(staffToken);
+  await staffPage.goto('/projects/'+id,{waitUntil:'domcontentloaded'});
+  await staffPage.getByRole('heading',{name,exact:true}).waitFor({timeout:18000});
+  await staffPage.getByText('Delegated acceptance task',{exact:true}).first().waitFor({timeout:18000});
+  check(await staffPage.getByRole('button',{name:'Save employee access'}).count()===0,
+    'Contributor does not see project staffing privileges');
+
+  const backendOtherTask=await pool.query(
+    "select t.id from public.project_tasks t where t.project_id<>$1 limit 1",[id]);
+  check(backendOtherTask.rowCount===1,'Pre-existing unrelated fixture task required');
+  await expectStatus('/api/projects/'+id+'/tasks/'+backendOtherTask.rows[0].id+'/comments',{
+    method:'POST',token:tokens.admin,body:{version:15,body:'Cross-project injection'},
+  },403,'Task comment gateway prevents cross-project task references');
+  const commentReply=await expectStatus('/api/projects/'+id+'/tasks/'+delegatedId+'/comments',{
+    method:'POST',token:tokens.staff,
+    body:{version:15,body:'Contributed private task note'},
+  },200,'Assigned contributor posts real private task comment');
+  check(commentReply.data.version===16,'Task discussion increments project version');
+  const dbComment=await pool.query(
+    "select task_id,shared,body from public.project_comments where project_id=$1 and body='Contributed private task note'",
+    [id]);
+  check(dbComment.rowCount===1&&dbComment.rows[0].task_id===delegatedId&&
+    dbComment.rows[0].shared===false,'Task comment persisted only on the proper task, private');
+
+  const contributed=await expectStatus('/api/projects/'+id+'/tasks/'+delegatedId,{
+    method:'PATCH',token:tokens.staff,
+    body:{version:16,status:'in_progress'},
+  },200,'Contributor may change the status of their own assigned task');
+  check(contributed.data.version===17,'Assigned contributor task status persisted');
+  await expectStatus('/api/projects/'+id+'/workforce/manager-grant',{
+    method:'POST',token:tokens.staff,body:{version:17,userId:staffId},
+  },403,'Project contributor cannot grant manager authority');
+  const granted=await expectStatus('/api/projects/'+id+'/workforce/manager-grant',{
+    method:'POST',token:tokens.admin,body:{version:17,userId:staffId},
+  },200,'Platform owner appoints manager');
+  check(granted.data.version===18,'Owner manager grant committed');
+  const revokedManager=await expectStatus('/api/projects/'+id+'/workforce/manager-revoke',{
+    method:'POST',token:tokens.admin,body:{version:18,userId:staffId},
+  },200,'Platform owner revokes manager authority');
+  check(revokedManager.data.version===19,'Manager revoke committed');
+  await expectStatus('/api/projects/'+id+'/workforce/remove',{
+    method:'POST',token:tokens.admin,body:{version:19,userId:staffId},
+  },400,'Cannot remove member who owns unfinished tasks');
+  const unassigned=await expectStatus('/api/projects/'+id+'/tasks/'+delegatedId+'/assignment',{
+    method:'PATCH',token:tokens.admin,body:{version:19,assigneeId:null},
+  },200,'Manager first unassigns unfinished work');
+  check(unassigned.data.version===20,'Unassignment increments version');
+  const removed=await expectStatus('/api/projects/'+id+'/workforce/remove',{
+    method:'POST',token:tokens.admin,body:{version:20,userId:staffId},
+  },200,'Manager revokes linked employee access after task reassignment');
+  check(removed.data.version===21,'Member removal persisted');
+  const revokedStaff=await pool.query(
+    'select status from public.project_memberships where project_id=$1 and user_id=$2',
+    [id,staffId]);
+  check(revokedStaff.rows[0].status==='revoked','Workforce revocation persisted in PostgreSQL');
+  await staffPage.reload({waitUntil:'domcontentloaded'});
+  await staffPage.getByText('Project details unavailable.',{exact:false})
+    .waitFor({timeout:18000});
+  await expectStatus('/api/projects/'+id+'/tasks/'+delegatedId+'/comments',{
+    method:'POST',token:tokens.staff,body:{version:21,body:'No access now'},
+  },403,'Revoked contributor immediately loses task discussion permissions');
+  console.log('Acceptance stage 8: browser staff assignment, task delegation/threading and owner manager governance persisted');
+
   await pool.query("update public.project_memberships set status='revoked' where project_id=$1 and user_id=$2",[id,viewer]);
   await viewerPage.reload({waitUntil:'domcontentloaded'});
   await viewerPage.getByText('Project details unavailable.',{exact:false}).waitFor({timeout:18000});
