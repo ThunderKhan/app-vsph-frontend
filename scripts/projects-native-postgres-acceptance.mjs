@@ -387,6 +387,26 @@ try {
   await expectStatus('/api/projects/'+id+'/tasks/'+backendOtherTask.rows[0].id+'/comments',{
     method:'POST',token:tokens.admin,body:{version:15,body:'Cross-project injection'},
   },403,'Task comment gateway prevents cross-project task references');
+  // Backend itself must enforce task/project identity. Frontend-only filtering
+  // cannot protect direct callers of the existing Express API.
+  for(const [segment,body] of [
+    ['comments',{version:15,body:'Foreign task direct backend test',
+      taskId:backendOtherTask.rows[0].id}],
+    ['deliverables',{version:15,title:'Foreign evidence',
+      url:'https://example.com/report',taskId:backendOtherTask.rows[0].id}],
+  ]) {
+    const backendReply=await fetch('http://127.0.0.1:3100/api/projects/'+id+'/'+segment,{
+      method:'POST',headers:{
+        Cookie:'vsph.portal.sid='+tokens.admin,Origin:api,'Content-Type':'application/json'
+      },
+      body:JSON.stringify(body),
+    });
+    check(backendReply.status===403,
+      'Direct backend must block cross-project '+segment+' task references');
+  }
+  check(await version(id)===15,
+    'Rejected direct backend cross-project references must not advance project version');
+
   const commentReply=await expectStatus('/api/projects/'+id+'/tasks/'+delegatedId+'/comments',{
     method:'POST',token:tokens.staff,
     body:{version:15,body:'Contributed private task note'},
