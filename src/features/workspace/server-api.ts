@@ -46,9 +46,11 @@ export async function portalApi(path: string): Promise<ApiResult> {
   const detailMatch = /^\/api\/projects\/([0-9a-fA-F-]{36})(?:\/workforce)?$/.exec(path);
   const permittedDetail = !!detailMatch &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(detailMatch[1]);
+  // A fixed authenticated directory read for owner-only project creation.
+  const permittedCreationDirectory = path === '/api/projects/directory';
   // Legacy key-based deep links still resolve through the backend's permission checks.
   const permittedByKey = /^\/api\/projects\/by-key\/[A-Z][A-Z0-9-]{1,19}$/.test(path);
-  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey)
+  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
