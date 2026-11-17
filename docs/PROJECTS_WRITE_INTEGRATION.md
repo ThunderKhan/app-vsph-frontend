@@ -40,4 +40,4 @@ Branch: integration/projects-live-details; this is NOT merged into the organizat
 11. Check task/milestone form usability at mobile widths and browser-only keyboard navigation. Verify customer visibility remains backend-filtered; do not infer project access from product links.
 
 ## Merge queue
-Organization employee entry (#6) then role dashboards (#7), then focused Projects and Operations branches. The current integration branch is stacked after Operations and must be reviewed/rebased after those merge. No additional organization PR was opened here.
+Organization employee entry (#6) merged on 2026-11-17; role dashboards (#7) still open. After #7 merges, submit focused Projects and Operations branches in that order. The current integration branch is stacked after Operations and must be reviewed/rebased after those merge. No additional organization PR was opened here.
