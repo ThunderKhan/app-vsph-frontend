@@ -45,9 +45,9 @@ async function ProjectList({ searchParams }: { searchParams: Promise<Filters> })
       </div>
       <div className="actions">
         <Link className="project-live-refresh" href={url(q, status)}>Refresh</Link>
-        {canCreate && <button type="button" disabled title="Creation awaits the approved backend">
+        {canCreate && <Link className="project-live-refresh" href="/projects/new">
           New project
-        </button>}
+        </Link>}
       </div>
     </header>
     <section id="portfolio" aria-label="Project portfolio">
