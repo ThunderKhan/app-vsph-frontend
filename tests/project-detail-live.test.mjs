@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { parseProjectDetail } from '../src/features/projects/ProjectDetailContract.ts';
+import { isProjectId, parseProjectDetail } from '../src/features/projects/ProjectDetailContract.ts';
 
 const read = path => readFile(new URL('../' + path, import.meta.url), 'utf8');
 const id = '11111111-1111-4111-8111-111111111111';
@@ -19,6 +19,13 @@ const base = () => ({
   members: [{ user_id: '33333333-3333-4333-8333-333333333333',
     full_name: 'Example Member', role: 'viewer', status: 'active' }],
   products: [], deliverables: [], comments: [], activity: [],
+});
+
+test('canonical UUID guard accepts real PostgreSQL IDs and rejects malformed route segments', () => {
+  assert.equal(isProjectId(id), true);
+  assert.equal(isProjectId('09e24f09-90d4-4624-8f52-b384ab42e84a'), true);
+  assert.equal(isProjectId('11111111-1111-4111-111111111111'), false);
+  assert.equal(isProjectId('../../escape'), false);
 });
 
 test('real detail decoder accepts backend projection and prevents cross-record substitution', () => {
@@ -48,7 +55,7 @@ test('real project details use backend-only GET with strict route allowlisting',
   assert.match(details, /portalApi\('\/api\/projects\/' \+ id\)/);
   assert.match(details, /parseProjectDetail\(result\.value, id\)/);
   assert.match(details, /redirect\('\/login'\)/);
-  assert.match(details, /if \(!uuid\.test\(id\)\) notFound\(\)/);
+  assert.match(details, /if \(!isProjectId\(id\)\) notFound\(\)/);
   assert.match(list, /href=\{'\/projects\/' \+ project\.id\}/);
   assert.doesNotMatch(details, /ProjectFixtures|exampleProjects|localStorage|sessionStorage|fetch\(/);
   assert.doesNotMatch(details, /method: 'POST'|method: 'PATCH'|method: 'DELETE'/);

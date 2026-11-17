@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { portalApi } from '@/features/workspace/server-api';
-import { parseProjectDetail, type ProjectDetail } from '@/features/projects/ProjectDetailContract';
+import { isProjectId, parseProjectDetail, type ProjectDetail } from '@/features/projects/ProjectDetailContract';
 import { ProjectEditForm } from '@/features/projects/ProjectEditForm';
 import { TaskCreateForm, MilestoneCreateForm, TaskStatusForm, MilestoneStatusForm } from '@/features/projects/ProjectWorkControls';
 import '../../../(preview)/projects.css';
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: 'Project details | VSPH Control Center',
   robots: { index: false, follow: false },
 };
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const title = (value: string) => value.replaceAll('_', ' ');
 const date = (value: string | null) => value || '—';
 const views = ['overview','tasks','milestones','team','applications','delivery','engineering','activity'] as const;
@@ -120,7 +120,7 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  if (!uuid.test(id)) notFound();
+  if (!isProjectId(id)) notFound();
   const result = await portalApi('/api/projects/' + id);
   if (result.kind === 'unauthorized') redirect('/login');
   const data = result.kind === 'ok' ? parseProjectDetail(result.value, id) : null;

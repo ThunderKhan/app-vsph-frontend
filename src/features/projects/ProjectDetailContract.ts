@@ -19,6 +19,8 @@ export type ProjectDetail = {
   activity: { summary: string; created_at: string }[];
 };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Canonical runtime UUID guard shared with route validation. */
+export const isProjectId = (value: string): boolean => uuid.test(value);
 const projectStatus = ['planned','active','paused','completed','archived'];
 const taskStatus = ['todo','in_progress','blocked','in_review','done','cancelled'];
 const milestoneStatus = ['planned','active','done','cancelled'];
