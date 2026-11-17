@@ -11,19 +11,24 @@ export type LiveTask = {
   priority: 'low'|'normal'|'high'|'urgent';
   assigneeId: string|null; dueOn: string|null; shared: boolean;
 };
+export type LiveMilestone={
+  id:string;title:string;status:'planned'|'active'|'done'|'cancelled';
+  dueOn:string|null;shared:boolean;
+};
 export type LiveComment = {
   id: string; taskId: string|null; actorId: string;
   body: string; createdAt: string; shared: boolean;
 };
 export type LiveProject = {
   id: string; key: string; name: string; description: string;
-  ownerId: string; version: number;
+  ownerId: string; version: number; dueOn:string|null;
   status: 'planned'|'active'|'paused'|'completed'|'archived';
   role: LiveMember['role']; priority: LiveTask['priority'];
-  members: LiveMember[]; tasks: LiveTask[]; comments: LiveComment[];
+  members: LiveMember[]; tasks: LiveTask[]; comments: LiveComment[]; milestones:LiveMilestone[];
 };
 export const projectIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const statuses = new Set(['planned','active','paused','completed','archived']);
+const milestoneStatuses = new Set(['planned','active','done','cancelled']);
 const roles = new Set(['manager','contributor','viewer','client']);
 const tasks = new Set(['todo','in_progress','blocked','in_review','done','cancelled']);
 const priorities = new Set(['low','normal','high','urgent']);
@@ -39,14 +44,15 @@ function date(v: unknown) {
 /** No partial rendering, sample fallback, or tolerance for truncated writes. */
 export function parseLiveProject(value: unknown): LiveProject|null {
   if(!obj(value)||!obj(value.project)||!Array.isArray(value.members)||
-    !Array.isArray(value.tasks)||!Array.isArray(value.comments)||
+    !Array.isArray(value.tasks)||!Array.isArray(value.comments)||!Array.isArray(value.milestones)||
     value.members.length>500||value.tasks.length>500||value.comments.length>200||
+    value.milestones.length>100||
     typeof value.role!=='string'||!roles.has(value.role))return null;
   const p=value.project;
   if(!id(p.id)||!id(p.owner_id)||typeof p.key!=='string'||
     !/^[A-Z][A-Z0-9-]{1,19}$/.test(p.key)||
     typeof p.name!=='string'||!p.name.trim()||p.name.length>150||
-    typeof p.description!=='string'||p.description.length>5000||
+    typeof p.description!=='string'||p.description.length>5000||!date(p.due_on)||
     !Number.isSafeInteger(p.version)||(p.version as number)<1||
     typeof p.status!=='string'||!statuses.has(p.status)||
     typeof p.priority!=='string'||!priorities.has(p.priority))return null;
@@ -78,6 +84,17 @@ export function parseLiveProject(value: unknown): LiveProject|null {
       assigneeId:t.assignee_id as string|null,dueOn:t.due_on as string|null,
       shared:t.shared});
   }
+  const milestones:LiveMilestone[]=[];
+  const milestoneIds=new Set<string>();
+  for(const m of value.milestones){
+    if(!obj(m)||!id(m.id)||milestoneIds.has(m.id.toLowerCase())||
+      typeof m.title!=='string'||!m.title.trim()||m.title.length>200||
+      typeof m.status!=='string'||!milestoneStatuses.has(m.status)||
+      !date(m.due_on)||typeof m.shared!=='boolean')return null;
+    milestoneIds.add(m.id.toLowerCase());
+    milestones.push({id:m.id,title:m.title,status:m.status as LiveMilestone['status'],
+      dueOn:m.due_on as string|null,shared:m.shared});
+  }
   const comments:LiveComment[]=[];
   const commentIds=new Set<string>();
   for(const c of value.comments){
@@ -91,7 +108,7 @@ export function parseLiveProject(value: unknown): LiveProject|null {
       actorId:c.actor_id,body:c.body,createdAt:c.created_at,shared:c.shared});
   }
   return {id:p.id,key:p.key,name:p.name,description:p.description,
-    ownerId:p.owner_id,version:p.version as number,
+    ownerId:p.owner_id,version:p.version as number,dueOn:p.due_on as string|null,
     status:p.status as LiveProject['status'],priority:p.priority as LiveTask['priority'],
-    role:value.role as LiveMember['role'],members,tasks:work,comments};
+    role:value.role as LiveMember['role'],members,tasks:work,comments,milestones};
 }
