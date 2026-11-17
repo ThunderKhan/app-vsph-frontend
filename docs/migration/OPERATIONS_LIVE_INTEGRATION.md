@@ -44,6 +44,27 @@ remain immutable and development-only.
   and immediately revokes affected product sessions.
 - Customer organization membership alone never grants product/app access.
 
+### Finance, delivery reports and notifications
+
+- `/admin/finance`: owner-only INR overview, using exact decimal paise strings.
+- `/admin/finance/journal`: owner-only read-only invoice and cash receipt
+  journal. Search, status and dates are validated; pagination retains the
+  backend's unrounded timestamp cursor and filter-scope fingerprint. Bank
+  settlement is **not** inferred from a manually recorded receipt.
+- `/reports`: permission-scoped project report covering **at most the first
+  100 authorized matching non-client projects**. Counts and metrics reflect
+  only returned projects, never an assumed organization-wide total.
+- `/api/project-report/export`: authenticated CSV export forwarding the same
+  filters to the backend's formula-safe first-100-project CSV generator.
+  Invalid filters, cross-site requests and unauthorized sessions fail closed.
+- `/notifications`: current-user in-app inbox (up to 100 entries), personal
+  preferences and explicit mark-read/retry controls. The backend's inbox GET
+  may dispatch queued items while rechecking current project permissions;
+  this is not an external mail or push notification system.
+
+These read surfaces do **not** enable invoice creation, payment recording,
+reversal, product provisioning or automatic external message delivery.
+
 ## Routing, authorization and deployment requirements
 
 Environment variables:
@@ -111,9 +132,10 @@ entire platform migration. Remaining modules include:
 
 - Customer invitation/acceptance, product role grants and lifecycle changes.
 - Employee archive, restoration, removal, HR authority and account linking.
-- Full HR self-service, leave requests, personal attendance and notifications.
-- Finance, journal, reports, administration, product catalog, provisioning,
-  account/security, outreach and other application integrations.
+- Full HR self-service, employee leave requests and personal attendance.
+- Finance write operations (invoice creation, payment recording, reversal),
+  administration, product catalog, provisioning, account/security,
+  outreach and other application integrations.
 - Full project engineering/delivery integrations and consolidated production QA.
 
 The destination organization PR queue remains untouched.
