@@ -67,3 +67,10 @@
   .project-live-create-grid{grid-template-columns:1fr}
   .project-member-controls{min-width:0}
 }
+
+.project-live-confirm{border:1px solid #f1c47a;background:#fff9ec;border-radius:8px;
+  padding:15px;margin:18px 0}
+.project-live-confirm p{margin:7px 0 12px}
+.project-live-confirm>div{display:flex;flex-wrap:wrap;gap:10px}
+.project-live-confirm button:last-child{background:#7f2c25;color:#fff;border-color:#7f2c25}
+.project-live-confirm button:last-child:hover:not(:disabled){background:#63241e}
