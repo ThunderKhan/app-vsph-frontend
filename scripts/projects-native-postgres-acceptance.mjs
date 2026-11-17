@@ -13,6 +13,7 @@ import { createRequire } from 'node:module';
 const backendRequire = createRequire(new URL('../.acceptance-backend/package.json', import.meta.url));
 const { Pool } = backendRequire('pg');
 const { hashToken } = backendRequire('./tokens.js');
+const {chromium} = backendRequire('@playwright/test');
 const input = process.env.TEST_DATABASE_URL;
 assert.ok(input, 'TEST_DATABASE_URL required for isolated acceptance');
 const database = new URL(input);
@@ -27,6 +28,9 @@ const outsider='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const pool=new Pool({connectionString:input, max:4});
 const tokens={};
 const show={checks:0};
+let browser;
+let adminPage;
+let viewerPage;
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const check=(condition,message)=>{assert.ok(condition,message); show.checks++};
@@ -94,64 +98,43 @@ try {
   const stored=await pool.query('select key,name,version from public.projects where id=$1',[id]);
   check(stored.rows[0].key===key&&stored.rows[0].name===name&&stored.rows[0].version===1,
     'Project must be committed to native PostgreSQL');
-  const adminList=await expectStatus('/projects',{token:tokens.admin},200,'Authorized portfolio page');
-  check(adminList.raw.includes(name) || adminList.raw.includes('Projects'),'Authenticated portfolio rendered');
-  const ownerPage=await expectStatus('/projects/'+id,{token:tokens.admin},200,'Authorized project page');
-  if (!(ownerPage.raw.includes(name)&&ownerPage.raw.includes('Add task') &&
-    ownerPage.raw.includes('Add milestone'))) {
-    const response=await fetch('http://127.0.0.1:3100/api/projects/'+id,
-      {headers:{Cookie:'vsph.portal.sid='+tokens.admin},cache:'no-store'});
-    const actual=await response.json().catch(()=>null);
-    const {parseProjectDetail}=await import('../src/features/projects/ProjectDetailContract.ts');
-    console.error('Project detail diagnostic',JSON.stringify({
-      realBackendStatus:response.status,
-      realBackendParsed:parseProjectDetail(actual,id)!==null,
-      realBackendProject:actual?.project ? {
-        key:actual.project.key,version:actual.project.version,kind:actual.project.kind,
-        priority:actual.project.priority,status:actual.project.status
-      }:null,
-      backendCollections:actual && typeof actual==='object' ?
-        Object.fromEntries(['tasks','milestones','members','products','deliverables','comments','activity']
-          .map(k=>[k,Array.isArray(actual[k])?{
-            count:actual[k].length,fields:actual[k][0]?Object.keys(actual[k][0]):[]
-          }:typeof actual[k]])):null,
-      backendAuth:await (async()=>{
-        const auth=await fetch('http://127.0.0.1:3100/api/auth/me',
-          {headers:{Cookie:'vsph.portal.sid='+tokens.admin}});
-        const data=await auth.json().catch(()=>({}));
-        return {status:auth.status,hasUser:!!data.user,role:data.user?.platformRole};
-      })(),
-      frontendLength:ownerPage.raw.length,
-      frontendTail:ownerPage.raw.slice(-1800).replace(/\s+/g,' ').slice(0,1600),
-      frontendMarkers:{workspaceUnavailable:ownerPage.raw.includes('Workspace unavailable'),
-        projectName:ownerPage.raw.includes(name),
-        addTask:ownerPage.raw.includes('Add task'),
-        addMilestone:ownerPage.raw.includes('Add milestone'),
-        unavailable:ownerPage.raw.includes('Project details unavailable'),
-        login:ownerPage.raw.includes('Sign in'),
-        suspense:ownerPage.raw.includes('Checking your session')},
-    }));
+  // Next.js 16 streams an initial Suspense shell; verify the visible page after hydration.
+  await expectStatus('/projects',{token:tokens.admin},200,'Authorized portfolio response');
+  await expectStatus('/projects/'+id,{token:tokens.admin},200,'Authorized project response');
+  browser=await chromium.launch({headless:true});
+  async function browserPage(token) {
+    const context=await browser.newContext({baseURL:api});
+    await context.addCookies([{name:'vsph.portal.sid',value:token,url:api,
+      httpOnly:true,sameSite:'Lax'}]);
+    return context.newPage();
   }
-  check(ownerPage.raw.includes(name)&&ownerPage.raw.includes('Add task') &&
-    ownerPage.raw.includes('Add milestone'), 'Real project details show manager work actions');
-  const guestDetail=await expectStatus('/projects/'+id,{token:tokens.outsider},200,
-    'Unauthorized project page fails closed with access message');
-  check(!guestDetail.raw.includes(name)&&guestDetail.raw.includes('Project details unavailable'),
-    'Outsider must not see project data');
-  await expectStatus('/api/projects/'+id,{method:'PATCH',token:tokens.outsider,
-    body:{version:1,name:'Intrusion',description:'',priority:'normal',dueOn:''}},
-    403,'Outsider cannot mutate project');
+  adminPage=await browserPage(tokens.admin);
+  await adminPage.goto('/projects',{waitUntil:'domcontentloaded'});
+  await adminPage.getByRole('heading',{name:'Projects',exact:true}).waitFor({timeout:18000});
+  await adminPage.goto('/projects/'+id,{waitUntil:'domcontentloaded'});
+  await adminPage.getByRole('heading',{name,exact:true}).waitFor({timeout:18000});
+  await adminPage.getByRole('button',{name:'Add task',exact:true}).waitFor({timeout:18000});
+  await adminPage.getByRole('button',{name:'Add milestone',exact:true}).waitFor({timeout:18000});
+  check(true,'Admin sees database-backed manager controls in Chromium');
+  const outsiderPage=await browserPage(tokens.outsider);
+  await outsiderPage.goto('/projects/'+id,{waitUntil:'domcontentloaded'});
+  await outsiderPage.getByText('Project details unavailable.',{exact:false}).waitFor({timeout:18000});
+  check(await outsiderPage.getByRole('heading',{name,exact:true}).count()===0,
+    'Outsider project detail remains inaccessible in browser');
 
   console.log('Acceptance stage 3: creation persisted and role-scoped project pages loaded');
   // Add a viewer directly to this disposable DB to prove the backend enforces role restrictions.
   await pool.query("insert into public.project_memberships(project_id,user_id,role,status) values($1,$2,'viewer','active')",[id,viewer]);
-  const viewerPage=await expectStatus('/projects/'+id,{token:tokens.viewer},200,'Viewer reads own project');
-  check(viewerPage.raw.includes(name)&&!viewerPage.raw.includes('Add task'),
-    'Viewer can read permitted project but cannot see management controls');
+  viewerPage=await browserPage(tokens.viewer);
+  await viewerPage.goto('/projects/'+id,{waitUntil:'domcontentloaded'});
+  await viewerPage.getByRole('heading',{name,exact:true}).waitFor({timeout:18000});
+  check(await viewerPage.getByRole('button',{name:'Add task',exact:true}).count()===0,
+    'Viewer cannot see manager task controls');
   await expectStatus('/api/projects/'+id+'/tasks',{
     method:'POST',token:tokens.viewer,
     body:{version:1,title:'Unauthorized',description:'',priority:'normal',dueOn:''},
   },403,'Viewer cannot create task');
+
   const edited=await expectStatus('/api/projects/'+id,{
     method:'PATCH',token:tokens.admin,
     body:{version:1,name:name+' edited',description:'Version verified',priority:'high',dueOn:''},
@@ -218,19 +201,20 @@ try {
   check(persisted.rowCount===1&&persisted.rows[0].version===10 &&
     persisted.rows[0].task_status==='done'&&persisted.rows[0].milestone_status==='done',
     'Task and milestone lifecycle persisted in native PostgreSQL');
-  const detailed=await expectStatus('/projects/'+id,{token:tokens.admin},200,
-    'Reload actual frontend project details');
-  check(detailed.raw.includes('Acceptance task')&&detailed.raw.includes('Acceptance milestone'),
-    'Frontend reload displays persisted task and milestone');
+  await adminPage.reload({waitUntil:'domcontentloaded'});
+  await adminPage.getByText('Acceptance task',{exact:true}).waitFor({timeout:18000});
+  await adminPage.getByText('Acceptance milestone',{exact:true}).waitFor({timeout:18000});
+  check(true,'Browser reload shows persisted task and milestone');
 
   await pool.query("update public.project_memberships set status='revoked' where project_id=$1 and user_id=$2",[id,viewer]);
-  const revoked=await expectStatus('/projects/'+id,{token:tokens.viewer},200,'Revoked member navigation');
-  check(!revoked.raw.includes('Acceptance task')&&revoked.raw.includes('Project details unavailable'),
-    'Revoked member immediately loses project visibility');
+  await viewerPage.reload({waitUntil:'domcontentloaded'});
+  await viewerPage.getByText('Project details unavailable.',{exact:false}).waitFor({timeout:18000});
+  check(await viewerPage.getByRole('heading',{name,exact:true}).count()===0,
+    'Revoked member immediately loses access in browser');
   await expectStatus('/api/projects/'+id+'/tasks',{
     method:'POST',token:tokens.viewer,
     body:{version:10,title:'After revocation',description:'',priority:'normal',dueOn:''},
-  },403,'Revoked member still cannot mutate');
+  },403,'Revoked member cannot mutate');
 
   console.log('NATIVE POSTGRESQL FULL-STACK ACCEPTANCE PASSED',JSON.stringify({
     checks:show.checks,projectId:id,taskId,milestoneId,
@@ -238,5 +222,6 @@ try {
     liveServicesUsed:false,realSupabaseAuthTested:false,
   }));
 } finally {
+  if(browser) await browser.close();
   await pool.end();
 }

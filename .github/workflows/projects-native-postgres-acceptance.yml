@@ -69,6 +69,9 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: Install Chromium for authenticated native DB UI acceptance
+        run: cd .acceptance-backend && npx playwright install --with-deps chromium
+
       - name: Verify real project writes in disposable native PostgreSQL
         shell: bash
         run: |
