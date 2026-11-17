@@ -133,7 +133,22 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (from===null||validDate(from)) && (to===null||validDate(to)) &&
       (from===null||to===null||from<=to) && validCursor;
   }
-  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal)
+  // The legacy report RPC permits only status and bounded date filters.
+  const reportPath = /^\/api\/project-reports(?:\?([^#]*))?$/.exec(path);
+  let permittedProjectReport = false;
+  if(reportPath){
+    const params=new URLSearchParams(reportPath[1]||'');
+    const keys=[...params.keys()];
+    const status=params.get('status'),from=params.get('from'),to=params.get('to');
+    const validDate=(v:string)=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&
+      !Number.isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v;
+    permittedProjectReport=keys.length<=3&&new Set(keys).size===keys.length&&
+      keys.every(k=>['status','from','to'].includes(k))&&
+      (status===null||['planned','active','paused','completed','archived'].includes(status))&&
+      (from===null||validDate(from))&&(to===null||validDate(to))&&
+      (from===null||to===null||from<=to);
+  }
+  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal && !permittedProjectReport)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
