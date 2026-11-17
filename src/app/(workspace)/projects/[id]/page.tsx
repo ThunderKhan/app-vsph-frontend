@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { portalApi } from '@/features/workspace/server-api';
 import { parseProjectDetail, type ProjectDetail } from '@/features/projects/ProjectDetailContract';
 import { ProjectEditForm } from '@/features/projects/ProjectEditForm';
+import { TaskCreateForm, MilestoneCreateForm, TaskStatusForm, MilestoneStatusForm } from '@/features/projects/ProjectWorkControls';
 import '../../../(preview)/projects.css';
 import '../../../(preview)/project-detail-v2.css';
 import '../../projects-live.css';
@@ -21,6 +22,8 @@ function LiveProject({ data }: { data: ProjectDetail }) {
   const { project: p, role, tasks, milestones, members, products, deliverables, comments, activity } = data;
   const completed = tasks.filter(t => t.status === 'done').length;
   const active = tasks.filter(t => t.status !== 'cancelled');
+  // Availability of controls is only UX; project_command rechecks manager authority.
+  const canManageWork = role === 'manager' && p.status !== 'completed' && p.status !== 'archived';
   return <main className="workspace-content project-workspace project-live-detail" id="mainContent" tabIndex={-1}>
     <header className="project-heading">
       <div>
@@ -45,20 +48,27 @@ function LiveProject({ data }: { data: ProjectDetail }) {
     </section>
     <section id="tasks" className="project-v2-card project-live-section" aria-labelledby="live-tasks">
       <h2 id="live-tasks">Tasks</h2>
+      {canManageWork && <TaskCreateForm projectId={p.id} version={p.version}/>}
       {tasks.length ? <div className="project-table-wrap" role="region"
         aria-label="Tasks table, horizontally scrollable" tabIndex={0}>
         <table><thead><tr>
           <th scope="col">Task</th><th scope="col">State</th><th scope="col">Priority</th><th scope="col">Due</th>
+          {canManageWork && <th scope="col">Change status</th>}
         </tr></thead><tbody>{tasks.map(task => <tr key={task.id}>
           <td><strong>{task.title}</strong>{task.description && <small>{task.description}</small>}</td>
           <td>{title(task.status)}</td><td>{title(task.priority)}</td><td>{date(task.due_on)}</td>
+          {canManageWork && <td><TaskStatusForm projectId={p.id} version={p.version}
+            entityId={task.id} current={task.status}/></td>}
         </tr>)}</tbody></table></div> : <p>No visible tasks.</p>}
     </section>
     <section id="milestones" className="project-v2-card project-live-section" aria-labelledby="live-milestones">
       <h2 id="live-milestones">Milestones</h2>
+      {canManageWork && <MilestoneCreateForm projectId={p.id} version={p.version}/>}
       {milestones.length ? <ul className="project-live-rows">
         {milestones.map(m => <li key={m.id}>
           <strong>{m.title}</strong><span>{title(m.status)} · Due {date(m.due_on)}</span>
+          {canManageWork && <MilestoneStatusForm projectId={p.id} version={p.version}
+            entityId={m.id} current={m.status}/>}
         </li>)}</ul> : <p>No visible milestones.</p>}
     </section>
     <section id="team" className="project-v2-card project-live-section" aria-labelledby="live-team">
@@ -99,7 +109,7 @@ function LiveProject({ data }: { data: ProjectDetail }) {
         </li>)}</ul> : <p>No visible activity.</p>}
     </section>
     <p className="project-section-hint" role="note">
-      Backend-authorized view. Project metadata edits require manager authority and version matching; team, task and access changes are not connected yet.
+      Backend-authorized view. Managers can create tasks and milestones and change their states with version checks. Assignment, sharing, team permissions and deployment integrations are not connected.
     </p>
   </main>;
 }
