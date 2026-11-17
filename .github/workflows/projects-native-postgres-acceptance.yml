@@ -85,7 +85,10 @@ jobs:
 
           backend_ready=0
           for attempt in $(seq 1 45); do
-            if curl -fsS -o /dev/null http://127.0.0.1:3100/login; then backend_ready=1; break; fi
+            # A missing cookie MUST return HTTP 401 from the actual session route.
+            # The legacy /login HTML handler can return 500 in fixture mode.
+            backend_status=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/api/auth/me || true)
+            if [ "$backend_status" = "401" ]; then backend_ready=1; break; fi
             if grep -q "Isolated browser fixture boot failed" /tmp/vsph-legacy-fixture.log; then break; fi
             if ! kill -0 "$backend_pid" 2>/dev/null; then break; fi
             sleep 2
