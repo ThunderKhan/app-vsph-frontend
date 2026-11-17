@@ -12,6 +12,8 @@ import { setTimeout as sleep } from 'node:timers/promises';
 const appPort = 47045;
 const publicOrigin = 'http://127.0.0.1:' + appPort;
 const id = '11111111-1111-4111-8111-111111111111';
+const taskId = '22222222-2222-4222-8222-222222222222';
+const milestoneId = '33333333-3333-4333-8333-333333333333';
 const fakeSid = 'a'.repeat(48);
 const requests = [];
 const backend = http.createServer(async (req, res) => {
@@ -32,6 +34,17 @@ const backend = http.createServer(async (req, res) => {
   } else if (req.url === '/api/projects/' + id && req.method === 'PATCH') {
     respond(parsed.version === 3 ? 409 : 200,
       parsed.version === 3 ? { message: 'Conflict' } : { id });
+  } else if (req.url === '/api/projects/' + id + '/tasks' && req.method === 'POST') {
+    respond(200, parsed.title === 'bad-backend-result' ?
+      {id:'not-a-uuid',version:parsed.version+1} : {id:taskId,version:parsed.version+1});
+  } else if (req.url === '/api/projects/' + id + '/milestones' && req.method === 'POST') {
+    respond(200, {id:milestoneId,version:parsed.version+1});
+  } else if (req.url === '/api/projects/' + id + '/tasks/' + taskId && req.method === 'PATCH') {
+    respond(parsed.version === 3 ? 409 : 200,
+      parsed.version === 3 ? {message:'Conflict'} : {id:taskId,version:parsed.version+1});
+  } else if (req.url === '/api/projects/' + id + '/milestones/' + milestoneId && req.method === 'PATCH') {
+    respond(parsed.version === 3 ? 409 : 200,
+      parsed.version === 3 ? {message:'Conflict'} : {id:milestoneId,version:parsed.version+1});
   } else respond(404, { message: 'Unknown mock route' });
 });
 await new Promise((resolve, reject) => {
@@ -109,7 +122,62 @@ try {
   assert.deepEqual(edited.body, { updated: true });
   assert.equal(requests.length, 3);
   assert.equal(requests[2].body.version, 4);
+  const task = {version:4,title:'Implement billing',description:'Internal only',
+    priority:'normal',dueOn:''};
+  const milestone = {version:4,title:'MVP ready',dueOn:'2026-12-05'};
+  const status = {version:4,status:'in_progress'};
+  const beforeWork = requests.length;
+  assert.equal((await request('/api/projects/'+id+'/tasks', {
+    method:'POST',body:task,cookie:null,
+  })).status,401);
+  assert.equal((await request('/api/projects/'+id+'/tasks', {
+    method:'POST',body:task,origin:'https://outside.invalid',
+  })).status,403);
+  assert.equal((await request('/api/projects/'+id+'/tasks', {
+    method:'POST',body:{...task,shared:true},
+  })).status,400);
+  assert.equal((await request('/api/projects/'+id+'/tasks', {
+    method:'POST',body:{...task,description:'x'.repeat(10000)},
+  })).status,413);
+  assert.equal((await request('/api/projects/'+id+'/tasks/invalid', {
+    method:'PATCH',body:status,
+  })).status,400);
+  assert.equal(requests.length,beforeWork,'Invalid work mutations must not reach the backend');
+  const addedTask=await request('/api/projects/'+id+'/tasks',{method:'POST',body:task});
+  assert.equal(addedTask.status,200);
+  assert.deepEqual(addedTask.body,{id:taskId,version:5});
+  assert.deepEqual(requests[beforeWork],{
+    path:'/api/projects/'+id+'/tasks',method:'POST',origin:publicOrigin,
+    cookie:'vsph.portal.sid='+fakeSid,body:task,
+  });
+  const addedMilestone=await request('/api/projects/'+id+'/milestones',{
+    method:'POST',body:milestone,
+  });
+  assert.equal(addedMilestone.status,200);
+  assert.deepEqual(addedMilestone.body,{id:milestoneId,version:5});
+  assert.equal((await request('/api/projects/'+id+'/tasks/'+taskId,{
+    method:'PATCH',body:{version:3,status:'done'},
+  })).status,409);
+  const movedTask=await request('/api/projects/'+id+'/tasks/'+taskId,{
+    method:'PATCH',body:status,
+  });
+  assert.equal(movedTask.status,200);
+  assert.deepEqual(movedTask.body,{id:taskId,version:5});
+  assert.equal((await request('/api/projects/'+id+'/milestones/'+milestoneId,{
+    method:'PATCH',body:{version:4,status:'blocked'},
+  })).status,400);
+  const movedMilestone=await request('/api/projects/'+id+'/milestones/'+milestoneId,{
+    method:'PATCH',body:{version:4,status:'active'},
+  });
+  assert.equal(movedMilestone.status,200);
+  assert.deepEqual(movedMilestone.body,{id:milestoneId,version:5});
+  const brokenBackend=await request('/api/projects/'+id+'/tasks',{
+    method:'POST',body:{...task,title:'bad-backend-result'},
+  });
+  assert.equal(brokenBackend.status,502,'Malformed upstream success must not be reported as success');
+  assert.equal(requests.length,beforeWork+6);
   console.log('Projects write gateway production HTTP smoke passed (origin, cookie, schema, size, 201/409/200).');
+  console.log('Task/milestone gateway HTTP smoke passed (200/400/401/403/409/413/502 and version guard).');
 } finally {
   next.kill('SIGTERM');
   backend.close();
