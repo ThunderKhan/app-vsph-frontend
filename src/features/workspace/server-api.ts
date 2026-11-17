@@ -1,3 +1,4 @@
+import {isProjectId} from '@/features/projects/ProjectDetailContract';
 import { cookies } from 'next/headers';
 
 /**
@@ -33,7 +34,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectDetailPath[1]));
   const workforcePath = /^\/api\/projects\/([0-9a-fA-F-]{36})\/workforce$/.exec(path);
   const permittedWorkforce = Boolean(workforcePath &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workforcePath[1]));
+    isProjectId(workforcePath[1]));
   let permittedProjects = false;
   if (projectListPath) {
     const params = new URLSearchParams(projectListPath[1]);
@@ -48,10 +49,6 @@ export async function portalApi(path: string): Promise<ApiResult> {
       status !== null && ['', 'planned', 'active', 'paused', 'completed', 'archived'].includes(status) &&
       (cursor === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cursor));
   }
-  if (process.env.VSPH_ACCEPTANCE_DIAGNOSTICS === '1' && path.endsWith('/workforce'))
-    console.error('Workforce API diagnostics allowlist', JSON.stringify({
-      permittedWorkforce, pathLength:path.length, projectIdLength:workforcePath?.[1]?.length,
-    }));
   if (!establishedRead && !permittedProjects && !permittedProjectDetail && !permittedWorkforce) return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
@@ -71,15 +68,11 @@ export async function portalApi(path: string): Promise<ApiResult> {
       redirect: 'manual',
       signal: AbortSignal.timeout(8000),
     });
-    if (process.env.VSPH_ACCEPTANCE_DIAGNOSTICS === '1' && path.endsWith('/workforce'))
-      console.error('Workforce API diagnostics status', response.status);
     if (response.status === 401) return { kind: 'unauthorized' };
     if (response.status !== 200) return { kind: 'unavailable' };
     const value: unknown = await response.json();
     return { kind: 'ok', value };
-  } catch (error) {
-    if (process.env.VSPH_ACCEPTANCE_DIAGNOSTICS === '1' && path.endsWith('/workforce'))
-      console.error('Workforce API diagnostics exception', error instanceof Error ? error.name : typeof error);
+  } catch {
     return { kind: 'unavailable' };
   }
 }
