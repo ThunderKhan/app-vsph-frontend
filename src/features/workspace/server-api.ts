@@ -67,7 +67,21 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (search === null || (search.length <= 80 && !/[\u0000-\u001f\u007f]/.test(search)));
   }
   const permittedEmployeeAccess = path === '/api/employees/access';
-  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess)
+  // Scoped HR leave and attendance reads. Backend performs current HR role checks.
+  const hrPath = /^\/api\/hrms\/(leave|attendance)\?([^#]*)$/.exec(path);
+  let permittedHrList = false;
+  if (hrPath) {
+    const params = new URLSearchParams(hrPath[2]);
+    const keys = [...params.keys()];
+    const status = params.get('status'), cursor = params.get('afterId');
+    const allowed = hrPath[1] === 'leave' ? ['status','afterId'] : ['afterId'];
+    permittedHrList = keys.length <= allowed.length &&
+      new Set(keys).size === keys.length && keys.every(k => allowed.includes(k)) &&
+      (status === null || (hrPath[1] === 'leave' &&
+        ['all','pending','approved','rejected','cancelled'].includes(status))) &&
+      (cursor === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cursor));
+  }
+  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
