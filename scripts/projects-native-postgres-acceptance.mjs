@@ -212,8 +212,8 @@ try {
     persisted.rows[0].task_status==='done'&&persisted.rows[0].milestone_status==='done',
     'Task and milestone lifecycle persisted in native PostgreSQL');
   await adminPage.reload({waitUntil:'domcontentloaded'});
-  await adminPage.getByText('Acceptance task',{exact:true}).waitFor({timeout:18000});
-  await adminPage.getByText('Acceptance milestone',{exact:true}).waitFor({timeout:18000});
+  await adminPage.locator('#tasks').getByText('Acceptance task',{exact:true}).waitFor({timeout:18000});
+  await adminPage.locator('#milestones').getByText('Acceptance milestone',{exact:true}).waitFor({timeout:18000});
   check(true,'Browser reload shows persisted task and milestone');
 
   await pool.query("update public.project_memberships set status='revoked' where project_id=$1 and user_id=$2",[id,viewer]);
