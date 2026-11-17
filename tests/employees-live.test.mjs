@@ -42,6 +42,6 @@ test('employee live screen is backed by server-only API with bounded filters',as
  assert.match(page,/loadEmployeeRoster/);
  assert.match(page,/employeeUrl\(search,status,roster.nextCursor\)/);
  assert.match(page,/roster\.counts\.total/);
- assert.match(header,/activePages = new Set\(\['\/dashboard', '\/applications', '\/projects', '\/employees'\]\)/);
+ assert.match(header,/activePages = new Set\(\['\/dashboard', '\/applications', '\/projects', '\/employees', '\/hr'\]\)/);
  assert.doesNotMatch(loader+page,/OperationsFixtures|exampleEmployees|localStorage|sessionStorage|fetch\(/);
 });
