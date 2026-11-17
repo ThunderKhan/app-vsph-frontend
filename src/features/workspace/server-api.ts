@@ -50,7 +50,24 @@ export async function portalApi(path: string): Promise<ApiResult> {
   const permittedCreationDirectory = path === '/api/projects/directory';
   // Legacy key-based deep links still resolve through the backend's permission checks.
   const permittedByKey = /^\/api\/projects\/by-key\/[A-Z][A-Z0-9-]{1,19}$/.test(path);
-  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory)
+  // Employee directory reads are restricted to documented, bounded filters.
+  const employeePath = /^\/api\/employees\?([^#]*)$/.exec(path);
+  let permittedEmployees = false;
+  if (employeePath) {
+    const params = new URLSearchParams(employeePath[1]);
+    const keys = [...params.keys()];
+    const cursor = params.get('afterId');
+    const status = params.get('status');
+    const search = params.get('search');
+    permittedEmployees = keys.length <= 3 &&
+      new Set(keys).size === keys.length &&
+      keys.every(key => ['afterId', 'status', 'search'].includes(key)) &&
+      (cursor === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cursor)) &&
+      (status === null || ['all','onboarding','active','on_leave','inactive'].includes(status)) &&
+      (search === null || (search.length <= 80 && !/[\u0000-\u001f\u007f]/.test(search)));
+  }
+  const permittedEmployeeAccess = path === '/api/employees/access';
+  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
