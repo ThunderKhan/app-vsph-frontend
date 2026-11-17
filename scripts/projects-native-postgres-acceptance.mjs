@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 const backendRequire = createRequire(new URL('../.acceptance-backend/package.json', import.meta.url));
 const { Pool } = backendRequire('pg');
 const { hashToken } = backendRequire('./tokens.js');
-const {chromium} = backendRequire('@playwright/test');
+const {chromium,expect} = backendRequire('@playwright/test');
 const input = process.env.TEST_DATABASE_URL;
 assert.ok(input, 'TEST_DATABASE_URL required for isolated acceptance');
 const database = new URL(input);
@@ -221,8 +221,14 @@ try {
   await adminPage.getByRole('button',{name:'Add private comment',exact:true}).click();
   await adminPage.getByRole('textbox',{name:'Comment',exact:true}).fill('Private acceptance note');
   await adminPage.getByRole('button',{name:'Post private comment',exact:true}).click();
+  // The textarea may contain the submitted text before the POST commits.
+  // Wait for the form to close and the parent version to refresh instead.
+  await adminPage.getByRole('button',{name:'Add private comment',exact:true})
+    .waitFor({timeout:18000});
   await adminPage.locator('#delivery').getByText('Private acceptance note',{exact:true})
     .waitFor({timeout:18000});
+  await expect(adminPage.getByRole('button',{name:'Add evidence link',exact:true}))
+    .toBeEnabled({timeout:18000});
   check(await version(id)===11,'Comment UI write must commit as version 11');
   await adminPage.getByRole('button',{name:'Add evidence link',exact:true}).click();
   await adminPage.getByRole('textbox',{name:'Evidence title',exact:true})
@@ -230,6 +236,8 @@ try {
   await adminPage.getByRole('textbox',{name:'HTTPS evidence URL',exact:true})
     .fill('https://example.com/build-report');
   await adminPage.getByRole('button',{name:'Save evidence link',exact:true}).click();
+  await adminPage.getByRole('button',{name:'Add evidence link',exact:true})
+    .waitFor({timeout:18000});
   await adminPage.locator('#delivery').getByText('Acceptance evidence link',{exact:true})
     .waitFor({timeout:18000});
   const deliveryStored=await pool.query(
