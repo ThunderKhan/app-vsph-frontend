@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - migration/operations-ui-port
+      - integration/projects-live-details
   pull_request:
     branches:
       - main
