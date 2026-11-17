@@ -2,7 +2,7 @@
  * Never accept client-selected project roles, assignees, visibility, owners,
  * permissions, entity IDs or arbitrary backend paths.
  */
-export type WorkAction = 'task-create' | 'milestone-create' | 'task-status' | 'milestone-status' | 'comment-create' | 'deliverable-create';
+export type WorkAction = 'task-create' | 'milestone-create' | 'task-status' | 'milestone-status' | 'comment-create' | 'deliverable-create' | 'task-comment-create' | 'task-assign';
 export type WorkBody = {
   version: number;
   title?: string;
@@ -12,6 +12,8 @@ export type WorkBody = {
   status?: string;
   body?: string;
   url?: string;
+  taskId?: string;
+  assigneeId?: string | null;
 };
 export type WorkParseResult = { ok: true; data: WorkBody } |
   { ok: false; error: string };
@@ -23,6 +25,8 @@ const allowed: Record<WorkAction, ReadonlySet<string>> = {
   'milestone-status': new Set(['version','status']),
   'comment-create': new Set(['version','body']),
   'deliverable-create': new Set(['version','title','url']),
+  'task-comment-create': new Set(['version','body','taskId']),
+  'task-assign': new Set(['version','assigneeId']),
 };
 const priorities = new Set(['low','normal','high','urgent']);
 const taskStatuses = new Set(['todo','in_progress','blocked','in_review','done','cancelled']);
@@ -60,11 +64,21 @@ export function parseWorkAction(action: WorkAction, value: unknown): WorkParseRe
         !date(value.dueOn)) return bad();
     return { ok:true, data:{version, title:value.title.trim(), dueOn:value.dueOn as string} };
   }
-  if (action === 'comment-create') {
+  if (action === 'task-assign') {
+    if (value.assigneeId !== null &&
+      (typeof value.assigneeId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.assigneeId))) return bad();
+    return {ok:true,data:{version,assigneeId:value.assigneeId as string | null}};
+  }
+  if (action === 'task-comment-create' &&
+      (typeof value.taskId !== 'string' ||
+       !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.taskId))) return bad();
+  if (action === 'comment-create' || action === 'task-comment-create') {
     if (typeof value.body !== 'string' || !value.body.trim() ||
         value.body.length > 4000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value.body))
       return bad();
-    return {ok:true,data:{version,body:value.body.trim()}};
+    return {ok:true,data:action === 'task-comment-create'
+      ? {version,body:value.body.trim(),taskId:value.taskId as string}
+      : {version,body:value.body.trim()}};
   }
   if (action === 'deliverable-create') {
     if (typeof value.title !== 'string' || !value.title.trim() ||

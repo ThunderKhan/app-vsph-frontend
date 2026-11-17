@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { approvedInternalOrigin } from '@/features/workspace/server-api';
+import { approvedInternalOrigin, portalApi } from '@/features/workspace/server-api';
 import { parseWorkAction, type WorkAction } from './ProjectWorkContract';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -27,6 +27,8 @@ const suffix: Record<WorkAction,string> = {
   'milestone-status':'/milestones',
   'comment-create':'/comments',
   'deliverable-create':'/deliverables',
+  'task-comment-create':'/comments',
+  'task-assign':'/tasks',
 };
 
 /** Same-origin browser writes, fixed upstream path, and no client-specified
@@ -43,8 +45,9 @@ export async function projectWorkWrite(request: NextRequest, action: WorkAction,
     return response(403,'Request origin not permitted.');
   if (request.nextUrl.search || request.headers.get('content-type')?.split(';')[0].trim() !== 'application/json')
     return response(400,'Invalid work item request.');
-  if (!uuid.test(projectId) || (action.endsWith('-status') && (!entityId || !uuid.test(entityId))) ||
-      (action.endsWith('-create') && entityId !== undefined))
+  const needsEntity = action.endsWith('-status') || action === 'task-assign' || action === 'task-comment-create';
+  if (!uuid.test(projectId) || (needsEntity && (!entityId || !uuid.test(entityId))) ||
+      (!needsEntity && entityId !== undefined))
     return response(400,'Invalid project or work item identifier.');
   const token = request.cookies.get('vsph.portal.sid')?.value;
   if (!token || !sidPattern.test(token)) return response(401,'Sign in to continue.');
@@ -57,7 +60,27 @@ export async function projectWorkWrite(request: NextRequest, action: WorkAction,
   if (new TextEncoder().encode(body).byteLength > LIMIT) return response(413,'Work item request is too large.');
   let submitted: unknown;
   try { submitted = JSON.parse(body); } catch { return response(400,'Invalid JSON request.'); }
-  const parsed = parseWorkAction(action,submitted);
+  // Entity ownership is checked server-side before passing a task-thread comment.
+  // The legacy SQL does not reject cross-project foreign task IDs on comment inserts.
+  let submission = submitted;
+  if (action === 'task-comment-create') {
+    const detail = await portalApi('/api/projects/' + projectId);
+    if (detail.kind === 'unauthorized') return response(401,'Sign in to continue.');
+    if (detail.kind !== 'ok' || !detail.value ||
+        typeof detail.value !== 'object' || Array.isArray(detail.value) ||
+        !('tasks' in detail.value) || !Array.isArray(detail.value.tasks))
+      return response(503,'Cannot verify project task membership.');
+    if (!detail.value.tasks.some((item:unknown)=>
+      item !== null && typeof item === 'object' && 'id' in item &&
+      typeof item.id === 'string' && item.id.toLowerCase() === entityId!.toLowerCase()))
+      return response(403,'Task is not visible in this project.');
+    if (!submitted || typeof submitted !== 'object' || Array.isArray(submitted))
+      return response(400,'Invalid task comment.');
+    // No caller-supplied taskId; the route validated the entity path.
+    if ('taskId' in submitted) return response(400,'Invalid task comment.');
+    submission = {...submitted,taskId:entityId};
+  }
+  const parsed = parseWorkAction(action,submission);
   if (!parsed.ok) return response(400,parsed.error);
   const method = action.endsWith('-create') ? 'POST' : 'PATCH';
   const path = '/api/projects/' + projectId + suffix[action] +
