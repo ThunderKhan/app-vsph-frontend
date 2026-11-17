@@ -32,4 +32,12 @@ fixtureSource=fixtureSource.replace(handler,
   "start(new Pool({ connectionString: url.toString() })).catch((error) => { console.error('Fixture SQL error:', error.code, error.message);");
 await writeFile(fixture,fixtureSource,'utf8');
 
+const policySql=await readFile('scripts/test-overlays/20261117150000_project_linked_staff_task_scope.sql','utf8');
+assert.ok(policySql.includes("m.role in ('contributor','viewer')") &&
+  policySql.includes("Task is outside this project") &&
+  policySql.includes("Deliverable task is outside this project"),
+  'Unsafe project permission overlay refused');
+await writeFile('.acceptance-backend/supabase/migrations/20261117150000_project_linked_staff_task_scope.sql',policySql,'utf8');
+console.log('Applied test-only project permission and task-scope forward migration from reviewed fork branch. Org backend unchanged.');
+
 console.log('Applied two-token SQL quoting correction in disposable test checkout ONLY. Upstream defect remains outstanding.');
