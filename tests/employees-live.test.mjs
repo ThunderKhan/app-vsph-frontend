@@ -42,10 +42,10 @@ test('employee live screen is backed by server-only API with bounded filters',as
  assert.match(page,/loadEmployeeRoster/);
  assert.match(page,/employeeUrl\(search,status,roster.nextCursor\)/);
  assert.match(page,/roster\.counts\.total/);
-  const allowedNavigation = /const activePages = new Set\\(\\[([^\\]]+)\\]\\)/.exec(header);
+  const allowedNavigation = header.split('\n').find(line => line.includes('const activePages = new Set('));
   assert.ok(allowedNavigation, 'active routes are registered');
   for (const route of ['/dashboard','/applications','/projects','/employees','/hr','/admin/customers','/admin/finance']) {
-    assert.ok(allowedNavigation[1].includes("'"+route+"'"), 'missing route '+route);
+    assert.ok(allowedNavigation.includes("'"+route+"'"), 'missing route '+route);
   }
  assert.doesNotMatch(loader+page,/OperationsFixtures|exampleEmployees|localStorage|sessionStorage|fetch\(/);
 });
