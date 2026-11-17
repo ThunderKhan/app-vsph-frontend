@@ -90,3 +90,47 @@ test('task and milestone routes only accept fixed project and entity UUID paths'
   assert.doesNotMatch(gateway,/NEXT_PUBLIC_|localStorage|sessionStorage|DATABASE_URL|eval\(/);
   assert.doesNotMatch(page,/ProjectFixtures|exampleProjects|OperationsFixtures/);
 });
+
+
+test('private comment and evidence link schemas accept only project-level writes',async()=>{
+  const comment={version:10,body:'Internal release approval'};
+  const evidence={version:11,title:'Build report',url:'https://example.com/build'};
+  assert.deepEqual(parseWorkAction('comment-create',comment),{ok:true,data:comment});
+  assert.deepEqual(parseWorkAction('deliverable-create',evidence),{ok:true,data:evidence});
+  assert.deepEqual(parseWorkAction('comment-create',{...comment,body:'  work done  '}),
+    {ok:true,data:{version:10,body:'work done'}});
+  assert.deepEqual(parseWorkAction('deliverable-create',{...evidence,title:'  Evidence  '}),
+    {ok:true,data:{...evidence,title:'Evidence'}});
+  for(const extra of [
+    {shared:true},{taskId:'33333333-3333-4333-8333-333333333333'},
+    {ownerId:'33333333-3333-4333-8333-333333333333'},
+    {visibility:'client'},{projectId:'33333333-3333-4333-8333-333333333333'},
+  ]) {
+    assert.equal(parseWorkAction('comment-create',{...comment,...extra}).ok,false);
+    assert.equal(parseWorkAction('deliverable-create',{...evidence,...extra}).ok,false);
+  }
+  for(const body of ['','   ','x'.repeat(4001),'\u0000hidden']) {
+    assert.equal(parseWorkAction('comment-create',{...comment,body}).ok,false);
+  }
+  for(const url of ['http://example.com/build','https://user:pass@example.com/build',
+    'https://example.com/report?token=secret','https://example.com/report#private',
+    'https://example.com:8443/build','https://example.com/'+'a'.repeat(1800)]) {
+    assert.equal(parseWorkAction('deliverable-create',{...evidence,url}).ok,false);
+  }
+  assert.equal(parseWorkAction('deliverable-create',{...evidence,title:''}).ok,false);
+  assert.equal(parseWorkAction('deliverable-create',{...evidence,version:0}).ok,false);
+  for(const [path,action] of [
+    ['src/app/api/projects/[id]/comments/route.ts',"'comment-create'"],
+    ['src/app/api/projects/[id]/deliverables/route.ts',"'deliverable-create'"],
+  ]) {
+    const content=await read(path);
+    assert.ok(content.includes('projectWorkWrite')&&content.includes(action),path);
+  }
+  const gateway=await read('src/features/projects/project-work-gateway.ts');
+  assert.ok(gateway.includes("'comment-create':'/comments'"));
+  assert.ok(gateway.includes("'deliverable-create':'/deliverables'"));
+  const page=await read('src/app/(workspace)/projects/[id]/page.tsx');
+  assert.match(page,/canComment = \(role === 'manager' \|\| role === 'contributor'\)/);
+  assert.match(page,/canManageWork && <ProjectDeliverableForm/);
+  assert.match(page,/canComment && <ProjectCommentForm/);
+});
