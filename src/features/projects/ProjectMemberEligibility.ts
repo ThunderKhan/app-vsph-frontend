@@ -10,14 +10,14 @@ export type ProjectMemberCandidate = Readonly<{
   employee: EligibleEmployee; role: ProjectMemberRole;
 }>;
 export type WorkforceStaff = Readonly<{
-  userId: string; name: string; team: string; role: ProjectMemberRole | null;
+  userId: string; name: string; team: string; role: ProjectMemberRole | 'client' | null;
   status: 'active' | 'revoked' | null; openTasks: number;
 }>;
 export type ProjectWorkforce = Readonly<{
   canGovernManagers: boolean; canAssign: boolean; staff: WorkforceStaff[];
 }>;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const roles = new Set(['manager','contributor','viewer']);
+const roles = new Set(['manager','contributor','viewer','client']);
 function record(x: unknown): x is Record<string, unknown> {
   return x !== null && typeof x === 'object' && !Array.isArray(x);
 }
