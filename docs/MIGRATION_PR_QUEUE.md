@@ -8,21 +8,20 @@ Organization: https://github.com/vsph-global/app-vsph-frontend
 - [x] Organization #4 — Customer Invitation Entry (merged)
 - [x] Organization #5 — Workspace Shell Applications (merged)
 - [x] Organization #6 — Employee Account Entry (merged 2026-11-17)
+- [x] Organization #7 — Owner/Employee Dashboard UI (merged 2026-11-17)
 - [x] Redundant **fork** #1 (customer invitation) and fork #3 (workspace shell) closed; their history remains visible.
 
-## Waiting on organization review
-- [ ] Organization #7 — Owner/Employee Dashboard UI: https://github.com/vsph-global/app-vsph-frontend/pull/7
-
-Organization PR #6 merged as a merge commit. Review #7's current CI and mergeability before merging it; no integration PRs are to be opened until #7 merges.
+## Organization review status
+Both prerequisite organization PRs (#6 and #7) have merged. The user asked to **keep new organization PRs unopened until explicitly requested**; continue code and acceptance on fork branches only.
 
 ## Prepared but NOT yet proposed to the organization
 - [ ] Fork draft #6 — Projects preview + authenticated read-only list:
   https://github.com/ThunderKhan/app-vsph-frontend/pull/6
 - [ ] Fork draft #7 — Operations UI previews + navigation/security polish:
   https://github.com/ThunderKhan/app-vsph-frontend/pull/7
-- [ ] Branch integration/projects-live-details — backend-authorized project details, internal creation, manager metadata edits, task/milestone creation and manager status transitions via same-origin versioned gateways; automated checks added, real staging acceptance still required. No organization PR yet.
+- [ ] Branch integration/projects-live-details — backend-authorized details; internal creation; metadata edits; task/milestone creation and lifecycle updates; private project comments and HTTPS delivery-evidence links. Strict same-origin, versioned gateway with native PostgreSQL fixture acceptance, but hosted staging acceptance remains outstanding. No organization PR yet.
 
-After org #7 has merged, open **separate** organization PRs from migration/projects-readonly-port and migration/operations-ui-port in that order. Do not merge the fork draft PRs into the fork's main branch; they are review checkpoints. Revalidate with the organization dev head to avoid duplicate already-merged content, and only then decide whether to create a separate project detail integration PR.
+When explicitly authorized, open **separate** organization PRs from migration/projects-readonly-port and migration/operations-ui-port in that order. Do not merge the fork draft PRs into the fork's main branch; they are review checkpoints. Revalidate with the organization dev head to avoid duplicate already-merged content, and only then decide whether to create a separate project detail integration PR.
 
 ## Branch cleanup (manual deletion pending)
 

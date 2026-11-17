@@ -10,7 +10,9 @@ Branch: integration/projects-live-details; this is NOT merged into the organizat
 - On failed/ambiguous creation, the UI asks the user to inspect their portfolio before retrying so it does not encourage accidental duplicates.
 - Manager-only task/milestone creation and allowed status transitions now use POST /api/projects/:id/tasks, POST /api/projects/:id/milestones, PATCH /api/projects/:id/tasks/:entity and PATCH /api/projects/:id/milestones/:entity. The Next gateway strictly forwards only the selected status or bounded title/description/priority/date fields, plus the current project version. The backend still rejects illegal transitions (including completion with outstanding milestone work).
 - All work item updates require a backend-confirmed UUID and project version increment. The UI holds repeat submissions until the parent page refreshes, and warns to reload after 409/ambiguous errors.
-- An isolated Node HTTP fake backend test exercises the production Next gateway: token/origin enforcement, bad schema and oversized body, successful creation/transition, stale version, and malformed upstream success. No production records were touched.
+- Managers can post **private project-level delivery-evidence links** and **private comments**. Contributors can post private comments; viewers and clients cannot use these forms. Browser requests cannot set sharing, assignees, arbitrary task IDs or customer permissions. Evidence requires bounded HTTPS URLs without credentials, query strings or fragments.
+- An isolated Node HTTP fake backend test exercises the production Next gateways: token/origin enforcement, bad schema and oversized body, successful creation/transition/comment/evidence, stale version, and malformed upstream success. No production records were touched.
+- A native PostgreSQL 17 + production Next.js + real Express backend CI acceptance workflow passed on 2026-11-17 before comment/evidence integration. It verifies persisted project creation, manager edits, version conflicts, manager task/milestone transitions, Chromium role-gated details and revocation. The comment/evidence extension has its own CI acceptance run; refer to latest workflow rather than assuming that extension passed.
 
 
 ## Required environment
@@ -21,9 +23,9 @@ Branch: integration/projects-live-details; this is NOT merged into the organizat
 
 ## Deliberately not complete
 - Customer project creation (needs approved customer organization selector).
-- Task and milestone **creation plus manager-only status transitions** are implemented in the frontend, but still require real staging acceptance. Advanced task editing, assignment, sharing, task comments, dependencies and evidence are NOT connected.
+- Task and milestone creation/status changes and private project-level comments/evidence are implemented and covered by isolated tests. Advanced task editing, assignment, task-thread comments, dependencies, uploads and client-facing sharing are NOT connected.
 - Project member, lifecycle, file/deployment, customer grant and product entitlement mutations remain unavailable.
-- Real staging integration, session/tenant acceptance, DB transaction checks or deployed verification.
+- Hosted staging integration, real Supabase Auth/PostgREST/SMTP session testing, full cross-tenant customer acceptance, migration deployment and production verification remain outstanding. Native PostgreSQL fixture acceptance is not hosted staging acceptance.
 - No live Supabase credentials, database changes or external mail/API calls were performed.
 
 ## Staging acceptance (do not test on production customer records)
@@ -38,6 +40,21 @@ Branch: integration/projects-live-details; this is NOT merged into the organizat
 9. Use the lifecycle controls to move task todo → in_progress → in_review → done and milestone planned → active → done (subject to backend outstanding-work rules); confirm unauthorized viewer/client and suspended memberships cannot mutate.
 10. Attempt a second mutation with the previous project version: expect 409, never silent overwrite. Simulate a backend success without valid id/version: frontend reports unconfirmed and requires inspection.
 11. Check task/milestone form usability at mobile widths and browser-only keyboard navigation. Verify customer visibility remains backend-filtered; do not infer project access from product links.
+12. As manager, post private project comment and HTTPS evidence via the browser; reload and verify PostgreSQL rows and version increments. Confirm shared=false and that unauthorized viewers/outsiders cannot create either resource. Check malformed URLs and stale-version conflict responses.
 
 ## Merge queue
-Organization employee entry (#6) merged on 2026-11-17; role dashboards (#7) still open. After #7 merges, submit focused Projects and Operations branches in that order. The current integration branch is stacked after Operations and must be reviewed/rebased after those merge. No additional organization PR was opened here.
+Organization employee entry (#6) and role dashboards (#7) merged on 2026-11-17. The agreed queue is still Projects read-only, Operations preview, then focused Projects integration. Revalidate the fork against organization dev before opening these PRs. No additional organization PR was opened here.
+
+
+## Disposable CI backend overlay and upstream migration defect
+The backend repository's \`supabase/migrations/20261111100000_outreach_internal_sso.sql\`
+has two defects that prevent provisioning a fresh native PostgreSQL database:
+\`outreach_introspect\` uses \`as $\`/\`end$;\` rather than matched \`$$\` delimiters,
+and \`outreach_consume_code\` declares the reserved PostgreSQL identifier
+\`current_role\` as a PL/pgSQL variable. The
+\`scripts/prepare-isolated-backend.mjs\` overlay edits ONLY the temporary
+\`.acceptance-backend\` checkout during CI (and enables concise fixture logging).
+This is not a migration repair, does not touch any hosted database, and
+does not establish whether the faulty migration was installed in production.
+Upstream must be corrected and separately tested before anyone attempts a
+new deployment from the checked-in migrations.
