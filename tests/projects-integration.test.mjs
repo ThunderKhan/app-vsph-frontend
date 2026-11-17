@@ -114,3 +114,36 @@ test('live project UI uses server authorized data and a CSRF-guarded mutation pr
   assert.match(list,/href=\{'\/projects\/'\+project.id\}/);
   assert.doesNotMatch(loader+proxy+ui,/ProjectFixtures|exampleProjects|localStorage|sessionStorage/);
 });
+
+test('project creation validates owner-accountable internal and customer requests',async()=>{
+  const {parseProjectCreation,parseCreationDirectory}=await moduleFromTs(
+    'src/features/projects/ProjectCreationContract.ts',
+    "const projectIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\n");
+  const directory=parseCreationDirectory({organizations:[{id,name:'Example customer'}]});
+  assert.equal(directory?.organizations[0].name,'Example customer');
+  const body={key:'PROJECT-2',name:'New work',description:'',kind:'internal',
+    customerOrganizationId:null,priority:'normal',startsOn:'',dueOn:'',
+    clientVisible:false,products:[]};
+  assert.equal(parseProjectCreation(body)?.key,'PROJECT-2');
+  assert.equal(parseProjectCreation({...body,clientVisible:true}),null);
+  assert.equal(parseProjectCreation({...body,kind:'customer'}),null);
+  assert.equal(parseProjectCreation({...body,kind:'customer',
+    customerOrganizationId:id,clientVisible:true})?.kind,'customer');
+  assert.equal(parseProjectCreation({...body,ownerId:user}),null);
+  assert.equal(parseProjectCreation({...body,startsOn:'2026-12-10',dueOn:'2026-12-01'}),null);
+});
+
+test('project creation route preserves identity and rejects missing origin',async()=>{
+  const page=await read('src/app/(workspace)/projects/new/page.tsx');
+  const form=await read('src/features/projects/NewProjectForm.tsx');
+  const proxy=await read('src/app/api/project-create/route.ts');
+  const list=await read('src/app/(workspace)/projects/page.tsx');
+  assert.match(page,/platformRole!=='super_admin'/);
+  assert.match(page,/parseCreationDirectory/);
+  assert.match(proxy,/request.headers.get\('origin'\)!==origin/);
+  assert.match(proxy,/validPortalSession\(sid\)/);
+  assert.match(proxy,/parseProjectCreation\(body\)/);
+  assert.match(form,/credentials:'same-origin'/);
+  assert.match(form,/customerOrganizationId:kind==='customer'\?organization:null/);
+  assert.match(list,/href="\/projects\/new"/);
+});
