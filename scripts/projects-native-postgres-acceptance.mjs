@@ -112,7 +112,17 @@ try {
   await adminPage.goto('/projects',{waitUntil:'domcontentloaded'});
   await adminPage.getByRole('heading',{name:'Projects',exact:true}).waitFor({timeout:18000});
   await adminPage.goto('/projects/'+id,{waitUntil:'domcontentloaded'});
-  await adminPage.getByRole('heading',{name,exact:true}).waitFor({timeout:18000});
+  try {
+    await adminPage.getByRole('heading',{name,exact:true}).waitFor({timeout:12000});
+  } catch(error) {
+    const visible=await adminPage.locator('body').innerText().catch(()=>'(unavailable)');
+    console.error('Authenticated browser diagnostic',JSON.stringify({
+      pageUrl:adminPage.url(),visible:visible.slice(0,2400),
+      documentTitle:await adminPage.title().catch(()=>null),
+      statusText:await adminPage.getByRole('status').allTextContents().catch(()=>[]),
+    }));
+    throw error;
+  }
   await adminPage.getByRole('button',{name:'Add task',exact:true}).waitFor({timeout:18000});
   await adminPage.getByRole('button',{name:'Add milestone',exact:true}).waitFor({timeout:18000});
   check(true,'Admin sees database-backed manager controls in Chromium');
