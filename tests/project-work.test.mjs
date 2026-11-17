@@ -76,7 +76,7 @@ test('task and milestone routes only accept fixed project and entity UUID paths'
   for(const text of [
     "request.headers.get('origin') !== origin",
     "request.cookies.get('vsph.portal.sid')",
-    "parseWorkAction(action,submitted)",
+    "parseWorkAction(action,submission)",
     "result.status === 409",
     "redirect:'manual'",
     "data.version !== parsed.data.version + 1",
