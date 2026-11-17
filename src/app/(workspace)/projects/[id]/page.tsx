@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { portalApi } from '@/features/workspace/server-api';
 import { parseProjectDetail, type ProjectDetail } from '@/features/projects/ProjectDetailContract';
+import { ProjectEditForm } from '@/features/projects/ProjectEditForm';
 import '../../../(preview)/projects.css';
 import '../../../(preview)/project-detail-v2.css';
 import '../../projects-live.css';
@@ -27,6 +28,7 @@ function LiveProject({ data }: { data: ProjectDetail }) {
         <h1 id="projectTitle">{p.name}</h1>
         <p id="projectSubtitle">{p.key} · {title(p.kind)} · {title(p.status)} · Your role: {title(role)}</p>
       </div>
+      {role === 'manager' && p.status !== 'archived' && <ProjectEditForm project={p} />}
     </header>
     <nav className="project-sections project-v2-nav" aria-label="Project views">
       {views.map(view => <a key={view} href={'#' + view}>{title(view)}</a>)}
@@ -97,7 +99,7 @@ function LiveProject({ data }: { data: ProjectDetail }) {
         </li>)}</ul> : <p>No visible activity.</p>}
     </section>
     <p className="project-section-hint" role="note">
-      Read-only backend-authorized view. Editing and access changes require reviewed server-side workflows.
+      Backend-authorized view. Project metadata edits require manager authority and version matching; team, task and access changes are not connected yet.
     </p>
   </main>;
 }

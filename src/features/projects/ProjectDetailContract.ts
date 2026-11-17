@@ -3,7 +3,7 @@
  */
 export type ProjectDetail = {
   project: {
-    id: string; key: string; name: string; description: string;
+    id: string; key: string; name: string; description: string; version: number;
     kind: 'internal' | 'customer';
     status: 'planned' | 'active' | 'paused' | 'completed' | 'archived';
     priority: 'low' | 'normal' | 'high' | 'urgent';
@@ -56,7 +56,8 @@ export function parseProjectDetail(value: unknown, requestedId: string): Project
       !['internal','customer'].includes(p.kind as string) ||
       !projectStatus.includes(p.status as string) ||
       !priority.includes(p.priority as string) ||
-      !date(p.due_on) || !date(p.starts_on)) return null;
+      !date(p.due_on) || !date(p.starts_on) || !Number.isSafeInteger(p.version) ||
+      (p.version as number) < 1 || (p.version as number) > 999999999) return null;
   const tasks = rows(value.tasks, 3000);
   const milestones = rows(value.milestones, 1000);
   const members = rows(value.members, 2000);
@@ -81,7 +82,7 @@ export function parseProjectDetail(value: unknown, requestedId: string): Project
         !short(item.created_at, 60))) return null;
   return {
     project: {
-      id: p.id as string, key: p.key as string,
+      id: p.id as string, key: p.key as string, version: p.version as number,
       name: p.name as string, description: p.description as string,
       kind: p.kind as ProjectDetail['project']['kind'],
       status: p.status as ProjectDetail['project']['status'],

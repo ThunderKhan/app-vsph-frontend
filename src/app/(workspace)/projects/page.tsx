@@ -45,9 +45,9 @@ async function ProjectList({ searchParams }: { searchParams: Promise<Filters> })
       </div>
       <div className="actions">
         <Link className="project-live-refresh" href={url(q, status)}>Refresh</Link>
-        {canCreate && <button type="button" disabled title="Creation awaits the approved backend">
-          New project
-        </button>}
+        {canCreate && <Link className="project-live-refresh" href="/projects/new">
+          New internal project
+        </Link>}
       </div>
     </header>
     <section id="portfolio" aria-label="Project portfolio">
@@ -84,7 +84,7 @@ async function ProjectList({ searchParams }: { searchParams: Promise<Filters> })
       {hasMore && page === 10 &&
         <p role="status">Showing the first 500 projects. Refine your search for more.</p>}
       <p className="project-section-hint">
-        Project details open read-only when your backend session has access. Changes remain disabled.
+        Project details require backend authorization. Owners can create internal projects; authorized managers can edit project metadata.
       </p>
     </section>
   </>;
