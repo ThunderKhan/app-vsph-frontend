@@ -51,7 +51,10 @@ async function EmployeeContent({searchParams}:{searchParams:Promise<Filters>}){
    <header className="employee-live-heading">
      <div><h1>Employee management</h1>
        <p>Authorized internal employee records · {roster.role==='owner'?'Platform owner':'HR workspace'}</p></div>
-     <Link className="employee-live-action" href={employeeUrl(search,status)}>Refresh</Link>
+     <div className="employee-live-heading-actions">
+       <Link className="employee-live-action" href={employeeUrl(search,status)}>Refresh</Link>
+       <Link className="employee-live-action" href="/employees/new">Onboard employee</Link>
+     </div>
    </header>
    <section className="employee-live-summary" aria-label="Workforce summary">
      {stats.map(([label,value])=><article key={label}>
