@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import Link from 'next/link';
 import {Suspense} from 'react';
 import {loadEmployeeRoster} from '@/features/operations/employee-server';
+import {LiveEmployeeTable} from '@/features/operations/LiveEmployeeTable';
 import type {EmployeeStatus} from '@/features/operations/EmployeeLiveContract';
 import '../employees-live.css';
 
@@ -80,21 +81,7 @@ async function EmployeeContent({searchParams}:{searchParams:Promise<Filters>}){
        <button type="submit">Apply filters</button>
        <Link href="/employees">Reset</Link>
      </form>
-     <div className="employee-live-table" role="region"
-       aria-label="Authorized employee records" tabIndex={0}>
-       <table><thead><tr>
-         {['Employee','Department / title','Type','Status','Access'].map(c=>
-           <th scope="col" key={c}>{c}</th>)}</tr></thead>
-         <tbody>{roster.employees.map(employee=><tr key={employee.id}>
-           <td><strong>{employee.fullName}</strong><small>{employee.email}</small></td>
-           <td>{employee.department}<small>{employee.jobTitle}</small></td>
-           <td>{display(employee.employmentType)}</td>
-           <td>{display(employee.status)}</td>
-           <td>{employee.isHr?'HR manager':'Employee'}</td>
-         </tr>)}</tbody>
-       </table>
-       {!roster.employees.length&&<p>No employees match these filters.</p>}
-     </div>
+     <LiveEmployeeTable employees={roster.employees} role={roster.role}/>
      <div className="employee-live-pagination">
        <p role="status">{roster.employees.length} employee records on this page
          {roster.hasMore?' · additional records available':''}</p>
