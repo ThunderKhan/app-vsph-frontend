@@ -16,5 +16,10 @@ assert.equal(source.split(ending).length,2,'Unexpected ending: isolated overlay 
 source=source.replace(ending,()=>corrected);
 assert.ok(source.includes(to) && source.includes(corrected) && !source.includes(from) && !source.includes(ending),
   'Repaired SQL quoting must be present before starting the fixture');
+// CURRENT_ROLE is PostgreSQL's special SQL expression, not a safe PL/pgSQL variable.
+assert.equal((source.match(/\bcurrent_role\b/g)||[]).length,4,
+  'Unrecognized Outreach variable references: overlay refused');
+source=source.replace(/\bcurrent_role\b/g,'resolved_role');
+assert.ok(!source.includes('current_role'),'Reserved identifier still present');
 await writeFile(path,source,'utf8');
 console.log('Applied two-token SQL quoting correction in disposable test checkout ONLY. Upstream defect remains outstanding.');
