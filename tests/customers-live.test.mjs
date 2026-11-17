@@ -55,7 +55,7 @@ test('customer routes are owner-authorized and cannot proxy arbitrary tenants',a
  assert.match(proxy,/request.headers.get\('origin'\)!==origin/);
  assert.match(proxy,/validPortalSession\(session\)/);
  assert.match(proxy,/parseCustomerMemberChange\(raw\)/);
- assert.match(ui,/confirmed:true|confirmed\|\|/);
+ assert.match(ui,/!confirmed/);
  assert.match(ui,/window.location.reload\(\)/);
  assert.match(nav,/activePages = new Set\(\['\/dashboard', '\/applications', '\/projects', '\/employees', '\/hr', '\/admin\/customers'\]\)/);
  assert.doesNotMatch(server+ui,/OperationsFixtures|exampleOrganizations|localStorage|sessionStorage/);
