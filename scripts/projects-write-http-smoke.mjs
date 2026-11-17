@@ -14,6 +14,8 @@ const publicOrigin = 'http://127.0.0.1:' + appPort;
 const id = '11111111-1111-4111-8111-111111111111';
 const taskId = '22222222-2222-4222-8222-222222222222';
 const milestoneId = '33333333-3333-4333-8333-333333333333';
+const commentId = '44444444-4444-4444-8444-444444444444';
+const deliverableId = '55555555-5555-4555-8555-555555555555';
 const fakeSid = 'a'.repeat(48);
 const requests = [];
 const backend = http.createServer(async (req, res) => {
@@ -39,6 +41,10 @@ const backend = http.createServer(async (req, res) => {
       {id:'not-a-uuid',version:parsed.version+1} : {id:taskId,version:parsed.version+1});
   } else if (req.url === '/api/projects/' + id + '/milestones' && req.method === 'POST') {
     respond(200, {id:milestoneId,version:parsed.version+1});
+  } else if (req.url === '/api/projects/' + id + '/comments' && req.method === 'POST') {
+    respond(200, {id:commentId,version:parsed.version+1});
+  } else if (req.url === '/api/projects/' + id + '/deliverables' && req.method === 'POST') {
+    respond(200, {id:deliverableId,version:parsed.version+1});
   } else if (req.url === '/api/projects/' + id + '/tasks/' + taskId && req.method === 'PATCH') {
     respond(parsed.version === 3 ? 409 : 200,
       parsed.version === 3 ? {message:'Conflict'} : {id:taskId,version:parsed.version+1});
@@ -176,6 +182,36 @@ try {
   });
   assert.equal(brokenBackend.status,502,'Malformed upstream success must not be reported as success');
   assert.equal(requests.length,beforeWork+6);
+  const commentsPath='/api/projects/'+id+'/comments';
+  const deliverablesPath='/api/projects/'+id+'/deliverables';
+  const comment={version:4,body:'Private delivery approval'};
+  const evidence={version:5,title:'Build report',url:'https://example.com/report'};
+  for(const [path,body] of [[commentsPath,comment],[deliverablesPath,evidence]]) {
+    assert.equal((await request(path,{method:'POST',body,cookie:null})).status,401);
+    assert.equal((await request(path,{method:'POST',body,
+      origin:'https://attacker.invalid'})).status,403);
+    assert.equal((await request(path,{method:'POST',body:{...body,shared:true}})).status,400);
+  }
+  assert.equal((await request(deliverablesPath,{method:'POST',body:{
+    ...evidence,url:'http://untrusted.invalid'}})).status,400);
+  assert.equal((await request(commentsPath,{method:'POST',body:{
+    ...comment,body:'x'.repeat(10000)}})).status,413);
+  assert.equal(requests.length,beforeWork+6,'Denied delivery requests must not reach backend');
+  const privateComment=await request(commentsPath,{method:'POST',body:comment});
+  assert.equal(privateComment.status,200);
+  assert.deepEqual(privateComment.body,{id:commentId,version:5});
+  assert.deepEqual(requests.at(-1),{
+    path:'/api/projects/'+id+'/comments',method:'POST',origin:publicOrigin,
+    cookie:'vsph.portal.sid='+fakeSid,body:comment,
+  });
+  const deliveryEvidence=await request(deliverablesPath,{method:'POST',body:evidence});
+  assert.equal(deliveryEvidence.status,200);
+  assert.deepEqual(deliveryEvidence.body,{id:deliverableId,version:6});
+  assert.deepEqual(requests.at(-1),{
+    path:'/api/projects/'+id+'/deliverables',method:'POST',origin:publicOrigin,
+    cookie:'vsph.portal.sid='+fakeSid,body:evidence,
+  });
+  console.log('Private comment/evidence gateway smoke passed (401/403/400/413/200).');
   console.log('Projects write gateway production HTTP smoke passed (origin, cookie, schema, size, 201/409/200).');
   console.log('Task/milestone gateway HTTP smoke passed (200/400/401/403/409/413/502 and version guard).');
 } finally {
