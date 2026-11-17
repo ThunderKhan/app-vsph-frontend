@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { loadLiveProjects } from '@/features/projects/project-server';
 import { ProjectCreateForm } from '@/features/projects/ProjectCreateForm';
-import '../../(preview)/projects.css';
-import '../projects-live.css';
+import '../../../(preview)/projects.css';
+import '../../projects-live.css';
 
 export const metadata: Metadata = {
   title: 'New internal project | VSPH Control Center',
