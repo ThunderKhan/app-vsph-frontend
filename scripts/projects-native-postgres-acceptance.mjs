@@ -314,7 +314,7 @@ try {
   await adminPage.getByLabel('Team (optional)').fill('Platform');
   await adminPage.getByRole('button',{name:'Save employee access',exact:true}).click();
   await adminPage.locator('.project-workforce-member').getByText('staff desktop',{exact:false})
-    .waitFor({timeout:18000});
+    .first().waitFor({timeout:18000});
   check(await version(id)===13,'Browser staff assignment increments persisted project version');
   const assignedRow=await pool.query(
     'select role,team,status from public.project_memberships where project_id=$1 and user_id=$2',
