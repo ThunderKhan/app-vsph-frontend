@@ -19,6 +19,12 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
   const [error,setError]=useState('');
   const [taskFilter,setTaskFilter]=useState('');
   const [assignments,setAssignments]=useState<Record<string,string>>({});
+  const [memberRoles,setMemberRoles]=useState<Record<string,'manager'|'contributor'|'viewer'>>({});
+  const [newTaskTitle,setNewTaskTitle]=useState('');
+  const [newTaskDescription,setNewTaskDescription]=useState('');
+  const [newTaskPriority,setNewTaskPriority]=useState<LiveTask['priority']>('normal');
+  const [newTaskDue,setNewTaskDue]=useState('');
+  const [newTaskAssignee,setNewTaskAssignee]=useState('');
   const [taskStates,setTaskStates]=useState<Record<string,LiveTask['status']>>({});
   const [commentText,setCommentText]=useState('');
   const [commentTask,setCommentTask]=useState('');
@@ -113,15 +119,33 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
             return <tr key={m.userId}>
               <td><strong>{m.name}</strong>{isOwner&&<small>Accountable owner</small>}</td>
               <td>{m.team||'—'}</td><td>{title(m.role)}</td><td>{title(m.status)}</td>
-              <td>{canAssign&&m.status==='active'&&!isOwner?<>
-                {m.role==='manager'?
-                  (workforce?.canGovernManagers&&<button type="button" disabled={busy}
-                    onClick={()=>void mutate('manager-revoke',{userId:m.userId})}>
-                    Demote to contributor</button>):
-                  <button type="button" disabled={busy||openTasks>0}
-                    title={openTasks>0?'Reassign open tasks first':undefined}
-                    onClick={()=>void mutate('member-remove',{userId:m.userId})}>Remove access</button>}
-              </>: '—'}</td>
+              <td>{canAssign&&m.status==='active'&&!isOwner? 
+                <div className="project-member-controls">
+                  {m.role==='manager'?
+                    (workforce?.canGovernManagers&&<button type="button" disabled={busy}
+                      onClick={()=>void mutate('manager-revoke',{userId:m.userId})}>
+                      Demote to contributor</button>):
+                    m.role==='client'?'Customer membership managed separately':<>
+                      <label>Role
+                        <select aria-label={'Role for '+m.name}
+                          value={memberRoles[m.userId]??m.role} disabled={busy}
+                          onChange={e=>setMemberRoles(p=>({...p,[m.userId]:
+                            e.target.value as 'manager'|'contributor'|'viewer'}))}>
+                          <option value="contributor">Contributor</option>
+                          <option value="viewer">Viewer</option>
+                          {workforce?.canGovernManagers&&<option value="manager">Manager</option>}
+                        </select>
+                      </label>
+                      <button type="button"
+                        disabled={busy||(memberRoles[m.userId]??m.role)===m.role||
+                          ((memberRoles[m.userId]??m.role)==='viewer'&&openTasks>0)}
+                        onClick={()=>void mutate('member-assign',{userId:m.userId,
+                          role:memberRoles[m.userId]??m.role,team:m.team})}>Save role</button>
+                      <button type="button" disabled={busy||openTasks>0}
+                        title={openTasks>0?'Reassign open tasks first':undefined}
+                        onClick={()=>void mutate('member-remove',{userId:m.userId})}>Remove access</button>
+                    </>}
+                </div> : '—'}</td>
             </tr>;
           })}</tbody></table>
       </div>
@@ -138,6 +162,34 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
     </section>}
     {tab==='tasks'&&<section className="project-live-panel" aria-label="Project tasks">
       <h2>Tasks and assignments</h2>
+      {canManage&&<form className="project-live-create-task"
+        onSubmit={event=>{event.preventDefault();if(!newTaskTitle.trim()||busy)return;
+          void mutate('task-create',{title:newTaskTitle.trim(),description:newTaskDescription,
+            priority:newTaskPriority,dueOn:newTaskDue,assigneeId:newTaskAssignee||null,
+            milestoneId:null,shared:false});
+        }}>
+        <h3>Create task</h3>
+        <label>Task title <input required maxLength={200} value={newTaskTitle}
+          disabled={busy} onChange={e=>setNewTaskTitle(e.target.value)}/></label>
+        <label>Description <textarea maxLength={5000} value={newTaskDescription}
+          disabled={busy} onChange={e=>setNewTaskDescription(e.target.value)}/></label>
+        <div className="project-live-create-grid">
+          <label>Priority <select disabled={busy} value={newTaskPriority}
+            onChange={e=>setNewTaskPriority(e.target.value as LiveTask['priority'])}>
+            {(['low','normal','high','urgent'] as const).map(p=>
+              <option key={p} value={p}>{title(p)}</option>)}
+          </select></label>
+          <label>Due date <input type="date" disabled={busy} value={newTaskDue}
+            onChange={e=>setNewTaskDue(e.target.value)}/></label>
+          <label>Assignee <select disabled={busy} value={newTaskAssignee}
+            onChange={e=>setNewTaskAssignee(e.target.value)}>
+            <option value="">Unassigned</option>
+            {assignees.map(m=><option key={m.userId} value={m.userId}>{m.name}</option>)}
+          </select></label>
+        </div>
+        <button type="submit" disabled={busy||!newTaskTitle.trim()}>
+          {busy?'Saving…':'Create task'}</button>
+      </form>}
       <label>Filter by state <select value={taskFilter}
         onChange={e=>setTaskFilter(e.target.value)}>
         <option value="">All tasks</option>{states.map(s=><option value={s} key={s}>{title(s)}</option>)}
