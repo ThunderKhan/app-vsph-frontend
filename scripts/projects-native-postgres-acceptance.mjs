@@ -354,7 +354,10 @@ try {
   const staffPage=await browserPage(staffToken);
   await staffPage.goto('/projects/'+id,{waitUntil:'domcontentloaded'});
   try {
-    await staffPage.getByRole('heading',{name,exact:true}).waitFor({timeout:12000});
+    await staffPage.locator('#projectTitle').waitFor({timeout:12000});
+    const actualHeading=await staffPage.locator('#projectTitle').textContent();
+    check(typeof actualHeading==='string' && actualHeading.startsWith('Concurrent '),
+      'Assigned contributor sees persisted, currently renamed project');
   }catch(error){
     const permission=await pool.query(
       'select public.project_permission($1,$2) role',[staffId,id]);
