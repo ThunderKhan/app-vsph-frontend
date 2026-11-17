@@ -115,7 +115,16 @@ try {
           .map(k=>[k,Array.isArray(actual[k])?{
             count:actual[k].length,fields:actual[k][0]?Object.keys(actual[k][0]):[]
           }:typeof actual[k]])):null,
-      frontendMarkers:{projectName:ownerPage.raw.includes(name),
+      backendAuth:await (async()=>{
+        const auth=await fetch('http://127.0.0.1:3100/api/auth/me',
+          {headers:{Cookie:'vsph.portal.sid='+tokens.admin}});
+        const data=await auth.json().catch(()=>({}));
+        return {status:auth.status,hasUser:!!data.user,role:data.user?.platformRole};
+      })(),
+      frontendLength:ownerPage.raw.length,
+      frontendTail:ownerPage.raw.slice(-1800).replace(/\s+/g,' ').slice(0,1600),
+      frontendMarkers:{workspaceUnavailable:ownerPage.raw.includes('Workspace unavailable'),
+        projectName:ownerPage.raw.includes(name),
         addTask:ownerPage.raw.includes('Add task'),
         addMilestone:ownerPage.raw.includes('Add milestone'),
         unavailable:ownerPage.raw.includes('Project details unavailable'),
