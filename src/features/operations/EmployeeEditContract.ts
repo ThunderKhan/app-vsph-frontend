@@ -1,5 +1,6 @@
 /** Exact backend POST /api/employees/:id/update form; browser data never authorizes HR. */
-import { departments, type EmployeeStatus, type EmployeeType } from './EmployeeLiveContract';
+import { departments } from './OperationsModels';
+import type { EmployeeStatus, EmployeeType } from './EmployeeLiveContract';
 export type EmployeeUpdate=Readonly<{
   fullName:string;department:string;jobTitle:string;employmentType:EmployeeType;
   startDate:string;version:number;status:EmployeeStatus;confirmed:true;
@@ -28,5 +29,10 @@ export function parseEmployeeUpdate(input:unknown):EmployeeUpdate|null{
   new Date(input.startDate).toISOString().slice(0,10)!==input.startDate||
   !Number.isSafeInteger(input.version)||(input.version as number)<1||
   (input.version as number)>2147483647||input.confirmed!==true)return null;
- return input as EmployeeUpdate;
+ return {
+   fullName:(input.fullName as string).trim(),department:input.department as string,
+   jobTitle:(input.jobTitle as string).trim(),employmentType:input.employmentType as EmployeeType,
+   startDate:input.startDate as string,version:input.version as number,
+   status:input.status as EmployeeStatus,confirmed:true
+ };
 }
