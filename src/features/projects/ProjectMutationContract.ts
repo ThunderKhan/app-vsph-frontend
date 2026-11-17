@@ -1,7 +1,7 @@
 import { projectIdPattern } from './ProjectLiveContract';
 
 export type ProjectAction =
-  'member-assign'|'member-remove'|'manager-grant'|'manager-revoke'|
+  'project-edit'|'milestone-create'|'milestone-status'|'member-assign'|'member-remove'|'manager-grant'|'manager-revoke'|
   'task-create'|'task-assign'|'task-status'|'comment-create';
 export type ValidatedMutation = {
   method:'POST'|'PATCH'; path:string; body:Record<string,unknown>;
@@ -18,6 +18,29 @@ function exact(x:Record<string,unknown>,fields:string[]){
 /** Trusted server adapter: tightly bounded operation allowlist, no arbitrary URL or method. */
 export function projectMutation(id:string,action:string,input:unknown):ValidatedMutation|null{
   if(!uuid(id)||!object(input)||!version(input.version))return null;
+  if(action==='project-edit'){
+    if(!exact(input,['version','name','description','priority','dueOn'])||
+      typeof input.name!=='string'||!input.name.trim()||input.name.length>150||
+      typeof input.description!=='string'||input.description.length>5000||
+      typeof input.priority!=='string'||!['low','normal','high','urgent'].includes(input.priority)||
+      typeof input.dueOn!=='string'||(input.dueOn!==''&&!/^\d{4}-\d{2}-\d{2}$/.test(input.dueOn)))
+      return null;
+    return {method:'PATCH',path:'/api/projects/'+id,body:input};
+  }
+  if(action==='milestone-create'){
+    if(!exact(input,['version','title','dueOn','shared'])||
+      typeof input.title!=='string'||!input.title.trim()||input.title.length>200||
+      typeof input.dueOn!=='string'||(input.dueOn!==''&&!/^\d{4}-\d{2}-\d{2}$/.test(input.dueOn))||
+      input.shared!==false)return null;
+    return {method:'POST',path:'/api/projects/'+id+'/milestones',body:input};
+  }
+  if(action==='milestone-status'){
+    if(!exact(input,['version','milestoneId','status'])||!uuid(input.milestoneId)||
+      typeof input.status!=='string'||
+      !['planned','active','done','cancelled'].includes(input.status))return null;
+    return {method:'PATCH',path:'/api/projects/'+id+'/milestones/'+input.milestoneId,
+      body:{version:input.version,status:input.status}};
+  }
   if(action==='member-assign'){
     if(!exact(input,['version','userId','role','team'])||!uuid(input.userId)||
       typeof input.role!=='string'||!roles.has(input.role)||
