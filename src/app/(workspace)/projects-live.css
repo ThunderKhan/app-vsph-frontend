@@ -17,3 +17,22 @@
  .project-workspace .project-heading .actions{flex-wrap:wrap;gap:10px}
  .project-workspace .project-live-refresh{width:100%}
 }
+
+/* Read-only, authenticated project details. Original layout styles remain unchanged. */
+.project-live-open{color:#0069c8;font-weight:650;text-decoration:underline;text-underline-offset:3px}
+.project-live-open:focus-visible,.project-live-back:focus-visible,
+.project-live-detail .project-v2-nav a:focus-visible{outline:3px solid #50c0e8;outline-offset:3px}
+.project-live-back{display:inline-flex;min-height:40px;align-items:center;color:#0069c8;text-decoration:none}
+.project-live-detail .project-v2-nav{display:flex;flex-wrap:wrap;gap:8px;overflow-wrap:anywhere}
+.project-live-detail .project-v2-nav a{display:inline-flex;align-items:center;min-height:40px;
+  border:1px solid #bfd0e2;border-radius:5px;padding:7px 12px;color:#005ca9;text-decoration:none}
+.project-live-detail .project-v2-nav a:hover{background:#eaf3fa}
+.project-live-section{margin-top:20px}
+.project-live-rows{padding:0;margin:12px 0;list-style:none}
+.project-live-rows li{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;
+  padding:12px 0;border-bottom:1px solid #dde5ee;overflow-wrap:anywhere}
+.project-live-rows li:last-child{border-bottom:0}
+.project-live-rows span{color:#536984}
+.project-live-section h3{font-size:15px;margin-top:20px}
+@media(max-width:650px){.project-live-section{padding:16px}.project-live-rows li{display:block}
+  .project-live-rows li span{display:block;margin-top:5px}}

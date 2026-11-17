@@ -70,7 +70,8 @@ async function ProjectList({ searchParams }: { searchParams: Promise<Filters> })
         <table><thead><tr>{['Project','Ownership','State','Priority','Progress','Due']
           .map(label => <th key={label} scope="col">{label}</th>)}</tr></thead>
           <tbody>{projects.map(project => <tr key={project.id}>
-            <td><strong>{project.name}</strong><small>{project.key}</small></td>
+            <td><Link className="project-live-open" href={'/projects/' + project.id}>{project.name}</Link>
+              <small>{project.key}</small></td>
             <td>{project.kind}</td><td>{project.status}</td><td>{project.priority}</td>
             <td>{project.completed_tasks} / {project.total_tasks} tasks</td>
             <td>{project.due_on || '—'}</td>
@@ -83,7 +84,7 @@ async function ProjectList({ searchParams }: { searchParams: Promise<Filters> })
       {hasMore && page === 10 &&
         <p role="status">Showing the first 500 projects. Refine your search for more.</p>}
       <p className="project-section-hint">
-        Project details and changes remain unavailable until the reviewed backend integration.
+        Project details open read-only when your backend session has access. Changes remain disabled.
       </p>
     </section>
   </>;
