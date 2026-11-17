@@ -309,7 +309,8 @@ try {
     throw error;
   }
   await adminPage.getByLabel('Eligible employee').selectOption(staffId);
-  await adminPage.getByLabel('Access',{exact:true}).selectOption('contributor');
+  await adminPage.locator('.project-workforce .project-live-form select').nth(1)
+    .selectOption('contributor');
   await adminPage.getByLabel('Team (optional)').fill('Platform');
   await adminPage.getByRole('button',{name:'Save employee access',exact:true}).click();
   await adminPage.locator('.project-workforce-member').getByText('staff desktop',{exact:false})
