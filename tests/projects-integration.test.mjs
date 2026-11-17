@@ -23,17 +23,20 @@ test('live detail parser rejects malformed backend payloads and duplicate record
   const {parseLiveProject}=await moduleFromTs('src/features/projects/ProjectLiveContract.ts');
   const input={
     project:{id,key:'PROJECT-1',name:'Work',description:'',owner_id:user,version:1,
-      status:'active',priority:'normal'},role:'manager',
+      status:'active',priority:'normal',due_on:null},role:'manager',
     members:[{user_id:user,full_name:'Builder',role:'manager',status:'active',team:'Engineering'}],
     tasks:[{id:task,title:'Implement',description:'',status:'todo',priority:'normal',
       assignee_id:user,due_on:null,shared:false}],
     comments:[{id:'dddddddd-dddd-4ddd-8ddd-dddddddddddd',actor_id:user,task_id:task,
-      body:'Please review',created_at:'2026-11-17T05:00:00Z',shared:false}]
+      body:'Please review',created_at:'2026-11-17T05:00:00Z',shared:false}],
+    milestones:[{id:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',title:'Ship v1',
+      status:'planned',due_on:null,shared:false}]
   };
   const result=parseLiveProject(input);
   assert.equal(result?.id,id);
   assert.equal(result?.tasks[0].assigneeId,user);
   assert.equal(result?.comments[0].taskId,task);
+  assert.equal(result?.milestones[0].title,'Ship v1');
   assert.equal(parseLiveProject({...input,tasks:[...input.tasks,...input.tasks]}),null);
   assert.equal(parseLiveProject({...input,role:'admin'}),null);
   assert.equal(parseLiveProject({...input,project:{...input.project,version:0}}),null);
@@ -59,6 +62,12 @@ test('project action adapter rejects unapproved operations and unsafe payloads',
   assert.equal(accepted?.method,'POST');
   assert.equal(projectMutation(id,'member-assign',{...member,role:'client'}),null);
   assert.equal(projectMutation(id,'member-assign',{...member,extra:true}),null);
+  assert.equal(projectMutation(id,'project-edit',{version:2,name:'Project',
+    description:'',priority:'normal',dueOn:''})?.method,'PATCH');
+  assert.equal(projectMutation(id,'milestone-create',{version:2,title:'Ship v1',
+    dueOn:'',shared:false})?.method,'POST');
+  assert.equal(projectMutation(id,'milestone-status',{version:2,
+    milestoneId:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',status:'active'})?.method,'PATCH');
   assert.equal(projectMutation(id,'task-create',{version:2,title:'New work',
     description:'',priority:'normal',dueOn:'',assigneeId:null,milestoneId:null,shared:false})?.method,'POST');
   assert.equal(projectMutation(id,'task-create',{version:2,title:'',description:'',
@@ -91,6 +100,9 @@ test('live project UI uses server authorized data and a CSRF-guarded mutation pr
   assert.match(ui,/window.location.reload\(\)/);
   assert.match(ui,/mutate\('member-assign'/);
   assert.match(ui,/mutate\('member-remove'/);
+  assert.match(ui,/mutate\('project-edit'/);
+  assert.match(ui,/mutate\('milestone-create'/);
+  assert.match(ui,/mutate\('milestone-status'/);
   assert.match(ui,/mutate\('task-create'/);
   assert.match(ui,/mutate\('task-assign'/);
   assert.match(ui,/mutate\('task-status'/);
