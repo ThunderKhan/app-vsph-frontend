@@ -2,7 +2,7 @@
  * Never accept client-selected project roles, assignees, visibility, owners,
  * permissions, entity IDs or arbitrary backend paths.
  */
-export type WorkAction = 'task-create' | 'milestone-create' | 'task-status' | 'milestone-status';
+export type WorkAction = 'task-create' | 'milestone-create' | 'task-status' | 'milestone-status' | 'comment-create' | 'deliverable-create';
 export type WorkBody = {
   version: number;
   title?: string;
@@ -10,6 +10,8 @@ export type WorkBody = {
   priority?: 'low' | 'normal' | 'high' | 'urgent';
   dueOn?: string;
   status?: string;
+  body?: string;
+  url?: string;
 };
 export type WorkParseResult = { ok: true; data: WorkBody } |
   { ok: false; error: string };
@@ -19,6 +21,8 @@ const allowed: Record<WorkAction, ReadonlySet<string>> = {
   'milestone-create': new Set(['version','title','dueOn']),
   'task-status': new Set(['version','status']),
   'milestone-status': new Set(['version','status']),
+  'comment-create': new Set(['version','body']),
+  'deliverable-create': new Set(['version','title','url']),
 };
 const priorities = new Set(['low','normal','high','urgent']);
 const taskStatuses = new Set(['todo','in_progress','blocked','in_review','done','cancelled']);
@@ -55,6 +59,24 @@ export function parseWorkAction(action: WorkAction, value: unknown): WorkParseRe
     if (typeof value.title !== 'string' || !value.title.trim() || value.title.length > 200 ||
         !date(value.dueOn)) return bad();
     return { ok:true, data:{version, title:value.title.trim(), dueOn:value.dueOn as string} };
+  }
+  if (action === 'comment-create') {
+    if (typeof value.body !== 'string' || !value.body.trim() ||
+        value.body.length > 4000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value.body))
+      return bad();
+    return {ok:true,data:{version,body:value.body.trim()}};
+  }
+  if (action === 'deliverable-create') {
+    if (typeof value.title !== 'string' || !value.title.trim() ||
+        value.title.length > 200 || typeof value.url !== 'string' ||
+        value.url.length > 1800) return bad();
+    try {
+      const target = new URL(value.url);
+      if (target.protocol !== 'https:' || target.username || target.password ||
+          target.hostname.length > 253 || !/^[a-z0-9.-]+$/i.test(target.hostname) ||
+          target.search || target.hash || target.port) return bad();
+    } catch { return bad(); }
+    return {ok:true,data:{version,title:value.title.trim(),url:value.url}};
   }
   const statuses = action === 'task-status' ? taskStatuses : milestoneStatuses;
   if (typeof value.status !== 'string' || !statuses.has(value.status)) return bad();

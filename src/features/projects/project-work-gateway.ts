@@ -25,6 +25,8 @@ const suffix: Record<WorkAction,string> = {
   'milestone-create':'/milestones',
   'task-status':'/tasks',
   'milestone-status':'/milestones',
+  'comment-create':'/comments',
+  'deliverable-create':'/deliverables',
 };
 
 /** Same-origin browser writes, fixed upstream path, and no client-specified
