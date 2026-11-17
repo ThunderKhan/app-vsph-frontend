@@ -9,7 +9,7 @@ const taskId = '22222222-2222-4222-8222-222222222222';
 const base = () => ({
   project: {
     id, key: 'PORTAL-1', name: 'Portal implementation', description: '',
-    kind: 'internal', status: 'active', priority: 'normal',
+    kind: 'internal', status: 'active', priority: 'normal', version: 3,
     due_on: null, starts_on: '2026-11-01',
   },
   role: 'viewer',

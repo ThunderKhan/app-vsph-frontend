@@ -20,7 +20,7 @@ Merge #6 before #7, preferably with a merge commit rather than squash; they are 
   https://github.com/ThunderKhan/app-vsph-frontend/pull/6
 - [ ] Fork draft #7 — Operations UI previews + navigation/security polish:
   https://github.com/ThunderKhan/app-vsph-frontend/pull/7
-- [ ] Branch integration/projects-live-details — read-only, backend-authorized detail view for one project; CI and staging acceptance required. No organization PR yet.
+- [ ] Branch integration/projects-live-details — read-only backend-authorized project details plus owner-gated internal project creation and versioned manager edits, through a same-origin write gateway; CI and staging acceptance required. No organization PR yet.
 
 After org #6 and #7 have merged, open **separate** organization PRs from migration/projects-readonly-port and migration/operations-ui-port in that order. Do not merge the fork draft PRs into the fork's main branch; they are review checkpoints. Revalidate with the organization dev head to avoid duplicate already-merged content, and only then decide whether to create a separate project detail integration PR.
 
