@@ -57,10 +57,10 @@ test('customer routes are owner-authorized and cannot proxy arbitrary tenants',a
  assert.match(proxy,/parseCustomerMemberChange\(raw\)/);
  assert.match(ui,/!confirmed/);
  assert.match(ui,/window.location.reload\(\)/);
-  const allowedNavigation = /const activePages = new Set\\(\\[([^\\]]+)\\]\\)/.exec(nav);
+  const allowedNavigation = nav.split('\n').find(line => line.includes('const activePages = new Set('));
   assert.ok(allowedNavigation, 'active routes are registered');
   for (const route of ['/dashboard','/applications','/projects','/employees','/hr','/admin/customers','/admin/finance']) {
-    assert.ok(allowedNavigation[1].includes("'"+route+"'"), 'missing route '+route);
+    assert.ok(allowedNavigation.includes("'"+route+"'"), 'missing route '+route);
   }
  assert.doesNotMatch(server+ui,/OperationsFixtures|exampleOrganizations|localStorage|sessionStorage/);
 });
