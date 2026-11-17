@@ -289,8 +289,25 @@ try {
   },404,'Only server-side workforce reads are allowed; no public GET proxy');
   // Browser-rendered directory is obtained using portalApi on the server.
   await adminPage.reload({waitUntil:'domcontentloaded'});
-  await adminPage.getByRole('heading',{name:'Add or update a project contributor',exact:true})
-    .waitFor({timeout:18000});
+  try {
+    await adminPage.getByRole('heading',{name:'Add or update a project contributor',exact:true})
+      .waitFor({timeout:12000});
+  } catch(error) {
+    const response=await fetch('http://127.0.0.1:3100/api/projects/'+id+'/workforce',{
+      headers:{Cookie:'vsph.portal.sid='+tokens.admin}
+    });
+    const workforceJson=await response.json().catch(()=>null);
+    const {parseProjectWorkforce}=await import('../src/features/projects/ProjectWorkforceContract.ts');
+    console.error('Workforce hydration diagnostic',JSON.stringify({
+      backendStatus:response.status,
+      parsed:parseProjectWorkforce(workforceJson)!==null,
+      responseKeys:workforceJson&&typeof workforceJson==='object'?Object.keys(workforceJson):[],
+      staffSamples:workforceJson?.staff?.slice(0,2),
+      visible:(await adminPage.locator('#team').innerText().catch(()=>'')).
+        slice(0,1200),
+    }));
+    throw error;
+  }
   await adminPage.getByLabel('Eligible employee').selectOption(staffId);
   await adminPage.getByLabel('Access',{exact:true}).selectOption('contributor');
   await adminPage.getByLabel('Team (optional)').fill('Platform');
