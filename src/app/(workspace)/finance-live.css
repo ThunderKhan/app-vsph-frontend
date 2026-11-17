@@ -38,3 +38,26 @@
  .finance-live-month{grid-template-columns:62px minmax(60px,1fr) 110px;gap:7px}
  .finance-live-month strong{font-size:12px}
 }
+
+.finance-live-breadcrumb{display:flex;gap:10px;margin:0 0 16px;color:#68798f;font-size:13px}
+.finance-live-breadcrumb a{color:#075fa9}
+.finance-journal-tabs{display:flex;gap:8px;border-bottom:1px solid #d8e3ee;margin:0 0 20px}
+.finance-journal-tabs a{padding:11px 16px;color:#556c85;text-decoration:none;border-bottom:3px solid transparent;font-weight:650}
+.finance-journal-tabs a[aria-current=page]{border-bottom-color:#075fa9;color:#075fa9}
+.finance-journal-filters{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:22px}
+.finance-journal-filters label{display:grid;gap:6px;min-width:120px;flex:1;font-weight:650;font-size:13px}
+.finance-journal-filters :is(input,select){min-height:42px;background:#fff;border:1px solid #afc3d7;border-radius:6px;padding:9px;color:#1b314a;font:inherit;max-width:100%}
+.finance-journal-filters button{min-height:42px;padding:9px 15px;color:#fff;background:#075fa9;border:1px solid #075fa9;border-radius:6px;font-weight:650;cursor:pointer}
+.finance-journal-filters a{padding:11px 6px;color:#075fa9}
+.finance-journal-table{overflow-x:auto}
+.finance-journal-table:focus-visible,.finance-live-workspace :is(a,input,button,select):focus-visible{outline:3px solid #4cbbdf;outline-offset:3px}
+.finance-journal-table table{width:100%;min-width:800px;border-collapse:collapse;font-size:13px}
+.finance-journal-table :is(th,td){text-align:left;vertical-align:top;border-bottom:1px solid #e0e8ef;padding:12px 9px}
+.finance-journal-table th{text-transform:uppercase;letter-spacing:.04em;font-size:11px;color:#647891}
+.finance-journal-table :is(strong,small){display:block}
+.finance-journal-table small{color:#6d7e92;margin-top:5px}
+.finance-journal-empty{padding:16px 9px}
+.finance-journal-pagination{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:20px;font-size:13px}
+.finance-journal-pagination span{flex:1;color:#64758d}
+.finance-journal-pagination a{color:#075fa9;font-weight:650}
+@media(max-width:700px){.finance-journal-filters{display:grid;grid-template-columns:1fr 1fr}.finance-journal-filters label:first-child{grid-column:1/-1}.finance-journal-filters a{justify-self:end}}
