@@ -1,0 +1,58 @@
+/* Scoped live-project controls. Legacy preview sources remain unchanged. */
+.project-live-breadcrumb{display:flex;gap:10px;align-items:center;margin:0 0 18px;font-size:14px;color:#58677d}
+.project-live-breadcrumb a,.project-live-open{color:#075fa9;font-weight:650;text-decoration:underline;text-underline-offset:3px}
+.project-live-description{max-width:850px;line-height:1.55;margin:0 0 18px;color:#455770}
+.project-live-tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid #d6e0ec;margin:18px 0 22px}
+.project-live-tabs button{appearance:none;padding:12px 16px;border:0;border-bottom:3px solid transparent;background:transparent;color:#485971;font-weight:650;cursor:pointer}
+.project-live-tabs button:hover{color:#075fa9;background:#f3f7fb}
+.project-live-tabs button.is-active{color:#075fa9;border-bottom-color:#075fa9}
+.project-live-panel{border:1px solid #d6e0ec;border-radius:10px;background:#fff;padding:24px;margin:0 0 22px;min-width:0}
+.project-live-panel h2{margin:0 0 14px;font-size:21px}
+.project-live-panel h3{margin:0 0 8px;font-size:16px}
+.project-live-panel p{line-height:1.55}
+.project-live-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:20px 0}
+.project-live-metrics>div{border:1px solid #d6e0ec;border-radius:8px;padding:15px;display:grid;gap:8px}
+.project-live-metrics span{color:#52657d;font-size:13px}
+.project-live-metrics strong{font-size:26px}
+.project-live-subpanel{margin-top:24px;border-top:1px solid #d6e0ec;padding-top:20px}
+.project-live-panel label{display:grid;gap:6px;font-size:14px;font-weight:600;color:#34465c;margin:12px 0}
+.project-live-panel input,.project-live-panel select,.project-live-panel textarea{max-width:100%;width:100%;border:1px solid #acbfd4;border-radius:6px;padding:9px 10px;min-height:43px;color:#24394f;background:#fff;font:inherit}
+.project-live-panel textarea{resize:vertical}
+.project-live-panel button{border:1px solid #b7c8dd;border-radius:6px;background:#f8fbff;color:#075fa9;font-weight:650;padding:9px 13px;min-height:40px;cursor:pointer}
+.project-live-panel button:hover:not(:disabled){background:#ebf4fd;border-color:#075fa9}
+.project-live-panel button:disabled{opacity:.52;cursor:not-allowed}
+.project-member-form{display:grid;grid-template-columns:1fr 1fr;column-gap:15px;align-items:end;max-width:820px}
+.project-member-form>p,.project-member-form>button{grid-column:1/-1}
+.project-live-task-list{display:grid;gap:14px;margin-top:16px}
+.project-live-task{border:1px solid #d7e1ec;border-radius:9px;padding:18px;min-width:0}
+.project-live-task-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+.project-live-task-head>span{font-size:13px;white-space:nowrap;color:#62748c}
+.project-live-task-head p{margin:4px 0 0;overflow-wrap:anywhere;color:#53657d}
+.project-live-task-actions{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:14px}
+.project-live-task-actions label{min-width:175px;margin:0;flex:1}
+.project-live-task-actions button{flex:0 0 auto}
+.project-live-comments{display:grid;gap:12px;margin:18px 0}
+.project-live-comment{border:1px solid #d7e1ec;border-radius:8px;padding:16px;overflow-wrap:anywhere}
+.project-live-comment>div{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.project-live-comment>div span,.project-live-comment small{color:#65758a;font-size:12px}
+.project-live-comment p{white-space:pre-wrap;margin:12px 0}
+.project-live-comment-form{border-top:1px solid #d7e1ec;padding-top:18px}
+.project-live-note{border:1px solid #c9d7e6;border-radius:6px;padding:12px 14px;background:#f6f9fc}
+.project-workspace .project-live-open{display:inline-block;padding:3px 0}
+.project-live-panel .project-table-wrap{overflow-x:auto}
+.project-live-panel table{min-width:660px}
+.project-live-panel table td,.project-live-panel table th{text-align:left;vertical-align:middle;padding:11px 13px}
+.project-live-panel table td small{display:block;margin-top:5px}
+.project-live-panel :is(button,select,input,textarea,a):focus-visible,.project-live-tabs button:focus-visible{
+  outline:3px solid #50c0e8;outline-offset:3px
+}
+@media(max-width:760px){
+  .project-live-panel{padding:16px}
+  .project-live-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .project-member-form{grid-template-columns:1fr}
+  .project-live-task-head{display:block}
+  .project-live-task-head>span{display:block;margin-top:8px;white-space:normal}
+  .project-live-task-actions label{flex-basis:100%}
+  .project-live-task-actions button{flex:1}
+}
+@media(prefers-reduced-motion:reduce){.project-live-tabs *{transition:none}}
