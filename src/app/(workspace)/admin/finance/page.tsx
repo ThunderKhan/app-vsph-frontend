@@ -25,7 +25,7 @@ export default async function FinancePage(){
  const maximum=data.monthly.reduce((max,row)=>{
    const n=BigInt(row.collectedPaise);
    return n>max?n:max;
- },1n);
+ },BigInt(1));
  return <main className="workspace-content finance-live-workspace" id="mainContent" tabIndex={-1}>
    <header className="finance-live-heading"><div><h1>Finance overview</h1>
      <p>Manual cash receipt basis · As of {data.asOf} · INR</p></div>
@@ -47,7 +47,7 @@ export default async function FinancePage(){
        Not automatically recognized revenue or bank-verified settlement.</p>
      <div className="finance-live-months">
        {data.monthly.map(row=>{
-         const height=Number((BigInt(row.collectedPaise)*100n)/maximum);
+         const height=Number((BigInt(row.collectedPaise)*BigInt(100))/maximum);
          return <div className="finance-live-month" key={row.monthStart}>
            <span>{row.monthStart.slice(0,7)}</span>
            <div className="finance-live-track">
