@@ -56,3 +56,14 @@
   .project-live-task-actions button{flex:1}
 }
 @media(prefers-reduced-motion:reduce){.project-live-tabs *{transition:none}}
+
+.project-member-controls{display:flex;align-items:end;gap:8px;flex-wrap:wrap;min-width:290px}
+.project-member-controls label{min-width:145px;margin:0}
+.project-member-controls button{white-space:nowrap}
+.project-live-create-task{margin:0 0 20px;padding:18px;border-radius:8px;background:#f7fafe;border:1px solid #dae6f2}
+.project-live-create-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.project-live-create-grid label{margin-top:4px}
+@media(max-width:760px){
+  .project-live-create-grid{grid-template-columns:1fr}
+  .project-member-controls{min-width:0}
+}
