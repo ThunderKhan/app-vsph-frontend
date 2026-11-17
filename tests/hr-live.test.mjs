@@ -64,6 +64,10 @@ test('HR workspace protects both live reads and audited changes',async()=>{
  assert.match(proxy,/request.headers.get\('origin'\)!==origin/);
  assert.match(proxy,/validPortalSession\(session\)/);
  assert.match(proxy,/hrMutation\(kind,id,data\)/);
- assert.match(header,/activePages = new Set\(\['\/dashboard', '\/applications', '\/projects', '\/employees', '\/hr', '\/admin\/customers'\]\)/);
+  const allowedNavigation = /const activePages = new Set\\(\\[([^\\]]+)\\]\\)/.exec(header);
+  assert.ok(allowedNavigation, 'active routes are registered');
+  for (const route of ['/dashboard','/applications','/projects','/employees','/hr','/admin/customers','/admin/finance']) {
+    assert.ok(allowedNavigation[1].includes("'"+route+"'"), 'missing route '+route);
+  }
  assert.doesNotMatch(ui+page+loader,/OperationsFixtures|exampleLeaves|localStorage|sessionStorage/);
 });
