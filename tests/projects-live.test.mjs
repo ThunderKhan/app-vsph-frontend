@@ -13,7 +13,7 @@ test('authenticated Projects list is server-only and does not use preview fixtur
   assert.match(loader, /portalApi\('\/api\/projects\?' \+ params\.toString\(\)\)/);
   assert.match(loader, /redirect\('\/login'\)/);
   assert.match(route, /loadLiveProjects/);
-  assert.match(header, /activePages = new Set\(\['\/dashboard', '\/applications', '\/projects'\]\)/);
+  assert.match(header, /activePages = new Set\(\['\/dashboard', '\/applications', '\/projects', '\/employees'\]\)/);
   assert.doesNotMatch(loader + route, /ProjectFixtures|exampleProjects|OperationsFixtures|localStorage|sessionStorage|fetch\(/);
 });
 
