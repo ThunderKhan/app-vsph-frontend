@@ -10,7 +10,7 @@ async function contract(){
  const out=ts.transpileModule(code,{compilerOptions:{
   module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022
  }}).outputText;
- const c={exports:{}};vm.runInNewContext(out,c,{timeout:1000});
+ const c={exports:{},URLSearchParams};vm.runInNewContext(out,c,{timeout:1000});
  return c.exports;
 }
 test('report contract enforces first-100 authorized rows and safe filters',async()=>{
