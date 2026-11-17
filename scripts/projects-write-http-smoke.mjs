@@ -62,8 +62,9 @@ async function request(path, { method = 'GET', origin = publicOrigin, body, cook
     method, headers, body: body === undefined ? undefined : JSON.stringify(body), redirect: 'manual',
   });
   const text = await response.text();
-  return { status: response.status, headers: response.headers,
-    body: text ? JSON.parse(text) : null };
+  let parsed = null;
+  if (text) { try { parsed = JSON.parse(text); } catch { parsed = text; } }
+  return { status: response.status, headers: response.headers, body: parsed };
 }
 const create = { key: 'TEST-PROJECT', name: 'Sample', description: '',
   kind: 'internal', priority: 'normal', startsOn: '', dueOn: '' };
