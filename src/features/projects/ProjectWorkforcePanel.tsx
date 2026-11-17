@@ -50,7 +50,7 @@ function WorkforceAssignment({context,staff}:{
    </label>
    {person&&role==='viewer'&&candidates.some(p=>p.userId===person&&p.openTasks>0)&&
      <p role="alert" className="feedback-state error-state">
-       Reassign this employee's open tasks before downgrading to viewer.</p>}
+       Reassign this employee&apos;s open tasks before downgrading to viewer.</p>}
    <button type="submit" disabled={!person||mutation.pending||mutation.applied||
      (role==='viewer'&&candidates.some(p=>p.userId===person&&p.openTasks>0))}>
      {mutation.pending?'Saving…':'Save employee access'}
