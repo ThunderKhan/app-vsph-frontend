@@ -13,7 +13,11 @@ test('authenticated Projects list is server-only and does not use preview fixtur
   assert.match(loader, /portalApi\('\/api\/projects\?' \+ params\.toString\(\)\)/);
   assert.match(loader, /redirect\('\/login'\)/);
   assert.match(route, /loadLiveProjects/);
-  assert.match(header, /activePages = new Set\(\['\/dashboard', '\/applications', '\/projects', '\/employees', '\/hr', '\/admin\/customers'\]\)/);
+  const allowedNavigation = /const activePages = new Set\\(\\[([^\\]]+)\\]\\)/.exec(header);
+  assert.ok(allowedNavigation, 'active routes are registered');
+  for (const route of ['/dashboard','/applications','/projects','/employees','/hr','/admin/customers','/admin/finance']) {
+    assert.ok(allowedNavigation[1].includes("'"+route+"'"), 'missing route '+route);
+  }
   assert.doesNotMatch(loader + route, /ProjectFixtures|exampleProjects|OperationsFixtures|localStorage|sessionStorage|fetch\(/);
 });
 
