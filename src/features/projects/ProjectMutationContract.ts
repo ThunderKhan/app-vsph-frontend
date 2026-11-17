@@ -2,7 +2,7 @@ import { projectIdPattern } from './ProjectLiveContract';
 
 export type ProjectAction =
   'member-assign'|'member-remove'|'manager-grant'|'manager-revoke'|
-  'task-assign'|'task-status'|'comment-create';
+  'task-create'|'task-assign'|'task-status'|'comment-create';
 export type ValidatedMutation = {
   method:'POST'|'PATCH'; path:string; body:Record<string,unknown>;
 };
@@ -28,6 +28,16 @@ export function projectMutation(id:string,action:string,input:unknown):Validated
     if(!exact(input,['version','userId'])||!uuid(input.userId))return null;
     const route=action==='member-remove'?'remove':action;
     return {method:'POST',path:'/api/projects/'+id+'/workforce/'+route,body:input};
+  }
+  if(action==='task-create'){
+    if(!exact(input,['version','title','description','priority','dueOn','assigneeId','milestoneId','shared'])||
+      typeof input.title!=='string'||!input.title.trim()||input.title.length>200||
+      typeof input.description!=='string'||input.description.length>5000||
+      typeof input.priority!=='string'||!['low','normal','high','urgent'].includes(input.priority)||
+      typeof input.dueOn!=='string'||(input.dueOn!==''&&!/^\d{4}-\d{2}-\d{2}$/.test(input.dueOn))||
+      !(input.assigneeId===null||uuid(input.assigneeId))||
+      !(input.milestoneId===null||uuid(input.milestoneId))||input.shared!==false)return null;
+    return {method:'POST',path:'/api/projects/'+id+'/tasks',body:input};
   }
   if(action==='task-assign'){
     if(!exact(input,['version','taskId','assigneeId'])||!uuid(input.taskId)||
