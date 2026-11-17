@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { HrAccess, PortalUser } from './contracts';
 
-const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal']);
+const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal']);
 
 type NavItem = { label: string; href: string; show?: boolean };
 type NavGroup = { label: string; items: NavItem[]; show?: boolean };
@@ -62,6 +62,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
       { label: 'Projects', href: '/projects' },
       { label: 'My tasks', href: '/dashboard#employeeDashboardWork', show: flags?.employee === true },
       { label: 'Reports', href: '/reports' },
+      { label: 'Notifications', href: '/notifications' },
     ] },
     { label: 'Organizations', items: [
       { label: 'My organizations', href: '/organizations' },
