@@ -148,7 +148,9 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (from===null||validDate(from))&&(to===null||validDate(to))&&
       (from===null||to===null||from<=to);
   }
-  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal && !permittedProjectReport)
+  // Inbox and preference reads are always scoped to the current backend session.
+  const permittedNotifications = path === '/api/notifications' || path === '/api/notifications/preferences';
+  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal && !permittedProjectReport && !permittedNotifications)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
