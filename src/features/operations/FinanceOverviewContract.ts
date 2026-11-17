@@ -35,5 +35,5 @@ export function parseFinanceOverview(input:unknown):FinanceOverview|null{
 export function rupeesFromPaise(amount:string){
  if(!money(amount))return '—';
  const v=BigInt(amount);
- return '₹'+(v/100n).toLocaleString('en-IN')+'.'+String(v%100n).padStart(2,'0');
+ return '₹'+(v/BigInt(100)).toLocaleString('en-IN')+'.'+String(v%BigInt(100)).padStart(2,'0');
 }
