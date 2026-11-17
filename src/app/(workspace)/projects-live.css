@@ -59,3 +59,26 @@
   .project-live-editor{width:100%}
   .project-live-form-actions button{flex:1}
 }
+
+
+/* Backend-authorized task & milestone action affordances */
+.project-work-controls{margin-top:15px;min-width:0}
+.project-work-controls>button,.project-work-status button,.project-work-refresh{
+  border:1px solid #0969bb;border-radius:6px;padding:9px 12px;min-height:40px;
+  background:#fff;color:#0969bb;font:inherit;font-weight:650;cursor:pointer
+}
+.project-work-controls button:disabled,.project-work-status button:disabled{
+  opacity:.55;cursor:not-allowed
+}
+.project-work-form{padding:16px;border:1px solid #c9d6e6;border-radius:7px}
+.project-work-form h3{margin:0}
+.project-work-status{display:flex;align-items:center;gap:7px;flex-wrap:wrap;max-width:340px}
+.project-work-status select{min-height:40px;max-width:170px;border:1px solid #b8c8dc;
+  border-radius:6px;background:#fff;padding:8px;color:#23354a;font:inherit}
+.project-work-status select:focus-visible,.project-work-status button:focus-visible,
+.project-work-controls>button:focus-visible{outline:3px solid #50c0e8;outline-offset:2px}
+.project-work-result{max-width:440px}
+.project-work-result p{margin:8px 0}
+.project-work-result .project-work-ok{color:#206748}
+.project-work-status .project-work-result{flex-basis:100%}
+@media(max-width:650px){.project-work-status{max-width:100%}.project-work-status select{max-width:100%}}
