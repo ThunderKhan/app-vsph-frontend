@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
-import type { LiveProject, LiveTask } from './ProjectLiveContract';
+import type { LiveProject, LiveTask, LiveMilestone } from './ProjectLiveContract';
 import type { ProjectWorkforce } from './ProjectMemberEligibility';
 import { ProjectMemberPicker } from './ProjectMemberPicker';
 import { parseEligibleEmployees } from './ProjectMemberEligibility';
 
 type Props={project:LiveProject;workforce:ProjectWorkforce|null;actorId:string|null};
-type Tab='overview'|'team'|'tasks'|'discussions';
-const tabs:Tab[]=['overview','team','tasks','discussions'];
+type Tab='overview'|'team'|'tasks'|'milestones'|'discussions';
+const tabs:Tab[]=['overview','team','tasks','milestones','discussions'];
 const title=(s:string)=>s.replaceAll('_',' ').replace(/\b\w/g,ch=>ch.toUpperCase());
 const states:LiveTask['status'][]=['todo','in_progress','blocked','in_review','done','cancelled'];
 const transitions:Record<LiveTask['status'],LiveTask['status'][]>={
@@ -36,6 +36,13 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
   const [newTaskPriority,setNewTaskPriority]=useState<LiveTask['priority']>('normal');
   const [newTaskDue,setNewTaskDue]=useState('');
   const [newTaskAssignee,setNewTaskAssignee]=useState('');
+  const [editName,setEditName]=useState(project.name);
+  const [editDescription,setEditDescription]=useState(project.description);
+  const [editPriority,setEditPriority]=useState<LiveTask['priority']>(project.priority);
+  const [editDue,setEditDue]=useState(project.dueOn??'');
+  const [newMilestoneTitle,setNewMilestoneTitle]=useState('');
+  const [newMilestoneDue,setNewMilestoneDue]=useState('');
+  const [milestoneStates,setMilestoneStates]=useState<Record<string,LiveMilestone['status']>>({});
   const [taskStates,setTaskStates]=useState<Record<string,LiveTask['status']>>({});
   const [commentText,setCommentText]=useState('');
   const [commentTask,setCommentTask]=useState('');
@@ -116,9 +123,29 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
         <div><span>Tasks</span><strong>{project.tasks.length}</strong></div>
         <div><span>Completed</span><strong>{project.tasks.filter(t=>t.status==='done').length}</strong></div>
         <div><span>Active members</span><strong>{members.length}</strong></div>
-        <div><span>Comments</span><strong>{project.comments.length}</strong></div>
+        <div><span>Recent comments</span><strong>{project.comments.length}</strong></div>
       </div>
       <p>Metrics are calculated from backend-authorized project records, not preview fixtures.</p>
+      {canManage&&<form className="project-live-edit-form" onSubmit={event=>{
+        event.preventDefault();if(!editName.trim()||busy)return;
+        void mutate('project-edit',{name:editName.trim(),description:editDescription,
+          priority:editPriority,dueOn:editDue});
+      }}>
+        <h3>Edit project</h3>
+        <label>Project name <input maxLength={150} required disabled={busy}
+          value={editName} onChange={e=>setEditName(e.target.value)}/></label>
+        <label>Description <textarea maxLength={5000} rows={3} disabled={busy}
+          value={editDescription} onChange={e=>setEditDescription(e.target.value)}/></label>
+        <div className="project-live-create-grid">
+          <label>Priority <select disabled={busy} value={editPriority}
+            onChange={e=>setEditPriority(e.target.value as LiveTask['priority'])}>
+            {(['low','normal','high','urgent'] as const).map(p=><option key={p} value={p}>
+              {title(p)}</option>)}</select></label>
+          <label>Due date <input type="date" disabled={busy} value={editDue}
+            onChange={e=>setEditDue(e.target.value)}/></label>
+        </div>
+        <button type="submit" disabled={busy||!editName.trim()}>Save project</button>
+      </form>}
     </section>}
     {tab==='team'&&<section className="project-live-panel" aria-label="Project team">
       <h2>Project team</h2>
@@ -254,6 +281,44 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
             <button type="button" onClick={()=>{setTab('discussions');setDiscussionFilter(t.id);setCommentTask(t.id);}}>
               Discussion ({project.comments.filter(c=>c.taskId===t.id).length})</button>
           </div>
+        </article>;
+      })}</div>
+    </section>}
+    {tab==='milestones'&&<section className="project-live-panel" aria-label="Milestones">
+      <h2>Milestone roadmap</h2>
+      {canManage&&<form className="project-live-create-task"
+        onSubmit={event=>{event.preventDefault();if(!newMilestoneTitle.trim()||busy)return;
+          void mutate('milestone-create',{title:newMilestoneTitle.trim(),dueOn:newMilestoneDue,
+            shared:false});
+        }}>
+        <h3>Create milestone</h3>
+        <label>Title <input required maxLength={200} disabled={busy}
+          value={newMilestoneTitle} onChange={e=>setNewMilestoneTitle(e.target.value)}/></label>
+        <label>Due date <input type="date" disabled={busy}
+          value={newMilestoneDue} onChange={e=>setNewMilestoneDue(e.target.value)}/></label>
+        <button type="submit" disabled={busy||!newMilestoneTitle.trim()}>Create milestone</button>
+      </form>}
+      {!project.milestones.length&&<p>No milestones have been created.</p>}
+      <div className="project-live-task-list">{project.milestones.map(m=>{
+        const allowed:LiveMilestone['status'][]=m.status==='planned'?['active','cancelled']:
+          m.status==='active'?['planned','done','cancelled']:
+          m.status==='done'?['active']:['planned'];
+        const selected=milestoneStates[m.id]??m.status;
+        return <article className="project-live-task" key={m.id}>
+          <div className="project-live-task-head"><h3>{m.title}</h3>
+            <span>Due {m.dueOn||'not set'}</span></div>
+          <div className="project-live-task-actions">
+            <label>State <select disabled={!canManage||busy} value={selected}
+              aria-label={'State for milestone '+m.title}
+              onChange={e=>setMilestoneStates(p=>({...p,[m.id]:
+                e.target.value as LiveMilestone['status']}))}>
+              {[m.status,...allowed].map(s=><option key={s} value={s}>{title(s)}</option>)}
+            </select></label>
+            {canManage&&<button type="button" disabled={busy||selected===m.status}
+              onClick={()=>void mutate('milestone-status',{milestoneId:m.id,status:selected})}>
+              Save state</button>}
+          </div>
+          <p>Milestones cannot be completed while linked tasks or dependencies remain unfinished.</p>
         </article>;
       })}</div>
     </section>}
