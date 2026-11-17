@@ -94,7 +94,46 @@ export async function portalApi(path: string): Promise<ApiResult> {
   const permittedCustomerDetail = /^\/api\/admin-management\/customers\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path);
   // Deliberately bounded, owner-only financial summary: never public invoice records.
   const permittedFinanceOverview = path === '/api/finance/overview';
-  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail && !permittedFinanceOverview)
+  // Finance journal: immutable owner-only ledger reads with scoped cursor checks.
+  const journalPath = /^\/api\/finance\/journal\?([^#]*)$/.exec(path);
+  let permittedFinanceJournal = false;
+  if (journalPath && journalPath[1].length <= 1100) {
+    const query = new URLSearchParams(journalPath[1]);
+    const keys = [...query.keys()];
+    const kind = query.get('kind');
+    const status = query.get('status'), search = query.get('search');
+    const from = query.get('from'), to = query.get('to'), cursor = query.get('cursor');
+    const validDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) &&
+      !Number.isNaN(Date.parse(d)) && new Date(d).toISOString().slice(0,10)===d;
+    let validCursor = cursor === null;
+    if (cursor !== null && cursor.length <= 500) {
+      try {
+        const value: unknown = JSON.parse(cursor);
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          const c = value as Record<string, unknown>;
+          validCursor = Object.keys(c).length===3 &&
+            typeof c.id==='string' &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(c.id) &&
+            typeof c.at==='string' &&
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/.test(c.at) &&
+            !Number.isNaN(Date.parse(c.at)) &&
+            typeof c.scope==='string' && /^[a-f0-9]{32}$/.test(c.scope);
+        }
+      } catch { validCursor = false; }
+    }
+    permittedFinanceJournal = keys.length>=1 && keys.length<=6 &&
+      new Set(keys).size===keys.length &&
+      keys.every(k=>['kind','status','search','from','to','cursor'].includes(k)) &&
+      (kind==='invoices'||kind==='receipts') &&
+      (status===null||(kind==='invoices'?
+        ['all','issued','void'].includes(status):
+        ['all','active','reversed'].includes(status))) &&
+      (search===null||(search.length<=100 &&
+        !/[\u0000-\u001f\u007f\uD800-\uDFFF]/u.test(search))) &&
+      (from===null||validDate(from)) && (to===null||validDate(to)) &&
+      (from===null||to===null||from<=to) && validCursor;
+  }
+  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
