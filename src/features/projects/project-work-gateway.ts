@@ -66,6 +66,7 @@ export async function projectWorkWrite(request: NextRequest, action: WorkAction,
   if (action === 'task-comment-create') {
     const detail = await portalApi('/api/projects/' + projectId);
     if (detail.kind === 'unauthorized') return response(401,'Sign in to continue.');
+    if (detail.kind === 'forbidden') return response(403,'Task is not available in this project.');
     if (detail.kind !== 'ok' || !detail.value ||
         typeof detail.value !== 'object' || Array.isArray(detail.value) ||
         !('tasks' in detail.value) || !Array.isArray(detail.value.tasks))

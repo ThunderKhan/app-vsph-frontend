@@ -8,6 +8,7 @@ import { cookies } from 'next/headers';
 type ApiResult =
   | { kind: 'ok'; value: unknown }
   | { kind: 'unauthorized' }
+  | { kind: 'forbidden' }
   | { kind: 'unavailable' };
 
 export function approvedInternalOrigin(): string | null {
@@ -69,6 +70,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       signal: AbortSignal.timeout(8000),
     });
     if (response.status === 401) return { kind: 'unauthorized' };
+    if (response.status === 403) return { kind: 'forbidden' };
     if (response.status !== 200) return { kind: 'unavailable' };
     const value: unknown = await response.json();
     return { kind: 'ok', value };

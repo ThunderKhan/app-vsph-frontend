@@ -73,6 +73,7 @@ test('actual Next routes enforce selected task entity and owner-governance actio
   assert.match(details,/TaskAssignmentForm/);
   assert.match(details,/TaskCommentForm/);
   assert.match(server,/permittedWorkforce/);
+  assert.match(server,/response\.status === 403\) return \{ kind: 'forbidden' \}/);
   assert.match(server,/isProjectId\(workforcePath\[1\]\)/);
   assert.doesNotMatch(server,/\[0-9a-f\]\{4\}-\[0-9a-f\]\{12\}\$\/i\.test\(workforcePath/);
   assert.doesNotMatch(workforceGateway,/NEXT_PUBLIC_|DATABASE_URL|localStorage|eval\(/);
