@@ -28,6 +28,9 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
   const [taskFilter,setTaskFilter]=useState('');
   const [assignments,setAssignments]=useState<Record<string,string>>({});
   const [memberRoles,setMemberRoles]=useState<Record<string,'manager'|'contributor'|'viewer'>>({});
+  const [pendingAccessChange,setPendingAccessChange]=useState<{
+    action:'member-remove'|'manager-revoke';userId:string;name:string;
+  }|null>(null);
   const [newTaskTitle,setNewTaskTitle]=useState('');
   const [newTaskDescription,setNewTaskDescription]=useState('');
   const [newTaskPriority,setNewTaskPriority]=useState<LiveTask['priority']>('normal');
@@ -132,7 +135,9 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
                 <div className="project-member-controls">
                   {m.role==='manager'?
                     (workforce?.canGovernManagers&&<button type="button" disabled={busy}
-                      onClick={()=>void mutate('manager-revoke',{userId:m.userId})}>
+                      onClick={()=>setPendingAccessChange({
+                        action:'manager-revoke',userId:m.userId,name:m.name
+                      })}>
                       Demote to contributor</button>):
                     m.role==='client'?'Customer membership managed separately':<>
                       <label>Role
@@ -152,12 +157,27 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
                           role:memberRoles[m.userId]??m.role,team:m.team})}>Save role</button>
                       <button type="button" disabled={busy||openTasks>0}
                         title={openTasks>0?'Reassign open tasks first':undefined}
-                        onClick={()=>void mutate('member-remove',{userId:m.userId})}>Remove access</button>
+                        onClick={()=>setPendingAccessChange({
+                          action:'member-remove',userId:m.userId,name:m.name
+                        })}>Remove access</button>
                     </>}
                 </div> : '—'}</td>
             </tr>;
           })}</tbody></table>
       </div>
+      {canAssign&&pendingAccessChange&&<div className="project-live-confirm" role="group"
+        aria-label="Confirm project access change">
+        <strong>{pendingAccessChange.action==='member-remove'?
+          'Remove project access?':'Demote project manager?'}</strong>
+        <p>{pendingAccessChange.name} — {pendingAccessChange.action==='member-remove'?
+          'This will revoke their project membership.':
+          'This will remove their project manager privileges.'}</p>
+        <div><button type="button" disabled={busy}
+          onClick={()=>setPendingAccessChange(null)}>Cancel</button>
+          <button type="button" disabled={busy}
+            onClick={()=>void mutate(pendingAccessChange.action,{
+              userId:pendingAccessChange.userId})}>Confirm change</button></div>
+      </div>}
       {canManage&&<div className="project-live-subpanel">
         <h3>Add an internal employee</h3>
         {workforce?.canAssign?
