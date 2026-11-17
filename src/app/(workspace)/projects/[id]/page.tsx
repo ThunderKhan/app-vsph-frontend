@@ -169,6 +169,16 @@ export default async function ProjectDetailPage({
     data.role === 'manager' ? portalApi('/api/projects/' + id + '/workforce') : Promise.resolve(null),
     data.role === 'contributor' ? portalApi('/api/auth/me') : Promise.resolve(null),
   ]);
+  if (process.env.VSPH_ACCEPTANCE_DIAGNOSTICS === '1' && data.role === 'manager') {
+    console.error('Workforce SSR result', JSON.stringify({
+      kind: workforceResult?.kind,
+      parsed: workforceResult?.kind === 'ok' ?
+        parseProjectWorkforce(workforceResult.value) !== null : false,
+      valueKeys: workforceResult?.kind === 'ok' && workforceResult.value &&
+        typeof workforceResult.value === 'object' ?
+        Object.keys(workforceResult.value) : [],
+    }));
+  }
   const workforce = workforceResult?.kind === 'ok' ?
     parseProjectWorkforce(workforceResult.value) : null;
   const actorId = identityResult?.kind === 'ok' ?
