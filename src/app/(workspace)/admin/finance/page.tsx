@@ -29,7 +29,10 @@ export default async function FinancePage(){
  return <main className="workspace-content finance-live-workspace" id="mainContent" tabIndex={-1}>
    <header className="finance-live-heading"><div><h1>Finance overview</h1>
      <p>Manual cash receipt basis · As of {data.asOf} · INR</p></div>
-     <Link href="/admin/finance">Refresh</Link></header>
+     <div className="finance-live-actions">
+       <Link href="/admin/finance/journal">View journal</Link>
+       <Link href="/admin/finance">Refresh</Link>
+     </div></header>
    <section className="finance-live-money" aria-label="Finance summary in INR">
      {figures.map(([label,value])=><article key={label}>
        <span>{label}</span><strong>{rupeesFromPaise(value)}</strong></article>)}
