@@ -1,32 +1,22 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { approvedInternalOrigin } from '@/features/workspace/server-api';
 import { projectMutation } from '@/features/projects/ProjectMutationContract';
+import { approvedPublicOrigin, validPortalSession } from '@/features/projects/ProjectProxySecurity';
 
 type Context={params:Promise<{id:string;operation:string}>};
 const noStore={'Cache-Control':'no-store'};
-function publicOrigin():string|null{
-  const raw=process.env.VSPH_PUBLIC_ORIGIN;
-  if(!raw)return null;
-  try{
-    const u=new URL(raw);
-    const local=['localhost','127.0.0.1','[::1]'].includes(u.hostname);
-    if(raw!==u.origin||u.username||u.password||u.pathname!=='/'||
-      u.search||u.hash||(u.protocol!=='https:'&&!(local&&u.protocol==='http:')))return null;
-    return u.origin;
-  }catch{return null;}
-}
 function failure(message:string,status:number){
   return NextResponse.json({message},{status,headers:noStore});
 }
 /** Server-only CSRF-protected write proxy. No browser-visible backend credentials. */
 export async function POST(request:NextRequest,{params}:Context){
-  const publicUrl=publicOrigin(),upstream=approvedInternalOrigin();
+  const publicUrl=approvedPublicOrigin(),upstream=approvedInternalOrigin();
   if(!publicUrl||!upstream)return failure('Project changes are unavailable.',503);
   if(request.headers.get('origin')!==publicUrl||
     request.headers.get('sec-fetch-site')==='cross-site')
     return failure('Origin not permitted.',403);
   const session=request.cookies.get('vsph.portal.sid')?.value;
-  if(!session||!/^[A-Za-z0-9_-]{32,128}$/.test(session))
+  if(!validPortalSession(session))
     return failure('Sign in again.',401);
   if(!request.headers.get('content-type')?.startsWith('application/json')||
     Number(request.headers.get('content-length')||0)>8192)
