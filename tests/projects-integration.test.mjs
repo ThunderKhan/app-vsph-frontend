@@ -80,9 +80,10 @@ test('live project UI uses server authorized data and a CSRF-guarded mutation pr
   const ui=await read('src/features/projects/LiveProjectWorkspace.tsx');
   const page=await read('src/app/(workspace)/projects/[id]/page.tsx');
   const list=await read('src/app/(workspace)/projects/page.tsx');
-  for(const word of ["portalApi('/api/projects/'+id)","portalApi('/api/projects/'+id+'/workforce')",
+  for(const word of ["'/api/projects/by-key/'+id","portalApi('/api/projects/'+project.id+'/workforce')",
     'parseLiveProject','parseWorkforce'])assert.ok(loader.includes(word),word);
   assert.match(readApi,/const permittedDetail/);
+  assert.match(readApi,/const permittedByKey/);
   assert.match(proxy,/request.headers.get\('origin'\)!==publicUrl/);
   assert.match(proxy,/request.cookies.get\('vsph.portal.sid'\)/);
   assert.match(proxy,/projectMutation\(id,operation,body\)/);
@@ -94,6 +95,9 @@ test('live project UI uses server authorized data and a CSRF-guarded mutation pr
   assert.match(ui,/mutate\('task-assign'/);
   assert.match(ui,/mutate\('task-status'/);
   assert.match(ui,/mutate\('comment-create'/);
+  assert.match(ui,/pendingAccessChange/);
+  assert.match(ui,/Confirm change/);
+  assert.match(ui,/transitions:Record/);
   assert.match(page,/loadLiveProject\(id\)/);
   assert.match(list,/href=\{'\/projects\/'\+project.id\}/);
   assert.doesNotMatch(loader+proxy+ui,/ProjectFixtures|exampleProjects|localStorage|sessionStorage/);
