@@ -10,11 +10,12 @@ const base = () => ({
   project: {
     id, key: 'PORTAL-1', name: 'Portal implementation', description: '',
     kind: 'internal', status: 'active', priority: 'normal', version: 3,
+    owner_id: id,
     due_on: null, starts_on: '2026-11-01',
   },
   role: 'viewer',
   tasks: [{ id: taskId, title: 'Review contract', description: '',
-    status: 'in_progress', priority: 'high', due_on: null }],
+    status: 'in_progress', priority: 'high', due_on: null, assignee_id: null }],
   milestones: [],
   members: [{ user_id: '33333333-3333-4333-8333-333333333333',
     full_name: 'Example Member', role: 'viewer', status: 'active' }],
@@ -59,4 +60,18 @@ test('real project details use backend-only GET with strict route allowlisting',
   assert.match(list, /href=\{'\/projects\/' \+ project\.id\}/);
   assert.doesNotMatch(details, /ProjectFixtures|exampleProjects|localStorage|sessionStorage|fetch\(/);
   assert.doesNotMatch(details, /method: 'POST'|method: 'PATCH'|method: 'DELETE'/);
+});
+
+
+test('task assignee and discussion decoder rejects cross-project or malformed IDs',()=>{
+ const x=base();
+ assert.equal(parseProjectDetail({...x,tasks:[{...x.tasks[0],assignee_id:x.project.id}]},id)?.tasks[0].assignee_id,id);
+ assert.equal(parseProjectDetail({...x,tasks:[{...x.tasks[0],assignee_id:'malformed'}]},id),null);
+ assert.equal(parseProjectDetail({...x,comments:[{
+   id:'44444444-4444-4444-8444-444444444444',body:'Private note',task_id:taskId,
+ }]},id)?.comments.length,1);
+ assert.equal(parseProjectDetail({...x,comments:[{
+   id:'44444444-4444-4444-8444-444444444444',body:'Wrong task',
+   task_id:'55555555-5555-4555-8555-555555555555'
+ }]},id),null);
 });

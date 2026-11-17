@@ -3,19 +3,19 @@
  */
 export type ProjectDetail = {
   project: {
-    id: string; key: string; name: string; description: string; version: number;
+    id: string; key: string; name: string; description: string; version: number; owner_id: string;
     kind: 'internal' | 'customer';
     status: 'planned' | 'active' | 'paused' | 'completed' | 'archived';
     priority: 'low' | 'normal' | 'high' | 'urgent';
     due_on: string | null; starts_on: string | null;
   };
   role: 'manager' | 'contributor' | 'viewer' | 'client';
-  tasks: { id: string; title: string; description: string; status: string; priority: string; due_on: string | null }[];
+  tasks: { id: string; title: string; description: string; status: string; priority: string; due_on: string | null; assignee_id: string | null }[];
   milestones: { id: string; title: string; status: string; due_on: string | null }[];
   members: { user_id: string; full_name: string; role: string; status: string }[];
   products: { id: string; name: string }[];
   deliverables: { id: string; title: string }[];
-  comments: { id: string; body: string }[];
+  comments: { id: string; body: string; task_id: string | null }[];
   activity: { summary: string; created_at: string }[];
 };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -58,7 +58,8 @@ export function parseProjectDetail(value: unknown, requestedId: string): Project
       !['internal','customer'].includes(p.kind as string) ||
       !projectStatus.includes(p.status as string) ||
       !priority.includes(p.priority as string) ||
-      !date(p.due_on) || !date(p.starts_on) || !Number.isSafeInteger(p.version) ||
+      !date(p.due_on) || !date(p.starts_on) || typeof p.owner_id !== 'string' ||
+      !uuid.test(p.owner_id) || !Number.isSafeInteger(p.version) ||
       (p.version as number) < 1 || (p.version as number) > 999999999) return null;
   const tasks = rows(value.tasks, 3000);
   const milestones = rows(value.milestones, 1000);
@@ -71,7 +72,8 @@ export function parseProjectDetail(value: unknown, requestedId: string): Project
       ![tasks,milestones,products,deliverables,comments].every(unique)) return null;
   if (tasks.some(t => !named(t.title, 200) || !short(t.description, 5000) ||
       !taskStatus.includes(t.status as string) || !priority.includes(t.priority as string) ||
-      !date(t.due_on))) return null;
+      !date(t.due_on) || !(t.assignee_id === null ||
+       (typeof t.assignee_id === 'string' && uuid.test(t.assignee_id))))) return null;
   if (milestones.some(m => !named(m.title, 200) ||
       !milestoneStatus.includes(m.status as string) || !date(m.due_on))) return null;
   if (members.some(m => typeof m.user_id !== 'string' || !uuid.test(m.user_id) ||
@@ -79,12 +81,15 @@ export function parseProjectDetail(value: unknown, requestedId: string): Project
       !membershipStatus.includes(m.status as string))) return null;
   if (products.some(item => !named(item.name, 200)) ||
       deliverables.some(item => !named(item.title, 200)) ||
-      comments.some(item => !named(item.body, 4000)) ||
+      comments.some(item => !named(item.body, 4000) ||
+        !(item.task_id === null || (typeof item.task_id === 'string' && uuid.test(item.task_id))) ||
+        (item.task_id !== null && !tasks.some(t => t.id === item.task_id))) ||
       activity.some(item => !named(item.summary, 2000) ||
         !short(item.created_at, 60))) return null;
   return {
     project: {
       id: p.id as string, key: p.key as string, version: p.version as number,
+      owner_id: p.owner_id as string,
       name: p.name as string, description: p.description as string,
       kind: p.kind as ProjectDetail['project']['kind'],
       status: p.status as ProjectDetail['project']['status'],

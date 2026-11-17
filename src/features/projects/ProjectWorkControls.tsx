@@ -6,7 +6,7 @@ import { allowedNextStatuses } from './ProjectWorkContract';
 
 type Props = { projectId:string; version:number };
 type Outcome = { message:string; success:boolean };
-function useWorkMutation({projectId,version}: Props) {
+export function useWorkMutation({projectId,version}: Props) {
   const router = useRouter();
   const lock = useRef(false);
   const [pending,setPending] = useState(false);
@@ -251,4 +251,60 @@ export function ProjectDeliverableForm(props:Props) {
       </form>}
     <Result outcome={mutation.outcome} refresh={()=>mutation.router.refresh()}/>
   </div>;
+}
+
+
+/** Manager-only assignee selection; backend rejects anyone outside active project membership. */
+export function TaskAssignmentForm({projectId,version,taskId,assigneeId,members}:Props & {
+ taskId:string;assigneeId:string|null;
+ members:{userId:string;name:string}[];
+}) {
+ const mutation=useWorkMutation({projectId,version});
+ const [chosen,setChosen]=useState(assigneeId||'');
+ const changed=chosen!==(assigneeId||'');
+ async function submit(e:FormEvent<HTMLFormElement>){
+   e.preventDefault();
+   if(!changed || (chosen && !members.some(m=>m.userId===chosen)))return;
+   await mutation.apply('/tasks/'+taskId+'/assignment','PATCH',{
+     assigneeId:chosen||null
+   });
+ }
+ return <form className="project-work-status" onSubmit={submit}>
+   <label>
+     <span className="visually-hidden">Assign task</span>
+     <select aria-label="Assign task" value={chosen}
+       disabled={mutation.pending||mutation.applied}
+       onChange={e=>setChosen(e.target.value)}>
+       <option value="">Unassigned</option>
+       {members.map(m=><option key={m.userId} value={m.userId}>{m.name}</option>)}
+     </select>
+   </label>
+   <button type="submit" disabled={!changed||mutation.pending||mutation.applied}>
+     {mutation.pending?'Saving…':'Assign'}
+   </button>
+   <Result outcome={mutation.outcome} refresh={()=>mutation.router.refresh()}/>
+ </form>;
+}
+
+/** Task thread form routes task ID via the URL, never through user-controlled JSON. */
+export function TaskCommentForm({projectId,version,taskId}:Props & {taskId:string}) {
+ const mutation=useWorkMutation({projectId,version});
+ const [body,setBody]=useState('');
+ async function submit(e:FormEvent<HTMLFormElement>){
+   e.preventDefault();
+   if(!body.trim())return;
+   if(await mutation.apply('/tasks/'+taskId+'/comments','POST',{body}))setBody('');
+ }
+ return <form className="project-live-form project-work-form" onSubmit={submit}>
+  <label>Reply to task
+    <textarea rows={2} value={body} maxLength={4000} required
+      onChange={e=>setBody(e.target.value)}
+      placeholder="Write a private task note…"/>
+  </label>
+  <p className="project-section-hint">Private to authorized project users. No client sharing.</p>
+  <button type="submit" disabled={!body.trim()||mutation.pending||mutation.applied}>
+    {mutation.pending?'Saving…':'Post task comment'}
+  </button>
+  <Result outcome={mutation.outcome} refresh={()=>mutation.router.refresh()}/>
+ </form>;
 }
