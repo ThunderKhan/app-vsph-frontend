@@ -82,3 +82,6 @@
 .project-work-result .project-work-ok{color:#206748}
 .project-work-status .project-work-result{flex-basis:100%}
 @media(max-width:650px){.project-work-status{max-width:100%}.project-work-status select{max-width:100%}}
+
+.project-work-form h4{font-size:1rem;margin:0}
+.project-work-controls .project-work-result[role="status"]{margin-top:8px}

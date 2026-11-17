@@ -174,3 +174,81 @@ export function TaskStatusForm(props: Props & {entityId:string;current:string}) 
 export function MilestoneStatusForm(props: Props & {entityId:string;current:string}) {
   return <StatusForm {...props} kind="milestone"/>;
 }
+
+
+/** Comments are always private on this frontend; contributors never choose sharing.
+ * Only the backend can determine who is permitted to post.
+ */
+export function ProjectCommentForm(props:Props) {
+  const [open,setOpen]=useState(false);
+  const [body,setBody]=useState('');
+  const mutation=useWorkMutation(props);
+  async function submit(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if(await mutation.apply('/comments','POST',{body})) {
+      setBody('');
+      setOpen(false);
+    }
+  }
+  return <div className="project-work-controls">
+    {!open ? <button type="button" disabled={mutation.applied}
+      onClick={()=>setOpen(true)}>Add private comment</button> :
+      <form className="project-live-form project-work-form" onSubmit={submit}>
+        <h4>New project comment</h4>
+        <label>Comment
+          <textarea value={body} required rows={3} maxLength={4000}
+            onChange={e=>setBody(e.target.value)}/>
+        </label>
+        <p className="project-section-hint">Private project-level comment. Client sharing and task
+          attachment are not supported by this form.</p>
+        <div className="project-live-form-actions">
+          <button type="submit" disabled={!body.trim()||mutation.pending||mutation.applied}>
+            {mutation.pending ? 'Saving…':'Post private comment'}
+          </button>
+          <button type="button" disabled={mutation.pending}
+            onClick={()=>setOpen(false)}>Cancel</button>
+        </div>
+      </form>}
+    <Result outcome={mutation.outcome} refresh={()=>mutation.router.refresh()}/>
+  </div>;
+}
+
+/** Link-only delivery evidence. No uploads, no arbitrary HTML, no shared/client access. */
+export function ProjectDeliverableForm(props:Props) {
+  const [open,setOpen]=useState(false);
+  const [title,setTitle]=useState('');
+  const [url,setUrl]=useState('');
+  const mutation=useWorkMutation(props);
+  async function submit(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if(await mutation.apply('/deliverables','POST',{title,url})) {
+      setTitle('');setUrl('');setOpen(false);
+    }
+  }
+  return <div className="project-work-controls">
+    {!open ? <button type="button" disabled={mutation.applied}
+      onClick={()=>setOpen(true)}>Add evidence link</button> :
+      <form className="project-live-form project-work-form" onSubmit={submit}>
+        <h4>Record delivery evidence</h4>
+        <label>Evidence title
+          <input required maxLength={200} value={title}
+            onChange={e=>setTitle(e.target.value)} placeholder="Build and test report"/>
+        </label>
+        <label>HTTPS evidence URL
+          <input type="url" required maxLength={1800} value={url} pattern="https://.*"
+            onChange={e=>setUrl(e.target.value)}
+            placeholder="https://example.com/report"/>
+        </label>
+        <p className="project-section-hint">Private project-level HTTPS link only.
+          Files, client sharing and task attachments require separate workflows.</p>
+        <div className="project-live-form-actions">
+          <button type="submit" disabled={mutation.pending||mutation.applied}>
+            {mutation.pending ? 'Saving…':'Save evidence link'}
+          </button>
+          <button type="button" disabled={mutation.pending}
+            onClick={()=>setOpen(false)}>Cancel</button>
+        </div>
+      </form>}
+    <Result outcome={mutation.outcome} refresh={()=>mutation.router.refresh()}/>
+  </div>;
+}

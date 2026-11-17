@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { portalApi } from '@/features/workspace/server-api';
 import { isProjectId, parseProjectDetail, type ProjectDetail } from '@/features/projects/ProjectDetailContract';
 import { ProjectEditForm } from '@/features/projects/ProjectEditForm';
-import { TaskCreateForm, MilestoneCreateForm, TaskStatusForm, MilestoneStatusForm } from '@/features/projects/ProjectWorkControls';
+import { TaskCreateForm, MilestoneCreateForm, TaskStatusForm, MilestoneStatusForm, ProjectCommentForm, ProjectDeliverableForm } from '@/features/projects/ProjectWorkControls';
 import '../../../(preview)/projects.css';
 import '../../../(preview)/project-detail-v2.css';
 import '../../projects-live.css';
@@ -24,6 +24,7 @@ function LiveProject({ data }: { data: ProjectDetail }) {
   const active = tasks.filter(t => t.status !== 'cancelled');
   // Availability of controls is only UX; project_command rechecks manager authority.
   const canManageWork = role === 'manager' && p.status !== 'completed' && p.status !== 'archived';
+  const canComment = (role === 'manager' || role === 'contributor') && p.status !== 'archived';
   return <main className="workspace-content project-workspace project-live-detail" id="mainContent" tabIndex={-1}>
     <header className="project-heading">
       <div>
@@ -89,10 +90,12 @@ function LiveProject({ data }: { data: ProjectDetail }) {
     <section id="delivery" className="project-v2-card project-live-section" aria-labelledby="live-delivery">
       <h2 id="live-delivery">Delivery</h2>
       <h3>Deliverables</h3>
+      {canManageWork && <ProjectDeliverableForm projectId={p.id} version={p.version}/>}
       {deliverables.length ? <ul className="project-live-rows">
         {deliverables.map(d => <li key={d.id}><strong>{d.title}</strong></li>)}
       </ul> : <p>No visible deliverables.</p>}
       <h3>Comments</h3>
+      {canComment && <ProjectCommentForm projectId={p.id} version={p.version}/>}
       {comments.length ? <ul className="project-live-rows">
         {comments.map(comment => <li key={comment.id}><span>{comment.body}</span></li>)}
       </ul> : <p>No visible comments.</p>}
@@ -109,7 +112,7 @@ function LiveProject({ data }: { data: ProjectDetail }) {
         </li>)}</ul> : <p>No visible activity.</p>}
     </section>
     <p className="project-section-hint" role="note">
-      Backend-authorized view. Managers can create tasks and milestones and change their states with version checks. Assignment, sharing, team permissions and deployment integrations are not connected.
+      Backend-authorized view. Managers can update tasks, milestones and private delivery evidence; contributors can post private project comments. Assignment, client sharing, team permissions, uploads and deployment integrations are not connected.
     </p>
   </main>;
 }
