@@ -99,7 +99,8 @@ test('live project UI uses server authorized data and a CSRF-guarded mutation pr
   assert.match(proxy,/response.status===409/);
   assert.match(ui,/window.location.reload\(\)/);
   assert.match(ui,/mutate\('member-assign'/);
-  assert.match(ui,/mutate\('member-remove'/);
+  assert.match(ui,/action:'member-remove'/);
+  assert.match(ui,/mutate\(pendingAccessChange.action/);
   assert.match(ui,/mutate\('project-edit'/);
   assert.match(ui,/mutate\('milestone-create'/);
   assert.match(ui,/mutate\('milestone-status'/);
