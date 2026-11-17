@@ -81,7 +81,18 @@ export async function portalApi(path: string): Promise<ApiResult> {
         ['all','pending','approved','rejected','cancelled'].includes(status))) &&
       (cursor === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cursor));
   }
-  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList)
+  // Owner-only customer directory/detail, with no arbitrary query or tenant IDs.
+  const customerList = /^\/api\/admin-management\/customers\?([^#]*)$/.exec(path);
+  let permittedCustomers = false;
+  if (customerList) {
+    const params = new URLSearchParams(customerList[1]);
+    const keys = [...params.keys()], cursor = params.get('afterId');
+    permittedCustomers = keys.length <= 1 &&
+      keys.every(k => k === 'afterId') &&
+      (cursor === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cursor));
+  }
+  const permittedCustomerDetail = /^\/api\/admin-management\/customers\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path);
+  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
