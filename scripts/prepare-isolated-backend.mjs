@@ -22,4 +22,14 @@ assert.equal((source.match(/\bcurrent_role\b/g)||[]).length,4,
 source=source.replace(/\bcurrent_role\b/g,'resolved_role');
 assert.ok(!source.includes('current_role'),'Reserved identifier still present');
 await writeFile(path,source,'utf8');
+// The upstream fixture launcher masks its actual database error in the catch.
+// Add diagnostic logging ONLY in this disposable checkout.
+const fixture='.acceptance-backend/tests/e2e/fixture-server.js';
+let fixtureSource=await readFile(fixture,'utf8');
+const handler="start(new Pool({ connectionString: url.toString() })).catch(() => {";
+assert.equal(fixtureSource.split(handler).length,2,'Unexpected fixture launcher: diagnostic overlay refused');
+fixtureSource=fixtureSource.replace(handler,
+  "start(new Pool({ connectionString: url.toString() })).catch((error) => { console.error('Fixture SQL error:', error.code, error.message);");
+await writeFile(fixture,fixtureSource,'utf8');
+
 console.log('Applied two-token SQL quoting correction in disposable test checkout ONLY. Upstream defect remains outstanding.');
