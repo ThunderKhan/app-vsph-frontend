@@ -84,7 +84,7 @@ jobs:
           trap cleanup EXIT
 
           backend_ready=0
-          for attempt in $(seq 1 90); do
+          for attempt in $(seq 1 45); do
             if curl -fsS -o /dev/null http://127.0.0.1:3100/login; then backend_ready=1; break; fi
             if grep -q "Isolated browser fixture boot failed" /tmp/vsph-legacy-fixture.log; then break; fi
             if ! kill -0 "$backend_pid" 2>/dev/null; then break; fi
@@ -104,7 +104,12 @@ jobs:
             echo "Production Next.js fixture did not start"; tail -80 /tmp/vsph-next-app.log; exit 1
           fi
 
-          node scripts/projects-native-postgres-acceptance.mjs
+          if ! timeout 90s node scripts/projects-native-postgres-acceptance.mjs; then
+            echo "Native PostgreSQL acceptance did not complete successfully"
+            tail -50 /tmp/vsph-legacy-fixture.log || true
+            tail -50 /tmp/vsph-next-app.log || true
+            exit 1
+          fi
 
       - name: Upload test logs if failing
         if: failure()

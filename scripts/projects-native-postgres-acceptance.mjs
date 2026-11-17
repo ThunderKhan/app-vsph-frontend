@@ -64,6 +64,7 @@ try {
   const initialized=await pool.query("select to_regclass('public.portal_sessions') session, to_regclass('public.projects') projects");
   check(Boolean(initialized.rows[0].session && initialized.rows[0].projects),
     'Backend fixture schema not installed');
+  console.log('Acceptance stage 1: schema verified, generating disposable sessions');
   // These are real production-format, random sessions, inserted ONLY into disposable vsph_test.
   for(const [label,id] of [['admin',admin],['viewer',viewer],['outsider',outsider]]) {
     const token=randomBytes(32).toString('base64url');
@@ -84,6 +85,7 @@ try {
     403,'Ordinary employee cannot create projects');
   await expectStatus('/api/projects',{method:'POST',token:tokens.outsider,body:create},
     403,'Outsider cannot create projects');
+  console.log('Acceptance stage 2: anonymous and non-admin creation denials confirmed');
   const created=await expectStatus('/api/projects',{
     method:'POST',token:tokens.admin,body:create,
   },201,'Admin creates real internal project');
@@ -105,6 +107,7 @@ try {
     body:{version:1,name:'Intrusion',description:'',priority:'normal',dueOn:''}},
     403,'Outsider cannot mutate project');
 
+  console.log('Acceptance stage 3: creation persisted and role-scoped project pages loaded');
   // Add a viewer directly to this disposable DB to prove the backend enforces role restrictions.
   await pool.query("insert into public.project_memberships(project_id,user_id,role,status) values($1,$2,'viewer','active')",[id,viewer]);
   const viewerPage=await expectStatus('/projects/'+id,{token:tokens.viewer},200,'Viewer reads own project');
@@ -123,6 +126,7 @@ try {
     method:'PATCH',token:tokens.admin,
     body:{version:1,name:'Stale edit',description:'',priority:'low',dueOn:''},
   },409,'Stale metadata edit cannot overwrite');
+  console.log('Acceptance stage 4: role permissions and stale version rejection verified');
   // Two simultaneous manager edits against the SAME current version must serialize safely.
   const attempts=await Promise.all([
     call('/api/projects/'+id,{method:'PATCH',token:tokens.admin,
@@ -135,6 +139,7 @@ try {
     'Concurrent writes must yield exactly one success and one HTTP 409');
   check(await version(id)===3,'Concurrent updates must increment version exactly once');
 
+  console.log('Acceptance stage 5: concurrent writes serialized safely');
   const milestone=await expectStatus('/api/projects/'+id+'/milestones',{
     method:'POST',token:tokens.admin,body:{version:3,title:'Acceptance milestone',dueOn:''},
   },200,'Manager creates milestone');
@@ -168,6 +173,7 @@ try {
     check(reply.data.version===current+1&&reply.data.id===milestoneId,
       'Milestone lifecycle has verified entity and next version');
   }
+  console.log('Acceptance stage 6: task and milestone transitions completed');
   const persisted=await pool.query(
     'select p.version,t.status task_status,m.status milestone_status from public.projects p '+
     'join public.project_tasks t on t.project_id=p.id and t.id=$2 '+
