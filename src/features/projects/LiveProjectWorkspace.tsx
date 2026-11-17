@@ -12,6 +12,14 @@ type Tab='overview'|'team'|'tasks'|'discussions';
 const tabs:Tab[]=['overview','team','tasks','discussions'];
 const title=(s:string)=>s.replaceAll('_',' ').replace(/\b\w/g,ch=>ch.toUpperCase());
 const states:LiveTask['status'][]=['todo','in_progress','blocked','in_review','done','cancelled'];
+const transitions:Record<LiveTask['status'],LiveTask['status'][]>={
+  todo:['in_progress','cancelled'],
+  in_progress:['todo','blocked','in_review'],
+  blocked:['todo','in_progress','cancelled'],
+  in_review:['in_progress','done'],
+  done:['todo'],cancelled:['todo']
+};
+
 
 export function LiveProjectWorkspace({project,workforce,actorId}:Props){
   const [tab,setTab]=useState<Tab>('overview');
@@ -77,7 +85,8 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
   }
   function taskStatusAllowed(task:LiveTask){
     return canManage||(project.role==='contributor'&&!!actorId&&
-      task.assigneeId?.toLowerCase()===actorId.toLowerCase()&&!closed);
+      task.assigneeId?.toLowerCase()===actorId.toLowerCase()&&!closed&&
+      task.status!=='done'&&task.status!=='cancelled');
   }
   return <main className="workspace-content project-workspace live-project-detail"
       id="mainContent" tabIndex={-1}>
@@ -216,7 +225,9 @@ export function LiveProjectWorkspace({project,workforce,actorId}:Props){
             <label>State <select aria-label={'State for '+t.title} value={nextStatus}
               disabled={!taskStatusAllowed(t)||busy}
               onChange={e=>setTaskStates(p=>({...p,[t.id]:e.target.value as LiveTask['status']}))}>
-              {states.map(s=><option value={s} key={s}>{title(s)}</option>)}</select></label>
+              {[t.status,...transitions[t.status].filter(s=>canManage||s!=='todo'|| 
+                (t.status!=='done'&&t.status!=='cancelled'))].map(s=>
+                <option value={s} key={s}>{title(s)}</option>)}</select></label>
             {taskStatusAllowed(t)&&<button type="button" disabled={busy||nextStatus===t.status}
               onClick={()=>void mutate('task-status',{taskId:t.id,status:nextStatus})}>
               Update state</button>}
