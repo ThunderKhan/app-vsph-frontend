@@ -97,6 +97,32 @@ try {
   const adminList=await expectStatus('/projects',{token:tokens.admin},200,'Authorized portfolio page');
   check(adminList.raw.includes(name) || adminList.raw.includes('Projects'),'Authenticated portfolio rendered');
   const ownerPage=await expectStatus('/projects/'+id,{token:tokens.admin},200,'Authorized project page');
+  if (!(ownerPage.raw.includes(name)&&ownerPage.raw.includes('Add task') &&
+    ownerPage.raw.includes('Add milestone'))) {
+    const response=await fetch('http://127.0.0.1:3100/api/projects/'+id,
+      {headers:{Cookie:'vsph.portal.sid='+tokens.admin},cache:'no-store'});
+    const actual=await response.json().catch(()=>null);
+    const {parseProjectDetail}=await import('../src/features/projects/ProjectDetailContract.ts');
+    console.error('Project detail diagnostic',JSON.stringify({
+      realBackendStatus:response.status,
+      realBackendParsed:parseProjectDetail(actual,id)!==null,
+      realBackendProject:actual?.project ? {
+        key:actual.project.key,version:actual.project.version,kind:actual.project.kind,
+        priority:actual.project.priority,status:actual.project.status
+      }:null,
+      backendCollections:actual && typeof actual==='object' ?
+        Object.fromEntries(['tasks','milestones','members','products','deliverables','comments','activity']
+          .map(k=>[k,Array.isArray(actual[k])?{
+            count:actual[k].length,fields:actual[k][0]?Object.keys(actual[k][0]):[]
+          }:typeof actual[k]])):null,
+      frontendMarkers:{projectName:ownerPage.raw.includes(name),
+        addTask:ownerPage.raw.includes('Add task'),
+        addMilestone:ownerPage.raw.includes('Add milestone'),
+        unavailable:ownerPage.raw.includes('Project details unavailable'),
+        login:ownerPage.raw.includes('Sign in'),
+        suspense:ownerPage.raw.includes('Checking your session')},
+    }));
+  }
   check(ownerPage.raw.includes(name)&&ownerPage.raw.includes('Add task') &&
     ownerPage.raw.includes('Add milestone'), 'Real project details show manager work actions');
   const guestDetail=await expectStatus('/projects/'+id,{token:tokens.outsider},200,
