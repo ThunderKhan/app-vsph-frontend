@@ -16,7 +16,7 @@ export type WorkforceStaff = Readonly<{
 export type ProjectWorkforce = Readonly<{
   canGovernManagers: boolean; canAssign: boolean; staff: WorkforceStaff[];
 }>;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const roles = new Set(['manager','contributor','viewer','client']);
 function record(x: unknown): x is Record<string, unknown> {
   return x !== null && typeof x === 'object' && !Array.isArray(x);
