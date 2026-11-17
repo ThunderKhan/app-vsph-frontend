@@ -59,6 +59,10 @@ test('project action adapter rejects unapproved operations and unsafe payloads',
   assert.equal(accepted?.method,'POST');
   assert.equal(projectMutation(id,'member-assign',{...member,role:'client'}),null);
   assert.equal(projectMutation(id,'member-assign',{...member,extra:true}),null);
+  assert.equal(projectMutation(id,'task-create',{version:2,title:'New work',
+    description:'',priority:'normal',dueOn:'',assigneeId:null,milestoneId:null,shared:false})?.method,'POST');
+  assert.equal(projectMutation(id,'task-create',{version:2,title:'',description:'',
+    priority:'normal',dueOn:'',assigneeId:null,milestoneId:null,shared:false}),null);
   assert.equal(projectMutation(id,'task-status',{version:2,taskId:task,status:'done'})?.method,'PATCH');
   assert.equal(projectMutation(id,'task-assign',{version:2,taskId:task,assigneeId:null})?.body.assigneeId,null);
   assert.equal(projectMutation(id,'comment-create',{version:2,taskId:task,body:'Review',
@@ -86,6 +90,7 @@ test('live project UI uses server authorized data and a CSRF-guarded mutation pr
   assert.match(ui,/window.location.reload\(\)/);
   assert.match(ui,/mutate\('member-assign'/);
   assert.match(ui,/mutate\('member-remove'/);
+  assert.match(ui,/mutate\('task-create'/);
   assert.match(ui,/mutate\('task-assign'/);
   assert.match(ui,/mutate\('task-status'/);
   assert.match(ui,/mutate\('comment-create'/);
