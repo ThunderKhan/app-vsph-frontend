@@ -8,6 +8,10 @@ Branch: integration/projects-live-details; this is NOT merged into the organizat
 - Manager-only editing of name, description, priority and due date. Every request includes the currently displayed project version. Backend checks membership, status constraints and optimistic version (conflicts yield 409). The UI never asks for an owner, subscription, entitlement, team grant or customer organization on this path.
 - Same-origin Next.js POST /api/projects and PATCH /api/projects/[id] route handlers forward narrowly validated JSON to a trusted internal API origin, using only the portal session cookie. Bounded request size, exact public Origin requirement, no-store, manual redirect rejection, timeout, sanitized errors and no arbitrary URL/path forwarding.
 - On failed/ambiguous creation, the UI asks the user to inspect their portfolio before retrying so it does not encourage accidental duplicates.
+- Manager-only task/milestone creation and allowed status transitions now use POST /api/projects/:id/tasks, POST /api/projects/:id/milestones, PATCH /api/projects/:id/tasks/:entity and PATCH /api/projects/:id/milestones/:entity. The Next gateway strictly forwards only the selected status or bounded title/description/priority/date fields, plus the current project version. The backend still rejects illegal transitions (including completion with outstanding milestone work).
+- All work item updates require a backend-confirmed UUID and project version increment. The UI holds repeat submissions until the parent page refreshes, and warns to reload after 409/ambiguous errors.
+- An isolated Node HTTP fake backend test exercises the production Next gateway: token/origin enforcement, bad schema and oversized body, successful creation/transition, stale version, and malformed upstream success. No production records were touched.
+
 
 ## Required environment
 - VSPH_INTERNAL_API_ORIGIN: exact approved backend origin (HTTPS, or loopback HTTP in development)
@@ -17,7 +21,8 @@ Branch: integration/projects-live-details; this is NOT merged into the organizat
 
 ## Deliberately not complete
 - Customer project creation (needs approved customer organization selector).
-- Project task, milestone, member, lifecycle, file/deployment, customer grant and product entitlement mutation flows.
+- Task and milestone **creation plus manager-only status transitions** are implemented in the frontend, but still require real staging acceptance. Advanced task editing, assignment, sharing, task comments, dependencies and evidence are NOT connected.
+- Project member, lifecycle, file/deployment, customer grant and product entitlement mutations remain unavailable.
 - Real staging integration, session/tenant acceptance, DB transaction checks or deployed verification.
 - No live Supabase credentials, database changes or external mail/API calls were performed.
 
@@ -29,6 +34,10 @@ Branch: integration/projects-live-details; this is NOT merged into the organizat
 5. Verify customer/client viewers see no edit control; test cross-tenant project GET/PATCH denial.
 6. Missing backend/env returns unavailable and never invents successful project records.
 7. Verify a production build returns 404 on /__preview/workspace and redirects anonymous /projects, /projects/new and /projects/[id] navigation.
+8. With an authorized manager on an active project, create a task and milestone; verify persisted IDs, starting state (todo/planned), private visibility and incremented project version.
+9. Use the lifecycle controls to move task todo → in_progress → in_review → done and milestone planned → active → done (subject to backend outstanding-work rules); confirm unauthorized viewer/client and suspended memberships cannot mutate.
+10. Attempt a second mutation with the previous project version: expect 409, never silent overwrite. Simulate a backend success without valid id/version: frontend reports unconfirmed and requires inspection.
+11. Check task/milestone form usability at mobile widths and browser-only keyboard navigation. Verify customer visibility remains backend-filtered; do not infer project access from product links.
 
 ## Merge queue
 Organization employee entry (#6) then role dashboards (#7), then focused Projects and Operations branches. The current integration branch is stacked after Operations and must be reviewed/rebased after those merge. No additional organization PR was opened here.
