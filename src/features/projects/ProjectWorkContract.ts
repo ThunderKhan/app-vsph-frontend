@@ -1,0 +1,81 @@
+/** A deliberately small, versioned subset of the VSPH project_command API.
+ * Never accept client-selected project roles, assignees, visibility, owners,
+ * permissions, entity IDs or arbitrary backend paths.
+ */
+export type WorkAction = 'task-create' | 'milestone-create' | 'task-status' | 'milestone-status';
+export type WorkBody = {
+  version: number;
+  title?: string;
+  description?: string;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  dueOn?: string;
+  status?: string;
+};
+export type WorkParseResult = { ok: true; data: WorkBody } |
+  { ok: false; error: string };
+
+const allowed: Record<WorkAction, ReadonlySet<string>> = {
+  'task-create': new Set(['version','title','description','priority','dueOn']),
+  'milestone-create': new Set(['version','title','dueOn']),
+  'task-status': new Set(['version','status']),
+  'milestone-status': new Set(['version','status']),
+};
+const priorities = new Set(['low','normal','high','urgent']);
+const taskStatuses = new Set(['todo','in_progress','blocked','in_review','done','cancelled']);
+const milestoneStatuses = new Set(['planned','active','done','cancelled']);
+
+function record(value: unknown): value is Record<string,unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+function date(value: unknown): value is string {
+  if (value === '') return true;
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(value + 'T00:00:00.000Z');
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(value);
+}
+const bad = (): WorkParseResult => ({ ok:false, error:'Check the work item fields and reload if the project changed.' });
+
+/** Strict, exact-key decoding; the trusted backend separately enforces authorization
+ * and permitted lifecycle state transitions under the project lock.
+ */
+export function parseWorkAction(action: WorkAction, value: unknown): WorkParseResult {
+  if (!record(value) || Object.keys(value).some(key => !allowed[action].has(key)) ||
+      !Number.isSafeInteger(value.version) || (value.version as number) < 1 ||
+      (value.version as number) > 999999998) return bad();
+
+  const version = value.version as number;
+  if (action === 'task-create') {
+    if (typeof value.title !== 'string' || !value.title.trim() || value.title.length > 200 ||
+        typeof value.description !== 'string' || value.description.length > 5000 ||
+        !priorities.has(value.priority as string) || !date(value.dueOn)) return bad();
+    return { ok:true, data: { version, title:value.title.trim(), description:value.description,
+      priority:value.priority as WorkBody['priority'], dueOn:value.dueOn as string } };
+  }
+  if (action === 'milestone-create') {
+    if (typeof value.title !== 'string' || !value.title.trim() || value.title.length > 200 ||
+        !date(value.dueOn)) return bad();
+    return { ok:true, data:{version, title:value.title.trim(), dueOn:value.dueOn as string} };
+  }
+  const statuses = action === 'task-status' ? taskStatuses : milestoneStatuses;
+  if (typeof value.status !== 'string' || !statuses.has(value.status)) return bad();
+  return { ok:true, data:{version, status:value.status} };
+}
+
+/** Pure UI aid, not authorization: server checks all transitions again. */
+export function allowedNextStatuses(
+  action: 'task-status' | 'milestone-status', current: string,
+): string[] {
+  if (action === 'milestone-status') {
+    const flow: Record<string,string[]> = {
+      planned:['active','cancelled'], active:['planned','done','cancelled'],
+      done:['active'], cancelled:['planned'],
+    };
+    return flow[current] ?? [];
+  }
+  const flow: Record<string,string[]> = {
+    todo:['in_progress','cancelled'], in_progress:['todo','blocked','in_review'],
+    blocked:['todo','in_progress','cancelled'], in_review:['in_progress','done'],
+    done:['todo'], cancelled:['todo'],
+  };
+  return flow[current] ?? [];
+}
