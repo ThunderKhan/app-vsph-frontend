@@ -4,7 +4,11 @@ import { notFound, redirect } from 'next/navigation';
 import { portalApi } from '@/features/workspace/server-api';
 import { isProjectId, parseProjectDetail, type ProjectDetail } from '@/features/projects/ProjectDetailContract';
 import { ProjectEditForm } from '@/features/projects/ProjectEditForm';
-import { TaskCreateForm, MilestoneCreateForm, TaskStatusForm, MilestoneStatusForm, ProjectCommentForm, ProjectDeliverableForm } from '@/features/projects/ProjectWorkControls';
+import { TaskCreateForm, MilestoneCreateForm, TaskStatusForm, MilestoneStatusForm,
+  ProjectCommentForm, ProjectDeliverableForm, TaskAssignmentForm, TaskCommentForm } from '@/features/projects/ProjectWorkControls';
+import {parseProjectWorkforce,type ProjectWorkforce} from '@/features/projects/ProjectWorkforceContract';
+import {ProjectWorkforcePanel} from '@/features/projects/ProjectWorkforcePanel';
+import {portalIdentity} from '@/features/workspace/contracts';
 import '../../../(preview)/projects.css';
 import '../../../(preview)/project-detail-v2.css';
 import '../../projects-live.css';
@@ -18,13 +22,19 @@ const title = (value: string) => value.replaceAll('_', ' ');
 const date = (value: string | null) => value || '—';
 const views = ['overview','tasks','milestones','team','applications','delivery','engineering','activity'] as const;
 
-function LiveProject({ data }: { data: ProjectDetail }) {
+function LiveProject({ data, workforce, actorId }: { data: ProjectDetail; workforce: ProjectWorkforce|null; actorId:string|null }) {
   const { project: p, role, tasks, milestones, members, products, deliverables, comments, activity } = data;
   const completed = tasks.filter(t => t.status === 'done').length;
   const active = tasks.filter(t => t.status !== 'cancelled');
   // Availability of controls is only UX; project_command rechecks manager authority.
   const canManageWork = role === 'manager' && p.status !== 'completed' && p.status !== 'archived';
-  const canComment = (role === 'manager' || role === 'contributor') && p.status !== 'archived';
+  const canComment = (role === 'manager' || role === 'contributor') &&
+    p.status !== 'archived' && p.status !== 'completed';
+  const canContribute = role === 'contributor' && p.status !== 'archived' && p.status !== 'completed';
+  const assignable = members.filter(m=>m.status==='active' &&
+    (m.role==='manager'||m.role==='contributor')).map(m=>({
+      userId:m.user_id,name:m.full_name||'Member'
+    }));
   return <main className="workspace-content project-workspace project-live-detail" id="mainContent" tabIndex={-1}>
     <header className="project-heading">
       <div>
@@ -54,12 +64,30 @@ function LiveProject({ data }: { data: ProjectDetail }) {
         aria-label="Tasks table, horizontally scrollable" tabIndex={0}>
         <table><thead><tr>
           <th scope="col">Task</th><th scope="col">State</th><th scope="col">Priority</th><th scope="col">Due</th>
-          {canManageWork && <th scope="col">Change status</th>}
+          {(canManageWork || (canContribute && tasks.some(t=>t.assignee_id===actorId))) &&
+            <th scope="col">Change status</th>}
+          {canManageWork && <th scope="col">Assignee</th>}
         </tr></thead><tbody>{tasks.map(task => <tr key={task.id}>
-          <td><strong>{task.title}</strong>{task.description && <small>{task.description}</small>}</td>
+          <td>
+            <strong>{task.title}</strong>{task.description && <small>{task.description}</small>}
+            <details className="project-task-thread">
+              <summary>Discussion ({comments.filter(c=>c.task_id===task.id).length})</summary>
+              <ul className="project-live-rows">
+                {comments.filter(c=>c.task_id===task.id).map(c=>
+                  <li key={c.id}>{c.body}</li>)}
+              </ul>
+              {canComment && <TaskCommentForm projectId={p.id} version={p.version} taskId={task.id}/>}
+            </details>
+          </td>
           <td>{title(task.status)}</td><td>{title(task.priority)}</td><td>{date(task.due_on)}</td>
-          {canManageWork && <td><TaskStatusForm projectId={p.id} version={p.version}
-            entityId={task.id} current={task.status}/></td>}
+          {(canManageWork || (canContribute && tasks.some(t=>t.assignee_id===actorId))) &&
+            <td>{(canManageWork || task.assignee_id===actorId) &&
+              <TaskStatusForm projectId={p.id} version={p.version}
+                entityId={task.id} current={task.status}/>}</td>}
+          {canManageWork && <td>
+            <TaskAssignmentForm projectId={p.id} version={p.version}
+              taskId={task.id} assigneeId={task.assignee_id} members={assignable}/>
+          </td>}
         </tr>)}</tbody></table></div> : <p>No visible tasks.</p>}
     </section>
     <section id="milestones" className="project-v2-card project-live-section" aria-labelledby="live-milestones">
@@ -74,6 +102,10 @@ function LiveProject({ data }: { data: ProjectDetail }) {
     </section>
     <section id="team" className="project-v2-card project-live-section" aria-labelledby="live-team">
       <h2 id="live-team">Project team</h2>
+      {role==='manager' && (workforce ?
+        <ProjectWorkforcePanel context={{projectId:p.id,version:p.version}}
+          data={workforce} ownerId={p.owner_id}/> :
+        <p role="alert" className="project-section-hint">Linked employee directory unavailable. Team changes are disabled.</p>)}
       {members.length ? <ul className="project-live-rows">
         {members.map(m => <li key={m.user_id}>
           <strong>{m.full_name || 'Project member'}</strong>
@@ -96,8 +128,8 @@ function LiveProject({ data }: { data: ProjectDetail }) {
       </ul> : <p>No visible deliverables.</p>}
       <h3>Comments</h3>
       {canComment && <ProjectCommentForm projectId={p.id} version={p.version}/>}
-      {comments.length ? <ul className="project-live-rows">
-        {comments.map(comment => <li key={comment.id}><span>{comment.body}</span></li>)}
+      {comments.some(c=>c.task_id===null) ? <ul className="project-live-rows">
+        {comments.filter(c=>c.task_id===null).map(comment => <li key={comment.id}><span>{comment.body}</span></li>)}
       </ul> : <p>No visible comments.</p>}
     </section>
     <section id="engineering" className="project-v2-card project-live-section" aria-labelledby="live-engineering">
@@ -112,7 +144,7 @@ function LiveProject({ data }: { data: ProjectDetail }) {
         </li>)}</ul> : <p>No visible activity.</p>}
     </section>
     <p className="project-section-hint" role="note">
-      Backend-authorized view. Managers can update tasks, milestones and private delivery evidence; contributors can post private project comments. Assignment, client sharing, team permissions, uploads and deployment integrations are not connected.
+      Backend-authorized view. Managers can assign tasks and govern eligible linked employees; contributors can post private task discussions and work on their assigned tasks. Client sharing, uploads and deployment integrations require separate reviewed workflows.
     </p>
   </main>;
 }
@@ -133,5 +165,13 @@ export default async function ProjectDetailPage({
       Project details unavailable. Check your project access or retry later.
     </p>
   </main>;
-  return <LiveProject data={data}/>;
+  const [workforceResult,identityResult] = await Promise.all([
+    data.role === 'manager' ? portalApi('/api/projects/' + id + '/workforce') : Promise.resolve(null),
+    data.role === 'contributor' ? portalApi('/api/auth/me') : Promise.resolve(null),
+  ]);
+  const workforce = workforceResult?.kind === 'ok' ?
+    parseProjectWorkforce(workforceResult.value) : null;
+  const actorId = identityResult?.kind === 'ok' ?
+    portalIdentity(identityResult.value)?.id ?? null : null;
+  return <LiveProject data={data} workforce={workforce} actorId={actorId}/>;
 }

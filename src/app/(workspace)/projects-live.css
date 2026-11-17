@@ -85,3 +85,19 @@
 
 .project-work-form h4{font-size:1rem;margin:0}
 .project-work-controls .project-work-result[role="status"]{margin-top:8px}
+
+.project-task-thread{margin-top:9px;max-width:520px}
+.project-task-thread>summary{cursor:pointer;color:#0969bb;font-size:13px;font-weight:600}
+.project-task-thread .project-live-rows li{font-size:13px;white-space:normal}
+.project-task-thread .project-work-form{max-width:440px}
+.project-workforce{margin:16px 0;padding:14px;border:1px solid #d4e0ed;border-radius:8px}
+.project-workforce-member{align-items:flex-start}
+.project-workforce-member>div:first-child{flex:1;min-width:180px}
+.project-workforce-actions{display:flex;gap:14px;flex-wrap:wrap}
+.project-workforce-action{display:grid;gap:7px;padding:10px;border:1px solid #dae3ed;border-radius:6px}
+.project-workforce-confirm{display:flex;gap:8px;align-items:flex-start;max-width:240px;font-size:13px}
+.project-workforce-confirm input{margin-top:4px}
+.project-workforce-action>button{border:1px solid #0969bb;background:#fff;color:#0969bb;padding:8px 12px;border-radius:6px;cursor:pointer}
+.project-workforce-action>button:disabled{opacity:.5;cursor:not-allowed}
+.project-workforce .project-live-form{max-width:720px}
+@media(max-width:650px){.project-workforce{padding:10px}.project-workforce-actions{display:grid;width:100%}}
