@@ -353,7 +353,27 @@ try {
 
   const staffPage=await browserPage(staffToken);
   await staffPage.goto('/projects/'+id,{waitUntil:'domcontentloaded'});
-  await staffPage.getByRole('heading',{name,exact:true}).waitFor({timeout:18000});
+  try {
+    await staffPage.getByRole('heading',{name,exact:true}).waitFor({timeout:12000});
+  }catch(error){
+    const permission=await pool.query(
+      'select public.project_permission($1,$2) role',[staffId,id]);
+    const direct=await fetch('http://127.0.0.1:3100/api/projects/'+id,{
+      headers:{Cookie:'vsph.portal.sid='+staffToken}
+    });
+    const detail=await direct.json().catch(()=>null);
+    const {parseProjectDetail}=await import('../src/features/projects/ProjectDetailContract.ts');
+    console.error('Contributor access diagnostic',JSON.stringify({
+      roleInSql:permission.rows[0]?.role,backendStatus:direct.status,
+      responseRole:detail?.role,
+      decoderValid:parseProjectDetail(detail,id)!==null,
+      pageTitle:await staffPage.title(),
+      pageText:(await staffPage.locator('body').innerText()).slice(-1000),
+      memberships:await pool.query('select role,status from project_memberships where project_id=$1 and user_id=$2',[id,staffId]).then(r=>r.rows),
+      links:await pool.query('select status from internal_employee_identity_links where user_id=$1',[staffId]).then(r=>r.rows)
+    }));
+    throw error;
+  }
   await staffPage.getByText('Delegated acceptance task',{exact:true}).first().waitFor({timeout:18000});
   check(await staffPage.getByRole('button',{name:'Save employee access'}).count()===0,
     'Contributor does not see project staffing privileges');
