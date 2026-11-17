@@ -10,15 +10,17 @@ export async function loadLiveProject(id:string): Promise<{
   workforce: ProjectWorkforce|null;
   actorId: string|null;
 }|null>{
-  if(!projectIdPattern.test(id))return null;
-  const result=await portalApi('/api/projects/'+id);
+  const byId=projectIdPattern.test(id);
+  const byKey=/^[A-Z][A-Z0-9-]{1,19}$/.test(id);
+  if(!byId&&!byKey)return null;
+  const result=await portalApi(byId?'/api/projects/'+id:'/api/projects/by-key/'+id);
   if(result.kind==='unauthorized')redirect('/login');
   if(result.kind!=='ok')return null;
   const project=parseLiveProject(result.value);
-  if(!project||project.id.toLowerCase()!==id.toLowerCase())return null;
+  if(!project||(byId?project.id.toLowerCase()!==id.toLowerCase():project.key!==id))return null;
   let workforce:ProjectWorkforce|null=null;
   if(project.role==='manager' && !['completed','archived'].includes(project.status)){
-    const staff=await portalApi('/api/projects/'+id+'/workforce');
+    const staff=await portalApi('/api/projects/'+project.id+'/workforce');
     if(staff.kind==='unauthorized')redirect('/login');
     if(staff.kind==='ok')workforce=parseWorkforce(staff.value);
   }
