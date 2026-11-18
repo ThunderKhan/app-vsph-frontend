@@ -57,3 +57,28 @@
 .admin-live-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .admin-live-job-details{grid-template-columns:repeat(2,minmax(0,1fr))}
 .admin-live-job-actions button{flex:1}}
+
+.admin-live-onboarding{display:grid;gap:20px}
+.admin-live-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.admin-live-form-grid>label{display:grid;gap:7px;font-size:13px;font-weight:650;color:#2b4057}
+.admin-live-onboarding :is(input:not([type=checkbox]),select){min-height:43px;width:100%;
+ border:1px solid #aac1d8;border-radius:7px;padding:10px;background:#fff;
+ color:#223751;font:inherit}
+.admin-live-onboarding input:focus-visible,.admin-live-onboarding select:focus-visible{
+ outline:3px solid #4ac1e8;outline-offset:3px}
+.admin-live-onboarding button,.admin-live-confirm .admin-live-actions button{
+ min-height:42px;border:1px solid #075fa9;border-radius:7px;padding:10px 15px;
+ color:#fff;background:#075fa9;font-weight:650;cursor:pointer}
+.admin-live-onboarding button:disabled,.admin-live-confirm button:disabled{opacity:.55;cursor:not-allowed}
+.admin-live-subsection{border-top:1px solid #d9e5f0;padding-top:20px}
+.admin-live-subsection h3{font-size:17px;margin:0 0 12px}
+.admin-live-products{display:grid;gap:12px;max-width:940px}
+.admin-live-product{border:1px solid #d7e4f0;border-radius:9px;padding:15px}
+.admin-live-product .admin-live-form-grid{margin-top:14px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.admin-live-onboarding .admin-live-actions{justify-content:flex-end}
+.admin-live-onboarding .admin-live-actions a{color:#075fa9;text-decoration:underline}
+.admin-live-workspace .admin-live-actions button{min-height:42px;border:1px solid #075fa9;
+ border-radius:7px;background:#075fa9;color:#fff;padding:10px 14px;font-weight:650;cursor:pointer}
+.admin-live-workspace .admin-live-actions button:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:740px){.admin-live-form-grid,.admin-live-product .admin-live-form-grid{
+ grid-template-columns:1fr}.admin-live-onboarding .admin-live-actions{justify-content:flex-start}}
