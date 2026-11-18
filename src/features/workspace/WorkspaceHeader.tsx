@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { HrAccess, PortalUser } from './contracts';
 
-const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions']);
+const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security']);
 
 type NavItem = { label: string; href: string; show?: boolean };
 type NavGroup = { label: string; items: NavItem[]; show?: boolean };
@@ -184,8 +184,10 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
                       onClick={() => previewAccount('/account/security')}>Security &amp; sessions</button>
                   </>
                 : <>
-                    <span className="portal-link portal-pending" aria-disabled="true">Your profile</span>
-                    <span className="portal-link portal-pending" aria-disabled="true">Security &amp; sessions</span>
+                    <Link className="portal-link" href="/account/profile"
+                      onClick={closeMenu}>Your profile</Link>
+                    <Link className="portal-link" href="/account/security"
+                      onClick={closeMenu}>Security &amp; sessions</Link>
                   </>}
               {previewMode
                 ? <span className="portal-link portal-pending" aria-disabled="true">Sign out unavailable in preview</span>
