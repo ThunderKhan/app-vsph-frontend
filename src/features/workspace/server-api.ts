@@ -148,9 +148,13 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (from===null||validDate(from))&&(to===null||validDate(to))&&
       (from===null||to===null||from<=to);
   }
+  // Platform owner-only administration; backend rechecks active super_admin on every read.
+  const permittedAdminOverview = path === '/api/admin-management/overview';
+  const permittedAdminAudit = path === '/api/admin-management/audit-logs';
+  const permittedProvisioningList = path === '/api/admin-management/onboardings';
   // Inbox and preference reads are always scoped to the current backend session.
   const permittedNotifications = path === '/api/notifications' || path === '/api/notifications/preferences';
-  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal && !permittedProjectReport && !permittedNotifications)
+  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal && !permittedProjectReport && !permittedNotifications && !permittedAdminOverview && !permittedAdminAudit && !permittedProvisioningList)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
