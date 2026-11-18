@@ -45,7 +45,7 @@ export function SessionWorkspace({sessions}:{sessions:readonly OwnSession[]}){
    <section className="account-live-panel">
      <h2>Your active portal sessions</h2>
      <p>Showing up to 100 active sessions. This screen never reveals
-       bearer tokens, session hashes or other accounts' devices.</p>
+       bearer tokens, session hashes or other accounts&apos; devices.</p>
      {error&&<p role="alert" className="account-live-error">{error}</p>}
      {notice&&<p role="status" className="account-live-success">{notice}</p>}
      <div className="account-live-sessions">
