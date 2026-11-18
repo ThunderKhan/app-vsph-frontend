@@ -37,8 +37,10 @@ export function ClientOnboardingWorkspace({products}:{products:readonly CatalogP
    else setSelected(v=>v.filter(x=>x!==id));
  }
  function changeChoice(id:string,change:Partial<ProductInput>){
-   setChoices(v=>({...v,[id]:{planCode:'standard',status:'trial',endsOn:tomorrow(),
-     ...v[id],...change}}));
+   setChoices(v=>{
+     const previous=v[id]??{planCode:'standard',status:'trial' as const,endsOn:tomorrow()};
+     return {...v,[id]:{...previous,...change}};
+   });
  }
  function buildPayload():ClientOnboardingPayload|null{
    const subscriptions:SubscriptionChoice[]=organizationOnly?[]:selected.map(id=>{
