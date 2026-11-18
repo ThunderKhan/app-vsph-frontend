@@ -151,8 +151,8 @@ export function ClientOnboardingWorkspace({products}:{products:readonly CatalogP
        <button type="button" disabled={busy}
          onClick={()=>void checkOriginal()}>Check original request</button>
        {originalMissing&&<>
-         <button type="button" disabled={busy||!original.current}
-           onClick={()=>{if(original.current)void send(original.current);}}>
+         <button type="button" disabled={busy}
+           onClick={()=>{const request=original.current;if(request)void send(request);}}>
            Retry identical request</button>
          <button type="button" disabled={busy}
            onClick={reviewAfterMissing}>Review fields and start a new request</button>
