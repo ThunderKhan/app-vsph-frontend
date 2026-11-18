@@ -40,7 +40,7 @@ export function parsePermissionContext(value:unknown):PermissionContext|null{
      (m.version as number)<1)return null;
    memberIds.add(m.user_id.toLowerCase());
    members.push({userId:m.user_id,name:m.full_name,email:m.email,
-     status:m.status,accountStatus:m.account_status,version:m.version as number});
+     status:String(m.status),accountStatus:m.account_status,version:m.version as number});
  }
  for(const p of value.products){
    if(!obj(p)||!validPermissionId(p.id)||appIds.has(p.id.toLowerCase())||
@@ -61,7 +61,7 @@ export function parsePermissionContext(value:unknown):PermissionContext|null{
    pairs.add(key);
    grants.push({userId:g.user_id,applicationId:g.application_id,role:g.role_code});
  }
- return {id:o.id,name:o.name,status:o.status,members,products,grants};
+ return {id:o.id,name:o.name,status:String(o.status),members,products,grants};
 }
 export type RoleChange=Readonly<{
  userId:string;applicationId:string;version:number;role:string;
