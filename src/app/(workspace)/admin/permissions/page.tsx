@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import Link from 'next/link';
 import {loadPermissionDirectory} from '@/features/operations/permission-server';
 import {PermissionWorkspace} from '@/features/operations/PermissionWorkspace';
-import '../permissions-live.css';
+import '../../permissions-live.css';
 
 export const metadata:Metadata={
  title:'Product roles & permissions | VSPH Control Center',
