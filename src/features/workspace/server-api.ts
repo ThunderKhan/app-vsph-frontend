@@ -153,6 +153,8 @@ export async function portalApi(path: string): Promise<ApiResult> {
   const permittedAdminAudit = path === '/api/admin-management/audit-logs';
   const permittedProvisioningList = path === '/api/admin-management/onboardings';
   const permittedOnboardingLookups = path === '/api/admin-management/lookups';
+  // Fixed, authenticated current-account profile and session reads.
+  const permittedAccountSelfService = path === '/api/account/profile' || path === '/api/account/sessions';
   // Owner-only product registry cursor and item reads; no arbitrary admin API paths.
   const productList=/^\/api\/admin-management\/product-registry(?:\?([^#]*))?$/.exec(path);
   let permittedProductList=false;
@@ -165,7 +167,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
   const permittedProductItem=/^\/api\/admin-management\/product-registry\/item\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path);
   // Inbox and preference reads are always scoped to the current backend session.
   const permittedNotifications = path === '/api/notifications' || path === '/api/notifications/preferences';
-  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal && !permittedProjectReport && !permittedNotifications && !permittedAdminOverview && !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups && !permittedProductList && !permittedProductItem)
+  if (!establishedRead && !permittedProjects && !permittedDetail && !permittedByKey && !permittedCreationDirectory && !permittedEmployees && !permittedEmployeeAccess && !permittedHrList && !permittedCustomers && !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal && !permittedProjectReport && !permittedNotifications && !permittedAdminOverview && !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups && !permittedProductList && !permittedProductItem && !permittedAccountSelfService)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
