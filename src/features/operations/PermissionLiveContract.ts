@@ -45,9 +45,10 @@ export function parsePermissionContext(value:unknown):PermissionContext|null{
  for(const p of value.products){
    if(!obj(p)||!validPermissionId(p.id)||appIds.has(p.id.toLowerCase())||
      !safe(p.code,40)||!safe(p.name,150)||!safe(p.status,40)||
-     !safe(p.access_status,40)||!Array.isArray(p.roles)||
-     p.roles.length>20||p.roles.some(r=>!supportedGrantRole(r)))return null;
-   const roles=[...new Set(p.roles as string[])];
+     !safe(p.access_status,40)||!(p.roles===null||Array.isArray(p.roles))||
+     (Array.isArray(p.roles)&&(p.roles.length>20||
+       p.roles.some((r:unknown)=>!supportedGrantRole(r)))))return null;
+   const roles=[...new Set((p.roles||[]) as string[])];
    appIds.add(p.id.toLowerCase());
    products.push({id:p.id,code:p.code,name:p.name,
      status:p.status,accessStatus:p.access_status,supportedRoles:roles});
