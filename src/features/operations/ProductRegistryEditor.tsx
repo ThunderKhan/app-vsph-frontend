@@ -135,7 +135,12 @@ export function ProductRegistryEditor({product}:{product:ProductRow|null}){
            <input required maxLength={40} pattern="[A-Z][A-Z0-9_]{1,39}"
              readOnly={!!product} disabled={busy}
              value={draft.code}
-             onChange={event=>update('code',event.target.value.toUpperCase())}/>
+             onChange={event=>{
+               const code=event.target.value.toUpperCase();
+               setDraft(previous=>({...previous,code,
+                 integrationMode:['CRM','MUSIC'].includes(code)?'adapter':previous.integrationMode}));
+               setConfirmed(false);setLifecycleConfirmed(false);setError('');setNotice('');
+             }}/>
          </label>
          <label>Name
            <input required maxLength={150} disabled={busy}
