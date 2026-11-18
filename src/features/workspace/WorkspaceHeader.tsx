@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { HrAccess, PortalUser } from './contracts';
 
-const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products']);
+const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions']);
 
 type NavItem = { label: string; href: string; show?: boolean };
 type NavGroup = { label: string; items: NavItem[]; show?: boolean };
@@ -87,7 +87,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
       ] },
     { label: 'Administration', show: isOwner, items: [
       { label: 'Platform administration', href: '/admin' },
-      { label: 'Roles & permissions', href: '/admin?tab=permissions' },
+      { label: 'Roles & permissions', href: '/admin/permissions' },
       { label: 'Provisioning recovery', href: '/admin/provisioning' },
       { label: 'Finance', href: '/admin/finance' },
       { label: 'Finance journal', href: '/admin/finance/journal' },
