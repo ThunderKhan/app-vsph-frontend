@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler",
+  "name": "vsph-coming-soon",
+  "compatibility_date": "2026-11-19",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "single-page-application"
+  }
+}
