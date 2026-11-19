@@ -3,157 +3,236 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#111c19" />
+  <meta name="theme-color" content="#FFFFFF" />
   <meta name="robots" content="noindex, nofollow" />
+  <meta name="description" content="Something new is on the way. VSPH Control Center is launching soon." />
   <title>Coming Soon | VSPH Control Center</title>
-  <meta name="description" content="VSPH Control Center is preparing a new experience. We're coming soon." />
+  <!--
+    Adapted from "Coming Soon 2" by Mohammad Shehadeh / Hirael.
+    Source: https://hirael.com/blocks/not-found/coming-soon-02
+    License: MIT. Reimplemented in dependency-free HTML/CSS for Cloudflare Workers Static Assets.
+    Visual tokens and typography adapted to the VSPH Design System (September 2026).
+  -->
   <style>
     :root {
       color-scheme: light;
-      --ink: #17241e;
-      --muted: #66756d;
-      --paper: #fafaf7;
-      --accent: #315c4d;
-      --line: #e1e7df;
+      --brand-navy: #00255A;
+      --brand-core-blue: #0069C8;
+      --brand-light-blue: #50C0E8;
+      --neutral-white: #FFFFFF;
+      --neutral-grey: #F1F2F2;
+      --muted: #526378;
+      --border: #DDE6F0;
+      --sparkle: #0069C8;
     }
     *, *::before, *::after { box-sizing: border-box; }
-    html, body { min-height: 100%; margin: 0; }
+    html { min-height: 100%; }
     body {
-      display: flex;
-      flex-direction: column;
-      background: var(--paper);
-      color: var(--ink);
-      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100%;
+      margin: 0;
+      background: var(--neutral-white);
+      color: var(--brand-navy);
+      font-family: Inter, Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
-    .shell { width: min(1100px, calc(100% - 48px)); margin-inline: auto; }
-    header { padding-top: 34px; }
-    .brand { display: inline-flex; align-items: center; gap: 13px; text-decoration: none; color: inherit; }
-    .mark {
-      display: grid;
-      place-items: center;
-      width: 39px;
-      height: 39px;
-      border-radius: 11px;
-      background: var(--ink);
-      color: white;
-    }
-    .brand-name { font-size: 17px; font-weight: 700; letter-spacing: .04em; }
-    .brand-detail { color: var(--muted); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; margin-left: 8px; }
-    main {
+    .coming-soon {
+      position: relative;
+      isolation: isolate;
       display: flex;
+      min-height: 100svh;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      flex: 1;
-      padding-block: 80px 110px;
+      overflow: hidden;
+      padding-top: 96px;
     }
-    .hero { text-align: center; max-width: 750px; }
-    .eyebrow {
+    .body {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      width: 100%;
+      max-width: 800px;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding-inline: 24px;
+      text-align: center;
+      animation: body-enter .8s ease-out both;
+    }
+    .badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      border: 1px solid #d4e3d8;
-      color: #385c46;
-      background: #f0f6ef;
-      padding: 10px 14px;
-      border-radius: 100px;
-      font-size: 12px;
-      font-weight: 650;
-      letter-spacing: .07em;
+      justify-content: center;
+      min-height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(241, 242, 242, .72);
+      padding: 6px 16px;
+      color: var(--muted);
+      font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .14em;
+      line-height: 1.4;
       text-transform: uppercase;
+      animation: badge-enter .6s ease-out .3s both;
     }
-    .dot { height: 7px; width: 7px; background: #5b9169; border-radius: 50%; }
     h1 {
-      margin: 31px 0 22px;
-      font-size: clamp(46px, 6.5vw, 84px);
-      line-height: 1.04;
-      font-weight: 590;
-      letter-spacing: -.063em;
+      max-width: 750px;
+      margin: 0;
+      font-size: clamp(36px, 5.6vw, 72px);
+      font-weight: 700;
+      line-height: 1.12;
+      letter-spacing: -.045em;
       text-wrap: balance;
     }
-    h1 span { color: var(--accent); }
-    .lede {
-      margin: 0 auto;
-      max-width: 555px;
+    h1 span {
+      display: inline-block;
+      animation: word-enter .5s ease-out both;
+      animation-delay: calc(.2s + var(--i) * .08s);
+    }
+    h1 .muted { color: var(--muted); }
+    h1 .strong { color: var(--brand-navy); }
+    .description {
+      max-width: 600px;
+      margin: 8px 0 0;
       color: var(--muted);
-      font-size: clamp(16px, 1.7vw, 18px);
-      line-height: 1.8;
+      font-size: clamp(16px, 1.75vw, 18px);
+      font-weight: 400;
+      line-height: 1.65;
       text-wrap: pretty;
+      animation: fade-in .6s ease-out .8s both;
     }
-    .graphic { position: relative; margin: 58px auto 0; width: min(100%, 410px); height: 110px; }
-    .graphic::before {
-      content: "";
+    .actions { margin-top: 16px; animation: action-enter .6s ease-out 1s both; }
+    .status {
+      min-height: 36px;
+      padding: 8px 20px;
+      background: rgba(255,255,255,.86);
+      color: var(--brand-navy);
+      font-family: Inter, Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0;
+      text-transform: none;
+      animation: none;
+    }
+    .horizon {
+      position: relative;
+      width: 100%;
+      height: 384px;
+      flex-shrink: 0;
+      margin-top: -128px;
+      overflow: hidden;
+      -webkit-mask-image: radial-gradient(50% 50% at 50% 50%, #000 0%, transparent 100%);
+      mask-image: radial-gradient(50% 50% at 50% 50%, #000 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .horizon::after {
       position: absolute;
+      z-index: 1;
       top: 50%;
-      left: 3%;
-      width: 94%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #c9d5cb, transparent);
+      left: -50%;
+      width: 200%;
+      aspect-ratio: 1 / .7;
+      border-top: 1px solid var(--border);
+      border-radius: 100%;
+      background: var(--neutral-grey);
+      content: "";
     }
-    .graphic .pill {
+    .horizon-glow {
       position: absolute;
-      top: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 200px;
-      height: 70px;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: #fff;
-      box-shadow: 0 20px 50px rgba(32, 64, 48, .07);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 13px;
+      inset: 0;
+      background: radial-gradient(circle at 50% 100%, rgba(0,105,200,.2), transparent 70%);
+      opacity: .4;
     }
-    .graphic .pill .square { width: 23px; height: 23px; border-radius: 6px; border: 6px solid #365d4b; transform: rotate(-16deg); }
-    .graphic .pill .bar { width: 55px; height: 5px; border-radius: 5px; background: #d6dfd7; box-shadow: 0 11px #e7ece7, 0 -11px #e7ece7; }
-    footer { border-top: 1px solid var(--line); padding: 24px 0 30px; }
-    .foot { display: flex; align-items: center; justify-content: space-between; gap: 20px; color: var(--muted); font-size: 12px; }
-    .foot .descriptor { letter-spacing: .04em; }
-    @media (max-width: 560px) {
-      .shell { width: min(100% - 32px, 1100px); }
-      header { padding-top: 21px; }
-      .brand-detail { display: none; }
-      main { padding-block: 64px 72px; }
-      h1 { margin-top: 25px; font-size: clamp(43px, 12vw, 66px); }
-      .graphic { margin-top: 30px; }
-      .foot { flex-direction: column; align-items: flex-start; gap: 7px; }
+    .sparkles {
+      position: absolute;
+      inset: 0;
+      -webkit-mask-image: radial-gradient(50% 50% at 50% 50%, #000 0%, transparent 85%);
+      mask-image: radial-gradient(50% 50% at 50% 50%, #000 0%, transparent 85%);
     }
-    @media (prefers-reduced-motion: no-preference) {
-      .pill { animation: float 6s ease-in-out infinite; }
-      @keyframes float { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-6px); } }
+    .sparkle {
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      width: var(--size, 2px);
+      height: var(--size, 2px);
+      border-radius: 50%;
+      background: var(--sparkle);
+      opacity: .4;
+      animation: twinkle var(--duration, 5s) ease-in-out var(--delay, 0s) infinite;
+    }
+    .sparkle::after {
+      position: absolute;
+      inset: -3px;
+      border: 1px solid rgba(80,192,232,.2);
+      border-radius: 50%;
+      content: "";
+    }
+    .page-label {
+      position: absolute;
+      z-index: 2;
+      bottom: 24px;
+      padding-inline: 20px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .025em;
+      text-align: center;
+    }
+    @keyframes body-enter { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes badge-enter { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+    @keyframes word-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes action-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes twinkle { 0%, 100% { opacity: .12; transform: scale(.85); } 50% { opacity: .58; transform: scale(1); } }
+    @media (max-width: 640px) {
+      .coming-soon { padding-top: 32px; }
+      .body { gap: 16px; padding-inline: 20px; }
+      h1 { font-size: clamp(36px, 10vw, 50px); line-height: 1.18; letter-spacing: -.035em; }
+      .description { margin-top: 4px; line-height: 1.5; }
+      .actions { margin-top: 12px; }
+      .horizon { height: 290px; margin-top: -68px; }
+      .page-label { bottom: 16px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .body, .badge, h1 span, .description, .actions, .sparkle { animation: none !important; }
     }
   </style>
 </head>
 <body>
-  <header class="shell">
-    <div class="brand" aria-label="VSPH Control Center">
-      <span class="mark" aria-hidden="true">
-        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
-          <path d="m12 2 9 5-9 5-9-5 9-5Z" />
-          <path d="m3 12 9 5 9-5M3 17l9 5 9-5" />
-        </svg>
-      </span>
-      <span class="brand-name">VSPH</span>
-      <span class="brand-detail">Control Center</span>
-    </div>
-  </header>
-  <main class="shell">
-    <section class="hero" aria-labelledby="main-title">
-      <div class="eyebrow"><span class="dot" aria-hidden="true"></span> Work in progress</div>
-      <h1 id="main-title">Something better<br /><span>is coming.</span></h1>
-      <p class="lede">We're preparing the next experience for VSPH Control Center. Our platform will be available soon.</p>
-      <div class="graphic" aria-hidden="true">
-        <div class="pill"><span class="square"></span><span class="bar"></span></div>
+  <main class="coming-soon" data-slot="coming-soon">
+    <div class="body" data-slot="coming-soon-body">
+      <span class="badge" data-slot="coming-soon-badge">Launching soon</span>
+      <h1 data-slot="coming-soon-title" aria-label="Something new is on the way">
+        <span class="muted" style="--i:0">Something&nbsp;</span><span class="muted" style="--i:1">new&nbsp;</span><span class="muted" style="--i:2">is&nbsp;</span><span class="strong" style="--i:3">on&nbsp;</span><span class="strong" style="--i:4">the&nbsp;</span><span class="strong" style="--i:5">way</span>
+      </h1>
+      <p class="description" data-slot="coming-soon-description">
+        We're preparing the next experience for VSPH Control Center. We're finishing the final details and will share more soon.
+      </p>
+      <div class="actions" data-slot="coming-soon-actions">
+        <span class="badge status" data-slot="coming-soon-cta">Coming soon</span>
       </div>
-    </section>
-  </main>
-  <footer>
-    <div class="shell foot">
-      <span>© 2026 VSPH. All rights reserved.</span>
-      <span class="descriptor">Building a better workspace.</span>
     </div>
-  </footer>
+    <div class="horizon" data-slot="coming-soon-horizon" aria-hidden="true">
+      <div class="horizon-glow" data-slot="coming-soon-horizon-glow"></div>
+      <div class="sparkles" data-slot="coming-soon-sparkles">
+        <i class="sparkle" style="--x:23%;--y:28%;--delay:-1s;--size:2px"></i>
+        <i class="sparkle" style="--x:29%;--y:39%;--delay:-3s;--size:3px"></i>
+        <i class="sparkle" style="--x:36%;--y:20%;--delay:-2s"></i>
+        <i class="sparkle" style="--x:42%;--y:41%;--delay:-4s;--duration:6s"></i>
+        <i class="sparkle" style="--x:47%;--y:15%;--delay:-.5s;--size:3px"></i>
+        <i class="sparkle" style="--x:52%;--y:34%;--delay:-3.5s"></i>
+        <i class="sparkle" style="--x:58%;--y:22%;--delay:-2.2s;--size:3px"></i>
+        <i class="sparkle" style="--x:65%;--y:37%;--delay:-1.4s"></i>
+        <i class="sparkle" style="--x:72%;--y:27%;--delay:-4.7s"></i>
+        <i class="sparkle" style="--x:32%;--y:54%;--delay:-2.4s;--size:2px"></i>
+        <i class="sparkle" style="--x:39%;--y:63%;--delay:-3.8s"></i>
+        <i class="sparkle" style="--x:50%;--y:55%;--delay:-1.7s;--size:3px"></i>
+        <i class="sparkle" style="--x:61%;--y:61%;--delay:-3.1s"></i>
+        <i class="sparkle" style="--x:69%;--y:53%;--delay:-2.8s"></i>
+      </div>
+    </div>
+    <div class="page-label">VSPH Control Center</div>
+  </main>
 </body>
 </html>
