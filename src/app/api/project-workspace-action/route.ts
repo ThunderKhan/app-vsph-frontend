@@ -2,6 +2,7 @@ import {type NextRequest,NextResponse} from 'next/server';
 import {approvedInternalOrigin} from '@/features/workspace/server-api';
 import {approvedPublicOrigin,validPortalSession} from '@/features/projects/ProjectProxySecurity';
 import {projectWorkspaceMutation,projectWorkspaceWriteConfirmed} from '@/features/projects/ProjectWorkspaceContract';
+import {readBoundedRequestText} from '@/features/workspace/BoundedRequestBody';
 const headers={'Cache-Control':'no-store'};
 const fail=(status:number,message:string)=>NextResponse.json({message},{status,headers});
 /** Project role, assignment, version and closure are recomputed by PostgreSQL. */
@@ -13,9 +14,9 @@ export async function POST(request:NextRequest){
  const session=request.cookies.get('vsph.portal.sid')?.value;
  if(!validPortalSession(session))return fail(401,'Sign in again.');
  if(!request.headers.get('content-type')?.startsWith('application/json')||
-   Number(request.headers.get('content-length')||0)>4096)return fail(400,'Invalid request body.');
+   Number(request.headers.get('content-length')||0)>8192)return fail(400,'Invalid request body.');
  let data:unknown;
- try{const body=await request.text();if(body.length>4096)return fail(400,'Workspace request too long.');
+ try{const body=await readBoundedRequestText(request,8192);if(body===null)return fail(400,'Workspace request too long.');
   data=JSON.parse(body);}catch{return fail(400,'Invalid JSON.');}
  const operation=projectWorkspaceMutation(data);
  if(!operation)return fail(400,'Invalid project workspace fields or version.');
