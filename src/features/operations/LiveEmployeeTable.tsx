@@ -2,6 +2,7 @@
 
 import {useState,type FormEvent} from 'react';
 import {departments} from './OperationsModels';
+import {EmployeeRemovalPanel} from './EmployeeRemovalPanel';
 import type {EmployeeStatus,EmployeeType,RosterEmployee} from './EmployeeLiveContract';
 
 const statuses:EmployeeStatus[]=['onboarding','active','on_leave','inactive'];
@@ -86,7 +87,9 @@ export function LiveEmployeeTable({employees,role}:{
  employees:readonly RosterEmployee[];role:'owner'|'hr';
 }){
  const [selectedId,setSelectedId]=useState<string|null>(null);
+ const [removeId,setRemoveId]=useState<string|null>(null);
  const selected=employees.find(e=>e.id===selectedId)||null;
+ const removing=employees.find(e=>e.id===removeId)||null;
  return <>
    <div className="employee-live-table" role="region"
      aria-label="Authorized employee records" tabIndex={0}>
@@ -101,10 +104,14 @@ export function LiveEmployeeTable({employees,role}:{
            <td>{display(employee.employmentType)}</td>
            <td>{display(employee.status)}</td>
            <td>{employee.isHr?'HR manager':'Employee'}</td>
-           <td>{canEdit?<button type="button" aria-expanded={selectedId===employee.id}
-             onClick={()=>setSelectedId(selectedId===employee.id?null:employee.id)}>
-             {selectedId===employee.id?'Close':'Edit'}</button>:
-             <span>Owner-managed</span>}</td>
+           <td>{canEdit?<div className="employee-lifecycle-actions">
+             <button type="button" aria-expanded={selectedId===employee.id}
+               onClick={()=>{setRemoveId(null);setSelectedId(selectedId===employee.id?null:employee.id);}}>
+               {selectedId===employee.id?'Close':'Edit'}</button>
+             <button type="button" aria-expanded={removeId===employee.id}
+               onClick={()=>{setSelectedId(null);setRemoveId(removeId===employee.id?null:employee.id);}}>
+               {removeId===employee.id?'Close removal':'Remove'}</button>
+           </div>:<span>Owner-managed</span>}</td>
          </tr>;
        })}</tbody>
      </table>
@@ -112,5 +119,7 @@ export function LiveEmployeeTable({employees,role}:{
    </div>
    {selected&&(role==='owner'||!selected.isHr)&&
      <EmployeeEditor key={selected.id} employee={selected} onClose={()=>setSelectedId(null)}/>}
+   {removing&&(role==='owner'||!removing.isHr)&&
+     <EmployeeRemovalPanel key={removing.id} employee={removing} onClose={()=>setRemoveId(null)}/>}
  </>;
 }
