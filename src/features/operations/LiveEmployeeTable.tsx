@@ -9,7 +9,7 @@ const statuses:EmployeeStatus[]=['onboarding','active','on_leave','inactive'];
 const types:EmployeeType[]=['full_time','part_time','intern','contract'];
 const display=(v:string)=>v.replaceAll('_',' ').replace(/\b\w/g,x=>x.toUpperCase());
 
-function EmployeeEditor({employee,onClose}:{employee:RosterEmployee;onClose:()=>void}){
+function EmployeeEditor({employee,onClose,onBusyChange}:{employee:RosterEmployee;onClose:()=>void;onBusyChange:(busy:boolean)=>void}){
  const [name,setName]=useState(employee.fullName);
  const [department,setDepartment]=useState(employee.department);
  const [jobTitle,setJobTitle]=useState(employee.jobTitle);
@@ -22,7 +22,7 @@ function EmployeeEditor({employee,onClose}:{employee:RosterEmployee;onClose:()=>
  async function save(event:FormEvent<HTMLFormElement>){
    event.preventDefault();
    if(!confirmed||saving||!departments.some(d=>d===department))return;
-   setSaving(true);setError('');
+   setSaving(true);onBusyChange(true);setError('');
    try{
      const response=await fetch('/api/employee-update/'+employee.id,{
        method:'POST',credentials:'same-origin',
@@ -36,7 +36,7 @@ function EmployeeEditor({employee,onClose}:{employee:RosterEmployee;onClose:()=>
      setError(data&&typeof data==='object'&&'message' in data&&
        typeof data.message==='string'?data.message:'Employee update was not saved.');
    }catch{setError('The workforce service is unavailable. No update was confirmed.');}
-   finally{setSaving(false);}
+   finally{setSaving(false);onBusyChange(false);}
  }
  return <section className="employee-live-edit" aria-label={'Edit '+employee.fullName}>
    <div className="employee-live-edit-heading"><div>
@@ -88,6 +88,7 @@ export function LiveEmployeeTable({employees,role}:{
 }){
  const [selectedId,setSelectedId]=useState<string|null>(null);
  const [removeId,setRemoveId]=useState<string|null>(null);
+ const [mutating,setMutating]=useState(false);
  const selected=employees.find(e=>e.id===selectedId)||null;
  const removing=employees.find(e=>e.id===removeId)||null;
  return <>
@@ -105,10 +106,10 @@ export function LiveEmployeeTable({employees,role}:{
            <td>{display(employee.status)}</td>
            <td>{employee.isHr?'HR manager':'Employee'}</td>
            <td>{canEdit?<div className="employee-lifecycle-actions">
-             <button type="button" aria-expanded={selectedId===employee.id}
+             <button type="button" disabled={mutating} aria-expanded={selectedId===employee.id}
                onClick={()=>{setRemoveId(null);setSelectedId(selectedId===employee.id?null:employee.id);}}>
                {selectedId===employee.id?'Close':'Edit'}</button>
-             <button type="button" aria-expanded={removeId===employee.id}
+             <button type="button" disabled={mutating} aria-expanded={removeId===employee.id}
                onClick={()=>{setSelectedId(null);setRemoveId(removeId===employee.id?null:employee.id);}}>
                {removeId===employee.id?'Close removal':'Remove'}</button>
            </div>:<span>Owner-managed</span>}</td>
@@ -118,8 +119,8 @@ export function LiveEmployeeTable({employees,role}:{
      {!employees.length&&<p>No employees match these filters.</p>}
    </div>
    {selected&&(role==='owner'||!selected.isHr)&&
-     <EmployeeEditor key={selected.id} employee={selected} onClose={()=>setSelectedId(null)}/>}
+     <EmployeeEditor key={selected.id} employee={selected} onBusyChange={setMutating} onClose={()=>setSelectedId(null)}/>}
    {removing&&(role==='owner'||!removing.isHr)&&
-     <EmployeeRemovalPanel key={removing.id} employee={removing} onClose={()=>setRemoveId(null)}/>}
+     <EmployeeRemovalPanel key={removing.id} employee={removing} onBusyChange={setMutating} onClose={()=>setRemoveId(null)}/>}
  </>;
 }
