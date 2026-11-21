@@ -2,13 +2,13 @@
 import {useState,type FormEvent} from 'react';
 import type {RosterEmployee} from './EmployeeLiveContract';
 
-export function EmployeeRemovalPanel({employee,onClose}:{employee:RosterEmployee;onClose:()=>void}){
+export function EmployeeRemovalPanel({employee,onClose,onBusyChange}:{employee:RosterEmployee;onClose:()=>void;onBusyChange:(busy:boolean)=>void}){
  const [reason,setReason]=useState(''),[confirmed,setConfirmed]=useState(false);
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();
   if(busy||!confirmed||reason.trim().length<8||reason.trim().length>500)return;
-  setBusy(true);setError('');
+  setBusy(true);onBusyChange(true);setError('');
   try{
    const response=await fetch('/api/employee-lifecycle-action',{
      method:'POST',credentials:'same-origin',cache:'no-store',
@@ -23,7 +23,7 @@ export function EmployeeRemovalPanel({employee,onClose}:{employee:RosterEmployee
        data.message:'Removal unconfirmed. Refresh current employee records before retrying.');
    window.location.reload();
   }catch(e){setError(e instanceof Error?e.message:'Unable to confirm employee removal.');}
-  finally{setBusy(false);}
+  finally{setBusy(false);onBusyChange(false);}
  }
  return <section className="employee-live-edit employee-lifecycle-remove" aria-label={'Remove '+employee.fullName}>
    <h3>Remove employee</h3><p>{employee.fullName} · {employee.email}</p>
