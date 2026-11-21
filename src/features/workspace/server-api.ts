@@ -180,6 +180,8 @@ export async function portalApi(path: string): Promise<ApiResult> {
   // Platform owner-only administration; backend rechecks active super_admin on every read.
   const permittedAdminOverview = path === '/api/admin-management/overview';
   const permittedAdminAudit = path === '/api/admin-management/audit-logs';
+  const permittedOutreachAccess = path === '/api/admin-management/outreach-access';
+  const permittedAdminUsers = path === '/api/admin-management/users';
   const permittedProvisioningList = path === '/api/admin-management/onboardings';
   const permittedOnboardingLookups = path === '/api/admin-management/lookups';
   // Fixed, authenticated current-account profile and session reads.
@@ -223,7 +225,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
