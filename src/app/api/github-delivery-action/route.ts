@@ -1,3 +1,4 @@
+import {readBoundedRequestText} from '@/features/workspace/BoundedRequestBody';
 import {type NextRequest,NextResponse} from 'next/server';
 import {approvedInternalOrigin} from '@/features/workspace/server-api';
 import {approvedPublicOrigin,validPortalSession} from '@/features/projects/ProjectProxySecurity';
@@ -15,7 +16,7 @@ export async function POST(request:NextRequest){
  if(!request.headers.get('content-type')?.startsWith('application/json')||
     Number(request.headers.get('content-length')||0)>2048)return fail(400,'Invalid request body.');
  let raw:unknown;
- try{const txt=await request.text();if(txt.length>2048)return fail(400,'Delivery request too long.');
+ try{const txt=await readBoundedRequestText(request,2048);if(txt===null||txt.length>2048)return fail(400,'Delivery request too long.');
    raw=JSON.parse(txt);}catch{return fail(400,'Invalid JSON.');}
  const command=deliveryCommand(raw);
  if(!command)return fail(400,'Invalid delivery operation or required IDs.');
