@@ -50,7 +50,7 @@ export function parseSearchPage(value:unknown):SearchPage|null{
       typeof v.project_key!=='string'||!/^[A-Z][A-Z0-9-]{1,19}$/.test(v.project_key) ||
       typeof v.project_name!=='string'||!v.project_name.trim()||v.project_name.length>150 ||
       typeof v.title!=='string'||!v.title.trim()||v.title.length>300 ||
-      !['project','task','milestone'].includes(String(v.kind)) ||
+      typeof v.kind!=='string'||!['project','task','milestone'].includes(v.kind) ||
       typeof v.status!=='string'||!searchStatuses.includes(v.status as typeof searchStatuses[number]) ||
       !(v.due_on===null||(typeof v.due_on==='string'&&date(v.due_on)))||
       seen.has(String(v.kind)+':'+v.id))return null;
