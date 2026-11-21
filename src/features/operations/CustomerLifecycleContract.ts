@@ -31,7 +31,7 @@ export function parseCustomerLifecycle(detail:unknown,preview:unknown):CustomerL
  for(const p of detail.products){
   if(!obj(p)||!id(p.id)||seen.has(p.id.toLowerCase())||
      !text(p.name)||!text(p.code,40)||
-     !['enabled','suspended','revoked'].includes(String(p.access_status))||
+     typeof p.access_status!=='string'||!['enabled','suspended','revoked'].includes(p.access_status)||
      !(p.subscription_status===null||['trial','active','past_due','cancelled','expired'].includes(String(p.subscription_status)))||
      !(p.plan_code===null||typeof p.plan_code==='string'&&p.plan_code.length<=60)||
      !(p.starts_at===null||dbTime(p.starts_at))||
