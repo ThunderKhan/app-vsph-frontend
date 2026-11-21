@@ -41,7 +41,7 @@ export default async function OrganizationsPage({searchParams}:{searchParams:Pro
      <p role="alert">The selected organization is unavailable or its current access could not be verified.</p>
      <Link href="/organizations">Return to organizations</Link>
    </main>;
- return <OrganizationWorkspace organizations={organizations} current={model}
+ return <OrganizationWorkspace key={model.organization.id+':'+model.organization.version} organizations={organizations} current={model}
    members={memberRows} invitations={inviteRows}
    organizationAfter={after} memberAfter={memberAfter}/>;
 }
