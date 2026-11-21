@@ -67,6 +67,15 @@ export async function portalApi(path: string): Promise<ApiResult> {
     permittedCalendar=keys.length===2&&new Set(keys).size===2&&keys.includes('from')&&keys.includes('to')&&
       valid(from)&&valid(to)&&Date.parse(to!)>Date.parse(from!)&&Date.parse(to!)-Date.parse(from!)<=370*86400000;
   }
+  // Narrow customer-admin organization read paths, never arbitrary tenant API forwarding.
+  const orgList=/^\/api\/organizations(?:\?afterId=([0-9a-f-]{36}))?$/.exec(path);
+  const orgDetails=/^\/api\/organizations\/([0-9a-f-]{36})(?:\/(members|invitations))?(?:\?afterId=([0-9a-f-]{36}))?$/.exec(path);
+  const validOrgUuid=(v:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+  const permittedOrgRead=Boolean(
+    (orgList&&(!orgList[1]||validOrgUuid(orgList[1])))||
+    (orgDetails&&validOrgUuid(orgDetails[1])&&
+      (!orgDetails[3]||(orgDetails[2]==='members'&&validOrgUuid(orgDetails[3]))))
+  );
   // Employee directory reads are restricted to documented, bounded filters.
   const employeePath = /^\/api\/employees\?([^#]*)$/.exec(path);
   let permittedEmployees = false;
@@ -211,7 +220,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
