@@ -22,7 +22,7 @@ export default async function ProjectManagersPage(){
     </section>
     <section className="manager-panel">
       <h2>Project leadership directory</h2>
-      <p className="muted">The accountable project owner cannot be removed until ownership is transferred. Appointment and revocation happen within the project's Team workspace.</p>
+      <p className="muted">The accountable project owner cannot be removed until ownership is transferred. Appointment and revocation happen within the project&apos;s Team workspace.</p>
       {!rows.length?<p>No active manager appointments found.</p>:
        <div className="manager-table" role="region" tabIndex={0}
          aria-label="Project leadership directory, horizontally scrollable">
