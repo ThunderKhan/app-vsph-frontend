@@ -2,21 +2,28 @@
 import Link from 'next/link';
 import {useState,type FormEvent} from 'react';
 import type {CustomerLifecycleData,CustomerEntitlement,LifecycleStatus} from './CustomerLifecycleContract';
+import type {ProductRow} from './ProductRegistryContract';
 import {entitlementDateInput,entitlementDateValue} from './CustomerEntitlementDates';
 type Terms={planCode:string;subscriptionStatus:string;accessStatus:string;startsAt:string;endsAt:string};
-const fromProduct=(product:CustomerEntitlement):Terms=>({
- planCode:product.planCode||'standard',subscriptionStatus:product.subscriptionStatus||'active',
- accessStatus:product.accessStatus,startsAt:entitlementDateInput(product.startsAt),
- endsAt:entitlementDateInput(product.endsAt)
+const fromProduct=(product:CustomerEntitlement|undefined):Terms=>({
+ planCode:product?.planCode||'standard',subscriptionStatus:product?.subscriptionStatus||'active',
+ accessStatus:product?.accessStatus||'enabled',startsAt:entitlementDateInput(product?.startsAt??null),
+ endsAt:entitlementDateInput(product?.endsAt??null)
 });
-export function CustomerLifecycleWorkspace({model}:{model:CustomerLifecycleData}){
+export function CustomerLifecycleWorkspace({model,registeredProducts,catalogIncomplete}:{
+ model:CustomerLifecycleData;registeredProducts:ProductRow[];catalogIncomplete:boolean;
+}){
  const {organization,products,impact}=model;
  const [status,setStatus]=useState<LifecycleStatus>(organization.status);
  const [reviewStatus,setReviewStatus]=useState(false);
- const [productId,setProductId]=useState(products[0]?.id||'');
+ // Current grants plus registered active products eligible for a first entitlement.
+ const options=[...products.map(p=>({id:p.id,name:p.name,code:p.code})),
+   ...registeredProducts.filter(p=>p.status==='active'&&!products.some(x=>x.id===p.id))
+     .map(p=>({id:p.id,name:p.name,code:p.code}))];
+ const [productId,setProductId]=useState(options[0]?.id||'');
  const chosen=products.find(p=>p.id===productId);
- const [terms,setTerms]=useState<Terms>(products.length?fromProduct(products[0]):{
-  planCode:'standard',subscriptionStatus:'active',accessStatus:'enabled',startsAt:'',endsAt:''});
+ const selected=options.find(p=>p.id===productId);
+ const [terms,setTerms]=useState<Terms>(fromProduct(chosen));
  const [reviewTerms,setReviewTerms]=useState(false),[busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
  const changeTerms=(key:keyof Terms,value:string)=>{setTerms(v=>({...v,[key]:value}));setReviewTerms(false);};
@@ -43,9 +50,9 @@ export function CustomerLifecycleWorkspace({model}:{model:CustomerLifecycleData}
    void submit({action:'status',status});
  }
  function submitTerms(e:FormEvent<HTMLFormElement>){
-   e.preventDefault();if(!chosen||organization.status==='closed')return;
-   const start=entitlementDateValue(terms.startsAt,chosen.startsAt);
-   const end=entitlementDateValue(terms.endsAt,chosen.endsAt);
+   e.preventDefault();if(!selected||organization.status==='closed')return;
+   const start=entitlementDateValue(terms.startsAt,chosen?.startsAt??null);
+   const end=entitlementDateValue(terms.endsAt,chosen?.endsAt??null);
    if(!start.valid||!end.valid||
      (start.value&&end.value&&Date.parse(end.value)<=Date.parse(start.value))){
       setMessage('Review entitlement dates; the end must follow the start.');return;
@@ -54,7 +61,7 @@ export function CustomerLifecycleWorkspace({model}:{model:CustomerLifecycleData}
       setMessage('A trial requires a future ending date.');return;
    }
    if(!reviewTerms){setReviewTerms(true);return;}
-   void submit({action:'entitlement',applicationId:chosen.id,
+   void submit({action:'entitlement',applicationId:selected.id,
      planCode:terms.planCode,subscriptionStatus:terms.subscriptionStatus,
      accessStatus:terms.accessStatus,startsAt:start.value,endsAt:end.value});
  }
@@ -97,17 +104,19 @@ export function CustomerLifecycleWorkspace({model}:{model:CustomerLifecycleData}
      <h2>Product grant and subscription terms</h2>
      <p>Apply the product grant and subscription terms in one audited transaction.
        Existing product sessions are revoked. This is not invoice or payment processing.
-       The chooser includes only products currently linked to this organization.</p>
-     {!products.length?<p>No linked products are available for entitlement changes.</p>:
+       New grants can be created for registered products, including a first product.</p>
+     {catalogIncomplete&&<p role="status">Registered product catalog is incomplete or unavailable. Additional products must be selected through an approved registry workflow.</p>}
+     {!options.length?<p>No eligible registered products are available.</p>:
      <form onSubmit={submitTerms} onChange={()=>setReviewTerms(false)}>
-       <label>Linked product<select value={productId} disabled={busy}
+       <label>Registered product<select value={productId} disabled={busy}
          onChange={e=>{const id=e.target.value;setProductId(id);
            const product=products.find(p=>p.id===id);
-           if(product)setTerms(fromProduct(product));setReviewTerms(false);}}>
-         {products.map(p=><option key={p.id} value={p.id}>{p.name} · {p.code}</option>)}
+           setTerms(fromProduct(product));setReviewTerms(false);}}>
+         {options.map(p=><option key={p.id} value={p.id}>{p.name} · {p.code}</option>)}
        </select></label>
-       {chosen&&<p>Current grant: {chosen.accessStatus}. Subscription: {chosen.subscriptionStatus||'none'}.
-         Existing start: {chosen.startsAt||'none'}, end: {chosen.endsAt||'none'}.</p>}
+       {chosen?<p>Current grant: {chosen.accessStatus}. Subscription: {chosen.subscriptionStatus||'none'}.
+         Existing start: {chosen.startsAt||'none'}, end: {chosen.endsAt||'none'}.</p>:
+         <p>No existing product grant. This transaction will create the first grant and subscription terms.</p>}
        <div className="customer-lifecycle-grid">
          <label>Plan code<input required maxLength={60} pattern="[a-z0-9][a-z0-9_-]{0,59}"
            value={terms.planCode} disabled={busy} onChange={e=>changeTerms('planCode',e.target.value)}/></label>
@@ -124,7 +133,7 @@ export function CustomerLifecycleWorkspace({model}:{model:CustomerLifecycleData}
          <label>End date/time (blank: no end)<input type="datetime-local" value={terms.endsAt}
            disabled={busy} onChange={e=>changeTerms('endsAt',e.target.value)}/></label>
        </div>
-       {reviewTerms&&<p role="status">Review combined product change for {chosen?.name}: 
+       {reviewTerms&&<p role="status">Review combined product change for {selected?.name}: 
          {terms.planCode}, subscription {terms.subscriptionStatus}, grant {terms.accessStatus}.
          Current product sessions will be revoked.</p>}
        <button type="submit" disabled={busy||currentStatus==='closed'}>
