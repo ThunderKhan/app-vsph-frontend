@@ -35,3 +35,13 @@ test('GitHub delivery writes and reads never expose credentials or accept arbitr
  assert.match(get,/parseRepositoryDiscovery/);
  assert.doesNotMatch(post+get,/GITHUB_APP_PRIVATE_KEY|NEXT_PUBLIC_|x-vsph-client-secret/);
 });
+
+test('engineering UI wires all provider-governed commands but never embeds a GitHub token',async()=>{
+ const ui=await read('src/features/projects/EngineeringDeliveryActions.tsx');
+ const parent=await read('src/features/projects/EngineeringDeliveryWorkspace.tsx');
+ for(const action of ["action:'approve'","action:'revoke'","action:'connect'","action:'sync'",
+   "action:'disconnect'","action:'link'"])assert.ok(ui.includes(action),action);
+ assert.match(parent,/EngineeringDeliveryActions/);
+ assert.match(ui,/parseRepositoryDiscovery/);
+ assert.doesNotMatch(ui,/GITHUB_APP_PRIVATE_KEY|Authorization:|Bearer |NEXT_PUBLIC_/);
+});

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {useState} from 'react';
 import type {ProjectDetail} from './ProjectDetailContract';
 import type {DeliveryData} from './EngineeringDeliveryContract';
+import {EngineeringDeliveryActions} from './EngineeringDeliveryActions';
 const kinds=['','commit','contributor','pull','workflow','check','release','tag'] as const;
 const time=(x:string|null)=>!x||Date.parse(x)===0?'Source time unavailable':
  new Date(x).toLocaleString('en-IN');
@@ -29,6 +30,7 @@ export function EngineeringDeliveryWorkspace({project,delivery,platformOwner}:{
        'A platform owner may approve repository installations only after verifying the approved GitHub App and installation scope.':
        'Your project role does not grant platform-level GitHub installation approval.'}</p>
    </section>
+   <EngineeringDeliveryActions project={project} delivery={delivery} platformOwner={platformOwner}/>
    <section className="engineering-panel">
      <h2>Approved installations</h2>
      {delivery.installations.length?delivery.installations.map(g=>

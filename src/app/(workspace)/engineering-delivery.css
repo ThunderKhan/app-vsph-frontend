@@ -12,3 +12,17 @@
 .engineering-delivery .engineering-table:focus-visible,
 .engineering-delivery :is(button,input,select,a):focus-visible{outline:3px solid #5ac8ed;outline-offset:2px}
 @media(max-width:700px){.engineering-delivery{padding:14px}.engineering-delivery .engineering-panel{padding:14px}}
+
+
+.engineering-actions form{display:grid;gap:12px;padding:16px 0;border-bottom:1px solid #dce5ee}
+.engineering-actions form label{display:grid;gap:7px;font-size:13px;font-weight:650}
+.engineering-actions :is(select,input){min-height:42px;width:100%;max-width:460px;border:1px solid #abc0d4;
+ border-radius:6px;padding:9px;color:#22374c;background:#fff;font:inherit}
+.engineering-actions button{border:1px solid #075fa9;border-radius:6px;background:#fff;
+ color:#075fa9;min-height:42px;padding:9px 13px;font-weight:650;cursor:pointer;width:max-content}
+.engineering-actions button:disabled{opacity:.5;cursor:not-allowed}
+.engineering-governance-row{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:13px 0}
+.engineering-repository{display:flex;align-items:center;justify-content:space-between;
+ flex-wrap:wrap;gap:12px;padding:12px 0;border-bottom:1px solid #dce5ee}
+.engineering-actions>section{margin-top:18px}
+@media(max-width:700px){.engineering-actions form{padding:12px 0}}
