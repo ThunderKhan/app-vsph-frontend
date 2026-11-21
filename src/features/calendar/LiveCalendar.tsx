@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useMemo,useRef,useState,type FormEvent} from 'react';
+import {useEffect,useMemo,useState,type FormEvent} from 'react';
 import {parseCalendarPage,type CalendarEvent} from './CalendarContract';
 type View='month'|'week'|'day'|'list';
 const pad=(n:number)=>String(n).padStart(2,'0');
@@ -27,7 +27,7 @@ export function LiveCalendar(){
  const [query,setQuery]=useState(''),[category,setCategory]=useState(''),[color,setColor]=useState(''),[tag,setTag]=useState('');
  const [editor,setEditor]=useState<Editor|null>(null);
  const [formError,setFormError]=useState(''),[confirmDelete,setConfirmDelete]=useState(false);
- const reload=useRef(0);
+ const [reloadKey,setReloadKey]=useState(0);
  const span=useMemo(()=>{
   let from:Date,to:Date;
   if(view==='month'){from=startWeek(new Date(date.getFullYear(),date.getMonth(),1));to=addDays(from,42);}
@@ -51,15 +51,15 @@ export function LiveCalendar(){
     if(!model)throw Error('Invalid calendar response.');
     if(abort.signal.aborted)return;
     setEvents(model.events);setCanCompanySchedule(model.canCompanySchedule);
-    setLoaded(true);setMessage(model.events.length?'':'No events');
+    setLoaded(true);setBusy(false);setMessage(model.events.length?'':'No events');
    }catch(e){
     if(abort.signal.aborted)return;
-    setEvents([]);setLoaded(false);
+    setEvents([]);setLoaded(false);setBusy(false);
     setMessage(e instanceof Error?e.message:'Calendar unavailable.');
    }
   })();
   return ()=>abort.abort();
- },[span,reload.current]);
+ },[span,reloadKey]);
  const availableTags=[...new Set(events.flatMap(e=>e.tags))].sort();
  const filtered=events.filter(e=>(!category||e.category===category)&&(!color||e.color===color)&&
     (!tag||e.tags.includes(tag))&&(!query||
@@ -89,7 +89,7 @@ export function LiveCalendar(){
    if(!response.ok)throw Error(raw&&typeof raw==='object'&&'message' in raw&&typeof raw.message==='string'?
       raw.message:'Event operation was not confirmed. Reload before retrying.');
    setEditor(null);setConfirmDelete(false);setLoaded(false);setMessage('Loading events…');
-   reload.current+=1;setDate(d=>new Date(d.getTime()));
+   setReloadKey(k=>k+1);
   }catch(e){setFormError(e instanceof Error?e.message:'Event operation failed.');setMessage('Event change not confirmed.');}
   finally{setBusy(false);}
  }

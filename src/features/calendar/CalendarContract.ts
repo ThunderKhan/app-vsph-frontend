@@ -30,9 +30,9 @@ export function parseCalendarPage(v:unknown):CalendarPage|null{
      typeof r.title!=='string'||!r.title.trim()||r.title.length>120||
      typeof r.description!=='string'||r.description.length>1000||
      !iso(r.startAt)||!iso(r.endAt)||Date.parse(r.endAt)<=Date.parse(r.startAt)||
-     !categories.includes(r.category as typeof categories[number])||
-     !colors.includes(r.color as typeof colors[number])||
-     !scopes.includes(r.scope as typeof scopes[number])||
+     typeof r.category!=='string'||!categories.includes(r.category as typeof categories[number])||
+     typeof r.color!=='string'||!colors.includes(r.color as typeof colors[number])||
+     typeof r.scope!=='string'||!scopes.includes(r.scope as typeof scopes[number])||
      !Array.isArray(r.tags)||r.tags.length>8||r.tags.some(t=>typeof t!=='string'||t.length>32)||
      !Array.isArray(r.attendees)||r.attendees.length>20||r.attendees.some(t=>typeof t!=='string'||t.length>254)||
      typeof r.meetUrl!=='string'||r.meetUrl.length>300||
