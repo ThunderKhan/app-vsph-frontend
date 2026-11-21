@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { HrAccess, PortalUser } from './contracts';
 
-const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security', '/search', '/my-work', '/admin/project-managers', '/calendar', '/organizations', '/hr/access']);
+const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security', '/search', '/my-work', '/admin/project-managers', '/calendar', '/organizations', '/hr/access', '/employment']);
 
 type NavItem = { label: string; href: string; show?: boolean };
 type NavGroup = { label: string; items: NavItem[]; show?: boolean };
