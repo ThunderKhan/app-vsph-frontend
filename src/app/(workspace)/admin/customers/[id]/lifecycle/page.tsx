@@ -38,6 +38,6 @@ export default async function CustomerLifecyclePage({params,searchParams}:{
      <Link href={'/admin/customers/'+id}>Back to customer</Link>
    </main>;
  return <CustomerLifecycleWorkspace model={model} registeredProducts={registry?.items??[]}
-     catalogIncomplete={registry===null||registry.nextCode!==null}
+     catalogIncomplete={registry===null||registry.nextCode!==null||Boolean(catalogAfter)}
      catalogAfter={catalogAfter} catalogNextCode={registry?.nextCode??null}/>;
 }
