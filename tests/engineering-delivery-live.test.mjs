@@ -22,3 +22,13 @@ test('engineering delivery requires original project authorization and server-ow
  assert.match(page,/portalApi\('\/api\/projects\/'\+id\+'\/delivery'\)/);
  assert.doesNotMatch(page,/ProjectFixtures|OperationsFixtures|NEXT_PUBLIC_|localStorage/);
 });
+
+test('engineering view includes actual observations and never imports demo provider records',async()=>{
+ const ui=await read('src/features/projects/EngineeringDeliveryWorkspace.tsx');
+ const detail=await read('src/app/(workspace)/projects/[id]/page.tsx');
+ assert.match(ui,/delivery.records.filter/);
+ assert.match(ui,/delivery.connections.map/);
+ assert.match(ui,/No repository connections. No development activity is fabricated/);
+ assert.match(detail,/View GitHub delivery evidence/);
+ assert.doesNotMatch(ui+detail,/EngineeringFixtures|sampleGithubRecords|mockProvider|Math.random/);
+});
