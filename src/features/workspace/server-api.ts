@@ -51,6 +51,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (cursor === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cursor));
   }
   const permittedManagerOverview = path === '/api/projects/manager-overview';
+  const permittedProjectWorkspace=/^\/api\/projects\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/workspace$/i.test(path);
   // Project features can use their reviewed directory and key-based detail reads.
   const permittedCreationDirectory = path === '/api/projects/directory';
   const permittedByKey = /^\/api\/projects\/by-key\/[A-Z][A-Z0-9-]{1,19}$/.test(path);
@@ -232,7 +233,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig && !permittedProjectWorkspace)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
