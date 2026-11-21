@@ -36,7 +36,7 @@ function RestoreRecord({record}:{record:ArchivedWorker}){
      {error&&<p role="alert">{error}</p>}
      <label>Restoration reason (8–500 characters)
        <textarea required minLength={8} maxLength={500} rows={3} disabled={busy}
-         value={reason} onChange={e=>{setReason(e.target.value);setConfirmed(false);}}/>
+         value={reason} onChange={e=>{setReason(e.target.value.replace(/[\u0000-\u001f\u007f]/g,' '));setConfirmed(false);}}/>
      </label>
      <label className="employee-live-confirm"><input type="checkbox" checked={confirmed} disabled={busy}
        onChange={e=>setConfirmed(e.target.checked)}/>
