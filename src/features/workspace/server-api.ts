@@ -221,6 +221,8 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (!query.get('from')||!query.get('to')||query.get('from')!<=query.get('to')!) &&
       (!after||/^[123]:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(after));
   }
+  // Current session-bound Music SSO configuration; never expose secrets.
+  const permittedMusicConfig=path==='/api/sso/config/MUSIC';
   // Inbox and preference reads are always scoped to the current backend session.
   const permittedNotifications = path === '/api/notifications' || path === '/api/notifications/preferences';
 
@@ -230,7 +232,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
