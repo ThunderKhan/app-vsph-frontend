@@ -195,6 +195,8 @@ export async function portalApi(path: string): Promise<ApiResult> {
   }
   // Platform owner-only administration; backend rechecks active super_admin on every read.
   const permittedAdminOverview = path === '/api/admin-management/overview';
+  // Current platform owner operating snapshot; backend enforces live owner session.
+  const permittedOwnerSnapshot = path === '/api/admin-management/dashboard';
   const permittedAdminAudit = path === '/api/admin-management/audit-logs';
   const permittedOutreachAccess = path === '/api/admin-management/outreach-access';
   const permittedAdminUsers = path === '/api/admin-management/users';
@@ -243,7 +245,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig && !permittedProjectWorkspace && !permittedEngineeringDelivery && !permittedGithubRepoDiscovery)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig && !permittedProjectWorkspace && !permittedEngineeringDelivery && !permittedGithubRepoDiscovery && !permittedOwnerSnapshot)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {

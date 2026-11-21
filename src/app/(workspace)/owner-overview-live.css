@@ -1,0 +1,31 @@
+.owner-live-overview{max-width:1400px;margin:0 auto;padding:25px 4px}
+.owner-live-header{display:flex;gap:18px;justify-content:space-between;align-items:start;flex-wrap:wrap;margin-bottom:20px}
+.owner-live-header h1{font-size:clamp(27px,3vw,37px);margin:8px 0}
+.owner-live-header p{color:#62768e}
+.owner-live-kicker{font-size:11px;letter-spacing:.11em;font-weight:750;color:#075fa9!important}
+.owner-live-overview a{color:#075fa9}
+.owner-live-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.owner-live-panel{border:1px solid #d7e3ed;border-radius:10px;padding:22px;background:#fff;min-width:0}
+.owner-live-panel h2{font-size:20px;margin:0 0 12px}
+.owner-live-panel h3{font-size:16px;margin-top:18px}
+.owner-live-panel p{color:#556a82;line-height:1.5}
+.owner-live-panel-top{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+.owner-live-hero,.owner-live-finance{grid-column:span 2}
+.owner-live-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.owner-live-facts>div{background:#f4f7fb;padding:14px;border-radius:8px;min-width:0}
+.owner-live-facts dt{font-size:12px;color:#596e85}
+.owner-live-facts dd{margin:7px 0 0;font-size:22px;font-weight:750;overflow-wrap:anywhere}
+.owner-live-muted{color:#62768e;font-size:13px}
+.owner-live-panel progress{width:100%;max-width:540px;min-height:11px}
+.owner-live-panel :is(li){padding:5px 0;overflow-wrap:anywhere}
+.owner-live-months{list-style:none;padding:0;display:grid;gap:8px}
+.owner-live-months li{display:grid;grid-template-columns:80px 1fr 145px;gap:10px;align-items:center;font-size:12px}
+.owner-live-months strong{text-align:right}
+.owner-live-track{display:block;background:#e3edf5;border-radius:5px;height:10px;overflow:hidden}
+.owner-live-track>span{display:block;height:100%;background:#0870bd}
+.owner-live-overview :is(a,progress):focus-visible{outline:3px solid #50c0e8;outline-offset:2px}
+@media(max-width:850px){.owner-live-grid{grid-template-columns:1fr}.owner-live-hero,.owner-live-finance{grid-column:span 1}
+.owner-live-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+.owner-live-months li{grid-template-columns:60px 1fr 90px}}
+@media(max-width:500px){.owner-live-facts{grid-template-columns:1fr 1fr}
+.owner-live-panel{padding:14px}}
