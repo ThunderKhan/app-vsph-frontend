@@ -4,8 +4,8 @@ import {portalApi} from '@/features/workspace/server-api';
 import {hrPermissions} from '@/features/workspace/contracts';
 import {loadEmployeeRoster} from '@/features/operations/employee-server';
 import {HrAccessWorkspace} from '@/features/employee-work/HrAccessWorkspace';
-import '../../(preview)/hrms.css';
-import '../hr-access-live.css';
+import '../../../(preview)/hrms.css';
+import '../../hr-access-live.css';
 export const metadata:Metadata={title:'HR access governance | VSPH',
  robots:{index:false,follow:false}};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

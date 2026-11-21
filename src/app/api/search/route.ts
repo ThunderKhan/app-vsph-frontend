@@ -1,7 +1,6 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {portalApi} from '@/features/workspace/server-api';
 import {parseSearchPage,validatedSearchParams} from '@/features/search/SearchContract';
-export const dynamic='force-dynamic';
 const headers={'Cache-Control':'no-store'};
 const failure=(status:number,message:string)=>NextResponse.json({message},{status,headers});
 export async function GET(request:NextRequest){

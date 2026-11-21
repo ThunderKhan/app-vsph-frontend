@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import Link from 'next/link';
 import {portalApi} from '@/features/workspace/server-api';
 import {parseManagerOverview} from '@/features/operations/ManagerOverviewContract';
-import '../project-managers-live.css';
+import '../../project-managers-live.css';
 export const metadata:Metadata={title:'Project manager governance | VSPH',
  robots:{index:false,follow:false}};
 export default async function ProjectManagersPage(){
