@@ -33,6 +33,10 @@ export function EngineeringDeliveryActions({project,delivery,platformOwner}:{
    if(!response.ok||!data||typeof data!=='object'||!('ok' in data)||data.ok!==true)
       throw Error(data&&typeof data==='object'&&'message' in data&&typeof data.message==='string'?
         data.message:'GitHub operation was not confirmed. Refresh before retrying.');
+   if(body.action==='sync'&&'processed' in data&&data.processed===false){
+     setMessage('Synchronization requested. No provider page was eligible yet; review the next sync time.');
+     return;
+   }
    window.location.reload();
   }catch(err){setMessage(err instanceof Error?err.message:'GitHub operation was not confirmed.');}
   finally{setBusy(false);}
