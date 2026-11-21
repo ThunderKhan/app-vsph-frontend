@@ -218,7 +218,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
   // Literal project work search: fixed keys, bounded query and opaque position cursor.
   const searchMatch=/^\/api\/search\?([^#]*)$/.exec(path);
   let permittedWorkSearch=false;
-  if(searchMatch && searchMatch[1].length<=800){
+  if(searchMatch && searchMatch[1].length<=2048){
     const query=new URLSearchParams(searchMatch[1]);
     const keys=[...query.keys()];
     const q=query.get('q'),kind=query.get('kind'),assignee=query.get('assigneeId'),after=query.get('after');
