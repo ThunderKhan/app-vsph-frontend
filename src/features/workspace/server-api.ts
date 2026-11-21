@@ -83,6 +83,11 @@ export async function portalApi(path: string): Promise<ApiResult> {
   const orgList=/^\/api\/organizations(?:\?afterId=([0-9a-f-]{36}))?$/.exec(path);
   const orgDetails=/^\/api\/organizations\/([0-9a-f-]{36})(?:\/(members|invitations))?(?:\?afterId=([0-9a-f-]{36}))?$/.exec(path);
   const validOrgUuid=(v:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+  // Current-session ownership preview; exact organization and candidate UUIDs only.
+  const ownershipQuery=/^\/api\/organizations\/([0-9a-f-]{36})\/ownership\/preview\?targetUserId=([0-9a-f-]{36})$/i.exec(path);
+  const ownerUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const permittedOwnerTransferPreview=Boolean(ownershipQuery&&
+    ownerUuid.test(ownershipQuery[1])&&ownerUuid.test(ownershipQuery[2]));
   const permittedOrgRead=Boolean(
     (orgList&&(!orgList[1]||validOrgUuid(orgList[1])))||
     (orgDetails&&validOrgUuid(orgDetails[1])&&
@@ -246,7 +251,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig && !permittedProjectWorkspace && !permittedEngineeringDelivery && !permittedGithubRepoDiscovery && !permittedOwnerSnapshot && !permittedOwnActivity)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig && !permittedProjectWorkspace && !permittedEngineeringDelivery && !permittedGithubRepoDiscovery && !permittedOwnerSnapshot && !permittedOwnActivity && !permittedOwnerTransferPreview)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
