@@ -6,16 +6,20 @@ export type ProjectLifecycleAction='archive'|'delete';
 export function projectLifecycleMutation(input:unknown):{
  path:string;body:{version:number;key:string;confirmed:true};projectId:string;operation:ProjectLifecycleAction
 }|null{
- if(!object(input)||Object.keys(input).length!==5||
-    !['operation','projectId','version','key','confirmed'].every(k=>Object.hasOwn(input,k))||
-    !['archive','delete'].includes(String(input.operation))||
-    typeof input.projectId!=='string'||!uuid.test(input.projectId)||
-    typeof input.key!=='string'||!key.test(input.key)||
-    !Number.isSafeInteger(input.version)||(input.version as number)<1||
-    (input.version as number)>999999999||input.confirmed!==true)return null;
- return {path:'/api/projects/'+input.projectId+'/lifecycle/'+input.operation,
-   body:{version:input.version as number,key:input.key,confirmed:true},
-   projectId:input.projectId,operation:input.operation as ProjectLifecycleAction};
+ if(!object(input))return null;
+ const keys=Object.keys(input);
+ if(keys.length!==5||!['operation','projectId','version','key','confirmed']
+   .every(k=>Object.hasOwn(input,k)))return null;
+ const {operation,projectId,version,confirmed}=input;
+ const projectKey=input.key;
+ if((operation!=='archive'&&operation!=='delete')||
+   typeof projectId!=='string'||!uuid.test(projectId)||
+   typeof projectKey!=='string'||!key.test(projectKey)||
+   typeof version!=='number'||!Number.isSafeInteger(version)||
+   version<1||version>999999999||confirmed!==true)return null;
+ return {path:'/api/projects/'+projectId+'/lifecycle/'+operation,
+   body:{version,key:projectKey,confirmed:true},
+   projectId,operation};
 }
 export function projectLifecycleConfirmed(result:unknown,action:ProjectLifecycleAction,id:string,k:string):boolean{
  if(!object(result)||result.id!==id)return false;
