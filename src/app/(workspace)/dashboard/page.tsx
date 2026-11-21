@@ -27,8 +27,8 @@ async function DashboardData() {
     return <LiveOwnerOverview operations={operations.kind==='ok'?parseOwnerOperations(operations.value):null}
       finance={finance.kind==='ok'?parseFinanceOverview(finance.value):null}/>;
   }
-  const access = await portalApi('/api/hrms/access');
-  const flags=access.kind==='ok'?hrPermissions(access.value):null;
+  const employeeAccess = await portalApi('/api/hrms/access');
+  const flags=employeeAccess.kind==='ok'?hrPermissions(employeeAccess.value):null;
   if(flags?.employee){
     const [own,activity]=await Promise.all([
       portalApi('/api/hrms/me'),portalApi('/api/hrms/me/activity')
