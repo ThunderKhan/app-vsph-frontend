@@ -1,3 +1,4 @@
+import {readBoundedRequestText} from '@/features/workspace/BoundedRequestBody';
 import {type NextRequest,NextResponse} from 'next/server';
 import {approvedInternalOrigin} from '@/features/workspace/server-api';
 import {approvedPublicOrigin,validPortalSession} from '@/features/projects/ProjectProxySecurity';
@@ -13,7 +14,7 @@ export async function POST(request:NextRequest){
  if(!request.headers.get('content-type')?.startsWith('application/json')||
    Number(request.headers.get('content-length')||0)>4096)return fail(400,'Invalid request body.');
  let raw:unknown;
- try{const text=await request.text();if(text.length>4096)return fail(400,'Request too long.');raw=JSON.parse(text);}
+ try{const text=await readBoundedRequestText(request,4096);if(text===null||text.length>4096)return fail(400,'Request too long.');raw=JSON.parse(text);}
  catch{return fail(400,'Invalid JSON.');}
  const cmd=organizationMutation(raw);
  if(!cmd)return fail(400,'Invalid organization action or required confirmation.');
