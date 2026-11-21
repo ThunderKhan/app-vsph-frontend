@@ -10,9 +10,9 @@ const localInput=(d:Date)=>dateKey(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes
 const label=(d:Date)=>d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
 type Editor={id:string;version?:number;title:string;description:string;startAt:string;endAt:string;
   category:string;color:string;scope:string;tags:string;attendees:string;meetUrl:string};
-const newEditor=(d=new Date()):Editor=>{
- const start=new Date(d);start.setMinutes(0,0,0);
- if(start.getHours()===0)start.setHours(9);else start.setHours(start.getHours()+1);
+const newEditor=(d=new Date(),preserveTime=false):Editor=>{
+ const start=new Date(d);start.setMinutes(preserveTime?start.getMinutes():0,0,0);
+ if(!preserveTime){if(start.getHours()===0)start.setHours(9);else start.setHours(start.getHours()+1);}
  return {id:crypto.randomUUID(),title:'',description:'',startAt:localInput(start),
    endAt:localInput(new Date(start.getTime()+3600000)),category:'meeting',color:'blue',
    scope:'personal',tags:'',attendees:'',meetUrl:''};
@@ -27,6 +27,7 @@ export function LiveCalendar(){
  const [query,setQuery]=useState(''),[category,setCategory]=useState(''),[color,setColor]=useState(''),[tag,setTag]=useState('');
  const [editor,setEditor]=useState<Editor|null>(null);
  const [formError,setFormError]=useState(''),[confirmDelete,setConfirmDelete]=useState(false);
+ const [mutationError,setMutationError]=useState('');
  const [reloadKey,setReloadKey]=useState(0);
  const span=useMemo(()=>{
   let from:Date,to:Date;
@@ -70,8 +71,9 @@ export function LiveCalendar(){
     new Date(cur.getFullYear(),cur.getMonth()+delta,Math.min(cur.getDate(),28)):
     addDays(cur,delta*(view==='week'?7:1)));
  };
- const changeView=(v:View)=>{setBusy(true);setLoaded(false);setView(v);setMessage('Loading events…');};
+ const changeView=(v:View)=>{if(v===view||busy)return;setBusy(true);setLoaded(false);setView(v);setMessage('Loading events…');};
  const openEvent=(e:CalendarEvent)=>{
+   if(busy)return;
    setConfirmDelete(false);setFormError('');
    setEditor({id:e.id,version:e.version,title:e.title,description:e.description,
      startAt:localInput(new Date(e.startAt)),endAt:localInput(new Date(e.endAt)),
@@ -80,7 +82,8 @@ export function LiveCalendar(){
  };
  const eventEditable=editor?.version===undefined||events.find(e=>e.id===editor.id)?.canEdit===true;
  async function mutate(action:'create'|'save'|'delete',body:Record<string,unknown>){
-  setBusy(true);setFormError('');setMessage('Saving event…');
+  if(busy)return;
+  setMutationError('');setBusy(true);setFormError('');setMessage('Saving event…');
   try{
    const response=await fetch('/api/hrms-calendar-action',{method:'POST',credentials:'same-origin',cache:'no-store',
       headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...body})});
@@ -90,7 +93,8 @@ export function LiveCalendar(){
       raw.message:'Event operation was not confirmed. Reload before retrying.');
    setEditor(null);setConfirmDelete(false);setLoaded(false);setMessage('Loading events…');
    setReloadKey(k=>k+1);
-  }catch(e){setFormError(e instanceof Error?e.message:'Event operation failed.');setMessage('Event change not confirmed.');}
+  }catch(e){const error=e instanceof Error?e.message:'Event operation failed.';
+    setFormError(error);setMutationError(error);setMessage('Event change not confirmed.');}
   finally{setBusy(false);}
  }
  const submit=(e:FormEvent<HTMLFormElement>)=>{
@@ -120,10 +124,14 @@ export function LiveCalendar(){
      category:item.category,color:item.color,scope:item.scope,
      tags:item.tags,attendees:item.attendees,meetUrl:item.meetUrl});
  }
- const selectedEvents=(d:Date)=>filtered.filter(e=>dateKey(new Date(e.startAt))===dateKey(d));
+ const selectedEvents=(d:Date)=>{
+  const begin=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+  const end=addDays(d,1).getTime();
+  return filtered.filter(e=>Date.parse(e.startAt)<end&&Date.parse(e.endAt)>begin);
+ };
  const eventButton=(ev:CalendarEvent,showTime=false)=>
   <button type="button" key={ev.id} className="calendar-event" data-color={ev.color}
-    draggable={ev.canEdit} onDragStart={e=>{if(ev.canEdit)e.dataTransfer.setData('text/plain',ev.id);}}
+    disabled={busy} draggable={ev.canEdit&&!busy} onDragStart={e=>{if(ev.canEdit&&!busy)e.dataTransfer.setData('text/plain',ev.id);}}
     onClick={()=>openEvent(ev)} title={ev.title}>
     {showTime?new Date(ev.startAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' · ':''}{ev.title}
   </button>;
@@ -132,7 +140,7 @@ export function LiveCalendar(){
  return <section className="employee-calendar" aria-labelledby="employeeCalendarTitle">
   <header className="calendar-heading"><h1 id="employeeCalendarTitle">Calendar</h1>
     <div className="calendar-heading-actions"><button type="button" className="calendar-primary"
-      onClick={()=>{setEditor(newEditor());setFormError('');setConfirmDelete(false);}}>New event</button></div>
+      disabled={busy} onClick={()=>{setEditor(newEditor());setFormError('');setConfirmDelete(false);}}>New event</button></div>
   </header>
   <div className="calendar-toolbar">
    <div className="calendar-period"><strong aria-live="polite">{period}</strong>
@@ -154,6 +162,7 @@ export function LiveCalendar(){
     <option value="">All tags</option>{availableTags.map(x=><option key={x}>{x}</option>)}</select>
   </div>
   <p className="calendar-status" role="status">{loaded?filtered.length+' events in view':message}</p>
+  {mutationError&&<p role="alert" className="calendar-status">{mutationError}</p>}
   {loaded&&<div className="calendar-grid">
    {view==='month'?<div className="calendar-month">
     {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=><div className="calendar-day-head" key={d}>{d}</div>)}
@@ -194,8 +203,8 @@ export function LiveCalendar(){
               color:dropped.color,scope:dropped.scope,tags:dropped.tags,attendees:dropped.attendees,
               meetUrl:dropped.meetUrl});
           }}
-          onDoubleClick={()=>{const target=new Date(day);target.setHours(hour,0,0,0);
-            setEditor(newEditor(target));}}>
+          onDoubleClick={()=>{if(busy)return;const target=new Date(day);target.setHours(hour,0,0,0);
+            setEditor(newEditor(target,true));}}>
           {selectedEvents(day).filter(e=>new Date(e.startAt).getHours()===hour).map(e=>eventButton(e,true))}
         </div>)}
       </div>;
@@ -212,32 +221,32 @@ export function LiveCalendar(){
    {formError&&<p role="alert">{formError}</p>}
    <form onSubmit={submit}>
     <div className="calendar-form-grid">
-     <label>Title<input value={editor.title} maxLength={120} required disabled={!eventEditable}
+     <label>Title<input value={editor.title} maxLength={120} required disabled={!eventEditable||busy}
        onChange={e=>setEditor(v=>v&&({...v,title:e.target.value}))}/></label>
-     <label>Category<select value={editor.category} disabled={!eventEditable}
+     <label>Category<select value={editor.category} disabled={!eventEditable||busy}
        onChange={e=>setEditor(v=>v&&({...v,category:e.target.value}))}>
        {['meeting','task','reminder','personal'].map(c=><option key={c}>{c}</option>)}</select></label>
-     <label>Start<input type="datetime-local" required value={editor.startAt} disabled={!eventEditable}
+     <label>Start<input type="datetime-local" required value={editor.startAt} disabled={!eventEditable||busy}
        onChange={e=>setEditor(v=>v&&({...v,startAt:e.target.value}))}/></label>
-     <label>End<input type="datetime-local" required value={editor.endAt} disabled={!eventEditable}
+     <label>End<input type="datetime-local" required value={editor.endAt} disabled={!eventEditable||busy}
        onChange={e=>setEditor(v=>v&&({...v,endAt:e.target.value}))}/></label>
-     <label>Color<select value={editor.color} disabled={!eventEditable}
+     <label>Color<select value={editor.color} disabled={!eventEditable||busy}
        onChange={e=>setEditor(v=>v&&({...v,color:e.target.value}))}>
        {['blue','green','purple','orange','pink','red'].map(c=><option key={c}>{c}</option>)}</select></label>
-     <label>Scope<select value={editor.scope} disabled={!eventEditable}
+     <label>Scope<select value={editor.scope} disabled={!eventEditable||busy}
        onChange={e=>setEditor(v=>v&&({...v,scope:e.target.value}))}>
        <option value="personal">Personal</option><option value="team">Team meeting</option>
        {(canCompanySchedule||editor.scope==='company')&&<option value="company">Company meeting</option>}
      </select></label>
     </div>
-    <label>Description<textarea rows={3} maxLength={1000} value={editor.description} disabled={!eventEditable}
+    <label>Description<textarea rows={3} maxLength={1000} value={editor.description} disabled={!eventEditable||busy}
       onChange={e=>setEditor(v=>v&&({...v,description:e.target.value}))}/></label>
-    <label>Tags (comma separated)<input value={editor.tags} disabled={!eventEditable}
+    <label>Tags (comma separated)<input value={editor.tags} disabled={!eventEditable||busy}
       onChange={e=>setEditor(v=>v&&({...v,tags:e.target.value}))}/></label>
     {editor.scope!=='personal'&&<label>Attendees (comma separated email addresses)
-     <input value={editor.attendees} disabled={!eventEditable}
+     <input value={editor.attendees} disabled={!eventEditable||busy}
        onChange={e=>setEditor(v=>v&&({...v,attendees:e.target.value}))}/></label>}
-    <label>Google Meet URL<input type="url" value={editor.meetUrl} disabled={!eventEditable}
+    <label>Google Meet URL<input type="url" value={editor.meetUrl} disabled={!eventEditable||busy}
       onChange={e=>setEditor(v=>v&&({...v,meetUrl:e.target.value}))}/></label>
     <div className="calendar-form-actions">
      {eventEditable&&<button type="submit" disabled={busy}>{busy?'Saving…':'Save event'}</button>}
