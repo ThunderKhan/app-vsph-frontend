@@ -261,6 +261,12 @@ try{
    return {status:res.status,body:await res.json().catch(()=>null),
      cookies:res.headers.get('set-cookie'),headers:res.headers};
  };
+ const productHome=await fetch(origin+'/apps/crm/home',{
+   headers:{Cookie:combinedCookie},redirect:'manual'});
+ assert.equal(productHome.status,200,'Second-stage sign-in must land on a migrated app home');
+ const productHtml=await productHome.text();
+ assert.match(productHtml,/VSPH APPLICATION WORKSPACE/);
+ assert.match(productHtml,/Application workspace|CRM/);
  assert.equal((await requestApp('/api/apps/CRM/context',{cookie:'vsph.portal.sid='+sid})).status,401,
    'Second stage requires product session, not only portal cookie');
  const current=await requestApp('/api/apps/CRM/context');
