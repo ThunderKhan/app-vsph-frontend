@@ -13,6 +13,7 @@ const sid='p'.repeat(43),appSid='c'.repeat(43),temporarySid='t'.repeat(43);
 const id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const userId='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const calls=[];
+let appEnabled=true;
 const respond=(res,status,data,cookie)=>{
  res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',
    ...(cookie?{'Set-Cookie':cookie}:{})});
@@ -34,6 +35,25 @@ const backend=http.createServer(async(req,res)=>{
      organizations:[{id,name:'Customer A',role:'manager'}],
    });
  }
+ const authorizedApp=req.headers.cookie==='vsph.portal.sid='+sid+'; vsph.crm.sid='+appSid;
+ if(req.method==='GET'&&req.url==='/api/auth/me'){
+  if(req.headers.cookie?.includes('vsph.portal.sid='+sid))return respond(res,200,{user:{id:userId,name:'Worker',email:'worker@example.invalid',platformRole:null}});
+  return respond(res,401,{message:'Invalid session'});
+ }
+ if(req.method==='GET'&&req.url==='/api/hrms/access')return respond(res,200,{employee:false,management:false,governHr:false,pendingLink:false});
+ if(req.method==='GET'&&req.url==='/api/apps/CRM/context'){
+  if(!authorizedApp)return respond(res,401,{message:'Application session required'});
+  if(!appEnabled)return respond(res,403,{message:'Revoked application role'});
+  return respond(res,200,{application:{code:'CRM',name:'CRM',status:'active'},
+   organization:{id,name:'Customer A'},user:{name:'Worker'},role:'manager',
+   capabilities:{createRecords:true},integration:{recordsConfigured:true,
+     heading:'CRM Contacts',externalHealth:'unverified'}});
+ }
+ if(req.method==='GET'&&req.url==='/api/apps/CRM/records'){
+  if(!authorizedApp)return respond(res,401,{message:'Application session required'});
+  if(!appEnabled)return respond(res,403,{message:'Revoked application role'});
+  return respond(res,200,{records:[{id:userId,name:'Contact A',email:'person@example.invalid',company:'Customer A'}]});
+ }
  if(req.method!=='POST'||req.headers.origin!==origin)
    return respond(res,403,{message:'Origin denied'});
  if(req.url==='/api/auth/login'){
@@ -51,6 +71,16 @@ const backend=http.createServer(async(req,res)=>{
      return respond(res,200,{user:{id:userId,name:'Worker',email:'worker@example.invalid'}},
        'vsph.portal.sid='+sid+'; Path=/; Max-Age=14400; HttpOnly; SameSite=Lax');
    return respond(res,401,{message:'Invalid credentials',code:'INVALID_CREDENTIALS'});
+ }
+ if(req.url==='/api/apps/CRM/records'){
+  if(!authorizedApp)return respond(res,401,{message:'Application session required'});
+  if(!appEnabled)return respond(res,403,{message:'Revoked application role'});
+  if(!payload||payload.name!=='New Contact'||payload.email!=='new@example.invalid')return respond(res,400,{message:'Invalid contact'});
+  return respond(res,201,{record:{id:userId,...payload}});
+ }
+ if(req.url==='/api/auth/app-logout'){
+  if(!req.headers.cookie?.includes('vsph.portal.sid='+sid))return respond(res,401,{message:'Sign in first'});
+  return respond(res,200,{message:'Application signed out.'});
  }
  if(req.url==='/api/auth/app-login'){
    if(req.headers.cookie!=='vsph.portal.sid='+sid)
@@ -136,6 +166,47 @@ try{
  assert.match(appLogin.cookie||'',/httponly/i);
  assert.equal((await post('/api/auth/app-login',{...login,app:'CRM',organizationId:userId},
   {cookie:sid})).status,403,'Unauthorized organization denied by backend');
+
+ const combinedCookie='vsph.portal.sid='+sid+'; vsph.crm.sid='+appSid;
+ const requestApp=async(path,{cookie=combinedCookie,method='GET',data=null,
+   requestOrigin=origin}={})=>{
+   const res=await fetch(origin+path,{method,redirect:'manual',cache:'no-store',
+     headers:{Cookie:cookie,...(method==='POST'?{Origin:requestOrigin,
+       'Sec-Fetch-Site':'same-origin','Content-Type':'application/json'}:{})},
+     ...(method==='POST'?{body:JSON.stringify(data)}:{})});
+   return {status:res.status,body:await res.json().catch(()=>null),
+     cookies:res.headers.get('set-cookie'),headers:res.headers};
+ };
+ assert.equal((await requestApp('/api/apps/CRM/context',{cookie:'vsph.portal.sid='+sid})).status,401,
+   'Second stage requires product session, not only portal cookie');
+ const current=await requestApp('/api/apps/CRM/context');
+ assert.equal(current.status,200);
+ assert.equal(current.body?.organization.id,id);
+ assert.equal(current.body?.application.code,'CRM');
+ const rows=await requestApp('/api/apps/CRM/records');
+ assert.equal(rows.status,200);
+ assert.equal(rows.body?.records?.[0]?.first,'Contact A');
+ assert.equal(rows.body?.records?.[0]?.third,'Customer A');
+ assert.ok(!('secret' in rows.body.records[0]));
+ assert.equal((await requestApp('/api/apps/CRM/records',{
+   method:'POST',data:{name:'New Contact',email:'new@example.invalid',company:'Customer A'},
+   requestOrigin:'https://attacker.invalid'})).status,403);
+ assert.equal((await requestApp('/api/apps/CRM/records',{
+   method:'POST',data:{name:'New Contact',email:'new@example.invalid',company:'Customer A',
+     organizationId:userId}})).status,400);
+ const created=await requestApp('/api/apps/CRM/records',{method:'POST',
+   data:{name:'New Contact',email:'new@example.invalid',company:'Customer A'}});
+ assert.equal(created.status,201);assert.equal(created.body?.ok,true);
+ appEnabled=false;
+ assert.equal((await requestApp('/api/apps/CRM/context')).status,403);
+ assert.equal((await requestApp('/api/apps/CRM/records')).status,403);
+ appEnabled=true;
+ const done=await requestApp('/api/auth/app-logout',{method:'POST',data:{app:'CRM'}});
+ assert.equal(done.status,200);assert.equal(done.body?.ok,true);
+ assert.match(done.cookies||'',/vsph\.crm\.sid=/);
+ assert.doesNotMatch(done.cookies||'',/vsph\.portal\.sid=/,'App logout must not clear portal session');
+ assert.ok(calls.some(c=>c.path==='/api/apps/CRM/context'&&c.cookie===combinedCookie));
+
  assert.ok(calls.some(c=>c.path==='/api/auth/login'&&c.origin===origin));
  assert.ok(calls.some(c=>c.path==='/api/auth/app-login'&&c.cookie==='vsph.portal.sid='+sid));
  console.log('Verified portal, MFA, enrollment and application sign-in proxy over production HTTP with isolated backend.');
