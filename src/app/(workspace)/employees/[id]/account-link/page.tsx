@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {portalApi} from '@/features/workspace/server-api';
 import {parseManagerLink} from '@/features/employee-work/IdentityContract';
 import {EmployeeIdentityManager} from '@/features/employee-work/EmployeeIdentityManager';
-import '../../../../employee-identity-live.css';
+import '../../../employee-identity-live.css';
 export const metadata:Metadata={title:'Employee account & access | VSPH',robots:{index:false,follow:false}};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export default async function EmployeeAccountLinkPage({params}:{params:Promise<{id:string}>}){
