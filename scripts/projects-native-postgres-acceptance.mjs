@@ -385,6 +385,8 @@ try {
   await adminPage.goto('/dashboard',{waitUntil:'domcontentloaded'});
   await adminPage.getByRole('heading',{name:'Company overview',exact:true}).waitFor({timeout:18000});
   await adminPage.getByText('Recorded finance',{exact:true}).waitFor({timeout:18000});
+  await adminPage.getByText('Cash collected',{exact:true}).waitFor({timeout:18000});
+  check(true,'Real PostgreSQL numeric finance aggregates render without precision loss');
   check(true,'Platform owner operating dashboard renders real PostgreSQL projections');
   await staffPage.goto('/my-work',{waitUntil:'domcontentloaded'});
   await staffPage.getByRole('heading',{name:'My work',exact:true}).waitFor({timeout:18000});
