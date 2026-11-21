@@ -20,6 +20,9 @@ const TIMESTAMP=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d
 const obj=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const uid=(x:unknown):x is string=>typeof x==='string'&&UUID.test(x);
 const money=(x:unknown):x is string=>typeof x==='string'&&/^(0|[1-9][0-9]{0,22})$/.test(x);
+// PostgreSQL jsonb can represent bigint amounts as safe JSON integers.
+const normalizedMoney=(x:unknown):string|null=>money(x)?x:
+  typeof x==='number'&&Number.isSafeInteger(x)&&x>=0?String(x):null;
 const label=(x:unknown,max=190):x is string=>typeof x==='string'&&
   x.length>0&&x.length<=max&&!/[\u0000-\u001f\u007f]/.test(x);
 const date=(x:unknown):x is string=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&
@@ -43,21 +46,21 @@ export function parseFinanceJournal(input:unknown,kind:JournalKind):JournalPage|
     if(kind==='invoices'){
       if(!label(item.reference,80)||!label(item.organization_name,150)||
         !(item.project_name===null||label(item.project_name,150))||
-        !money(item.amount_paise)||!money(item.collected_paise)||
+        normalizedMoney(item.amount_paise)===null||normalizedMoney(item.collected_paise)===null||
         !date(item.issued_on)||!date(item.due_on)||
         !['issued','void'].includes(String(item.status))||!timestamp(item.created_at))
         return null;
       invoices.push({
         id:item.id,reference:item.reference,organizationName:item.organization_name,
-        projectName:item.project_name as string|null,amountPaise:item.amount_paise,
-        collectedPaise:item.collected_paise,issuedOn:item.issued_on,dueOn:item.due_on,
+        projectName:item.project_name as string|null,amountPaise:normalizedMoney(item.amount_paise)!, 
+        collectedPaise:normalizedMoney(item.collected_paise)!, issuedOn:item.issued_on,dueOn:item.due_on,
         status:item.status as JournalInvoice['status'],createdAt:item.created_at
       });
     }else{
       if(!label(item.invoice_reference,80)||!label(item.payment_reference,100)||
         !label(item.organization_name,150)||
         !(item.project_name===null||label(item.project_name,150))||
-        !money(item.amount_paise)||!date(item.received_on)||
+        normalizedMoney(item.amount_paise)===null||!date(item.received_on)||
         !timestamp(item.recorded_at)||typeof item.reversed!=='boolean')
         return null;
       receipts.push({
@@ -65,7 +68,7 @@ export function parseFinanceJournal(input:unknown,kind:JournalKind):JournalPage|
         paymentReference:item.payment_reference,
         organizationName:item.organization_name,
         projectName:item.project_name as string|null,
-        amountPaise:item.amount_paise,receivedOn:item.received_on,
+        amountPaise:normalizedMoney(item.amount_paise)!, receivedOn:item.received_on,
         recordedAt:item.recorded_at,reversed:item.reversed
       });
     }
