@@ -3,10 +3,14 @@ import { Suspense } from 'react';
 import { DashboardSummary } from '@/features/workspace/DashboardSummary';
 import { loadAuthorizedApps, loadProductAccess, loadWorkspaceCount } from '@/features/workspace/server-data';
 import {portalApi} from '@/features/workspace/server-api';
-import {portalIdentity} from '@/features/workspace/contracts';
+import {portalIdentity,hrPermissions} from '@/features/workspace/contracts';
 import {parseOwnerOperations} from '@/features/workspace/OwnerOperationsContract';
 import {parseFinanceOverview} from '@/features/operations/FinanceOverviewContract';
 import {LiveOwnerOverview} from '@/features/workspace/LiveOwnerOverview';
+import {parseOwnWork} from '@/features/employee-work/OwnWorkContract';
+import {parseEmployeeActivity} from '@/features/workspace/EmployeeActivityContract';
+import {LiveEmployeeOverview} from '@/features/workspace/LiveEmployeeOverview';
+import '../employee-overview-live.css';
 import '../owner-overview-live.css';
 
 export const metadata: Metadata = {
@@ -22,6 +26,19 @@ async function DashboardData() {
     ]);
     return <LiveOwnerOverview operations={operations.kind==='ok'?parseOwnerOperations(operations.value):null}
       finance={finance.kind==='ok'?parseFinanceOverview(finance.value):null}/>;
+  }
+  const access = await portalApi('/api/hrms/access');
+  const flags=access.kind==='ok'?hrPermissions(access.value):null;
+  if(flags?.employee){
+    const [own,activity]=await Promise.all([
+      portalApi('/api/hrms/me'),portalApi('/api/hrms/me/activity')
+    ]);
+    const work=own.kind==='ok'?parseOwnWork(own.value):null;
+    if(!work)return <p role="alert" className="feedback-state error-state">
+      Your current employee identity, session or assigned work could not be verified.
+    </p>;
+    return <LiveEmployeeOverview work={work}
+      activity={activity.kind==='ok'?parseEmployeeActivity(activity.value):null}/>;
   }
   const apps = await loadAuthorizedApps();
   if (!apps) {

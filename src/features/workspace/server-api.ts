@@ -67,6 +67,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
   const permittedByKey = /^\/api\/projects\/by-key\/[A-Z][A-Z0-9-]{1,19}$/.test(path);
   // Own HRMS self-service is bound to the current employee, never arbitrary IDs.
   const ownWorkPath=/^\/api\/hrms\/me(?:\?afterTaskId=([0-9a-fA-F-]{36}))?$/.exec(path);
+  const permittedOwnActivity=path==='/api/hrms/me/activity';
   const permittedMyWork=Boolean(ownWorkPath&&
     (!ownWorkPath[1]||/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ownWorkPath[1])));
   const calendarMatch=/^\/api\/hrms\/calendar\?([^#]*)$/.exec(path);
@@ -245,7 +246,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig && !permittedProjectWorkspace && !permittedEngineeringDelivery && !permittedGithubRepoDiscovery && !permittedOwnerSnapshot)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig && !permittedProjectWorkspace && !permittedEngineeringDelivery && !permittedGithubRepoDiscovery && !permittedOwnerSnapshot && !permittedOwnActivity)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
