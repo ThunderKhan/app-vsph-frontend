@@ -6,10 +6,24 @@ const positive=(v:unknown):v is number=>Number.isSafeInteger(v)&&(v as number)>0
 const count=(v:unknown):v is number=>Number.isSafeInteger(v)&&(v as number)>=0;
 const text=(v:unknown,max=150):v is string=>typeof v==='string'&&!!v.trim()&&v.length<=max&&
  !/[\u0000-\u001f\u007f]/.test(v);
-const iso=(v:unknown):v is string=>typeof v==='string'&&v.length<=35&&
- /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(v)&&!Number.isNaN(Date.parse(v));
-const dbTime=(v:unknown):v is string=>typeof v==='string'&&
- /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(v)&&!Number.isNaN(Date.parse(v));
+const validTimestamp=(value:unknown,offsets:boolean):value is string=>{
+ if(typeof value!=='string'||value.length>40)return false;
+ const match=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))?(Z|[+-]\d{2}:\d{2})$/.exec(value);
+ if(!match||(!offsets&&(match[8]!=='Z'||(match[7]?.length||0)>3)))return false;
+ const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+ if(year<1||month<1||month>12||day<1||day>31||
+   Number(match[4])>23||Number(match[5])>59||Number(match[6])>59)return false;
+ const calendarDate=new Date(match[1]+'-'+match[2]+'-'+match[3]+'T12:00:00Z');
+ if(!Number.isFinite(calendarDate.getTime())||
+    calendarDate.toISOString().slice(0,10)!==match[1]+'-'+match[2]+'-'+match[3])return false;
+ if(match[8]!=='Z'){
+  const hr=Number(match[8].slice(1,3)),min=Number(match[8].slice(4,6));
+  if(hr>14||min>59||(hr===14&&min!==0))return false;
+ }
+ return Number.isFinite(Date.parse(value));
+};
+const iso=(v:unknown):v is string=>validTimestamp(v,false);
+const dbTime=(v:unknown):v is string=>validTimestamp(v,true);
 const exact=(v:Record<string,unknown>,keys:string[])=>Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
 export type LifecycleStatus='active'|'suspended'|'closed';
 export type CustomerEntitlement=ReadOnlyProduct;
