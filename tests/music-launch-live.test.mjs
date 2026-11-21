@@ -7,7 +7,7 @@ const url='https://music.example.test/api/sso/start',id='aaaaaaaa-aaaa-4aaa-8aaa
 test('Music launch never trusts a backend-supplied URL except the server-approved SSO start',()=>{
  assert.equal(trustedMusicStartUrl(url),url);
  for(const bad of ['https://evil.example.test/redirect','javascript:alert(1)',
-   'https://music.example.test/api/sso/start?redirect=x','https://user:pass@music.example.test/api/sso/start'])
+   'https://music.example.test/api/sso/start?redirect=x','https://music.example.test/old/api/sso/start','https://user:pass@music.example.test/api/sso/start'])
    assert.equal(trustedMusicStartUrl(bad),null);
  const reply={enabled:true,startUrl:url,organizations:[{id,name:'Client Org',role:'admin'}]};
  assert.equal(parseMusicLaunch(reply,url)?.organizations[0].id,id);
