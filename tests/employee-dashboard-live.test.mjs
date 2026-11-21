@@ -19,7 +19,7 @@ test('live employee role dashboard comes from own HRMS and audit evidence, not s
  const api=await read('src/features/workspace/server-api.ts');
  const ui=await read('src/features/workspace/LiveEmployeeOverview.tsx');
  assert.match(page,/parseOwnWork/);assert.match(page,/parseEmployeeActivity/);
- assert.match(page,/flags.employee/);assert.match(page,/LiveEmployeeOverview/);
+ assert.match(page,/flags\?\.employee/);assert.match(page,/LiveEmployeeOverview/);
  assert.match(api,/permittedOwnActivity/);
  assert.match(ui,/task completion activity/i);
  assert.doesNotMatch(page+ui,/employeePreviewData|RoleDashboardFixtures|Math.random|sample task completions/);
