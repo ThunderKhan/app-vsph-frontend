@@ -61,3 +61,27 @@ export function safeAuthError(raw:unknown){
  }
  return {message,...(codeValue?{code:codeValue}:{}),...(factors.length?{factors}:{})};
 }
+
+export type ApplicationLoginContext={
+ application:{name:string};email:string;
+ organizations:{id:string;name:string;role:string}[];
+};
+/** Authenticator UI consumes only these scoped, validated backend account fields. */
+export function applicationLoginContext(raw:unknown,requestedCode:string):ApplicationLoginContext|null{
+ if(!obj(raw)||!obj(raw.application)||raw.application.code!==requestedCode||
+   raw.application.status!=='active'||typeof raw.application.name!=='string'||
+   !raw.application.name.trim()||raw.application.name.length>150||
+   typeof raw.email!=='string'||raw.email.length>254||
+   !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw.email)||
+   !Array.isArray(raw.organizations)||raw.organizations.length>500)return null;
+ const organizations:ApplicationLoginContext['organizations']=[],seen=new Set<string>();
+ for(const item of raw.organizations){
+  if(!obj(item)||typeof item.id!=='string'||!uuid.test(item.id)||
+    typeof item.name!=='string'||!item.name.trim()||item.name.length>150||
+    typeof item.role!=='string'||!item.role.trim()||item.role.length>40||
+    seen.has(item.id.toLowerCase()))return null;
+  seen.add(item.id.toLowerCase());
+  organizations.push({id:item.id,name:item.name,role:item.role});
+ }
+ return {application:{name:raw.application.name},email:raw.email,organizations};
+}
