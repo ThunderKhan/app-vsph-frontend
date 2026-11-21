@@ -12,7 +12,8 @@ export function parseManagerOverview(value:unknown):ManagerRecord[]|null{
  for(const row of value.managers){
    if(!obj(row)||typeof row.project_id!=='string'||!uuid.test(row.project_id)||
      typeof row.project_name!=='string'||!row.project_name.trim()||row.project_name.length>150||
-     !['planned','active','paused','completed','archived'].includes(String(row.project_status))||
+     typeof row.project_status!=='string'||
+     !['planned','active','paused','completed','archived'].includes(row.project_status)||
      typeof row.manager_name!=='string'||!row.manager_name.trim()||row.manager_name.length>150||
      !(row.department===null||row.department===undefined||
        (typeof row.department==='string'&&row.department.length<=100))||
