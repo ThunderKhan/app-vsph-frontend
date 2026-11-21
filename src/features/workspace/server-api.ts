@@ -168,6 +168,26 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (afterCode===null||/^[A-Z][A-Z0-9_]{1,39}$/.test(afterCode));
   }
   const permittedProductItem=/^\/api\/admin-management\/product-registry\/item\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path);
+  // Literal project work search: fixed keys, bounded query and opaque position cursor.
+  const searchMatch=/^\\/api\\/search\\?([^#]*)$/.exec(path);
+  let permittedWorkSearch=false;
+  if(searchMatch && searchMatch[1].length<=800){
+    const query=new URLSearchParams(searchMatch[1]);
+    const keys=[...query.keys()];
+    const q=query.get('q'),kind=query.get('kind'),assignee=query.get('assigneeId'),after=query.get('after');
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const date=(v:string)=>/^\\d{4}-\\d{2}-\\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0,10)===v;
+    permittedWorkSearch=keys.length>=1 && keys.length<=9 && new Set(keys).size===keys.length &&
+      keys.every(k=>['q','kind','status','projectId','organizationId','assigneeId','from','to','after'].includes(k)) &&
+      q!==null && q.trim().length>=2 && q.trim().length<=100 && !/[\\u0000-\\u001f\\u007f]/.test(q) &&
+      (kind===null||['all','project','task','milestone'].includes(kind)) &&
+      (!assignee||kind==='task') &&
+      (query.get('status')===null||['','planned','active','paused','completed','archived','todo','in_progress','blocked','in_review','done','cancelled'].includes(query.get('status')!)) &&
+      ['projectId','organizationId','assigneeId'].every(k=>!query.get(k)||uuid.test(query.get(k)!)) &&
+      ['from','to'].every(k=>!query.get(k)||date(query.get(k)!)) &&
+      (!query.get('from')||!query.get('to')||query.get('from')!<=query.get('to')!) &&
+      (!after||/^[123]:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(after));
+  }
   // Inbox and preference reads are always scoped to the current backend session.
   const permittedNotifications = path === '/api/notifications' || path === '/api/notifications/preferences';
 
@@ -177,7 +197,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {

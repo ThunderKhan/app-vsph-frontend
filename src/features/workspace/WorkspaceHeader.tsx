@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { HrAccess, PortalUser } from './contracts';
 
-const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security']);
+const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security', '/search']);
 
 type NavItem = { label: string; href: string; show?: boolean };
 type NavGroup = { label: string; items: NavItem[]; show?: boolean };
@@ -141,11 +141,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
           {previewMode
             ? <button type="button" className="portal-preview-search"
                 onClick={() => onPreviewNavigate?.('/search')}>Search project work</button>
-            : <>
-                <input aria-label="Search work" placeholder="Search work" disabled
-                  title="Search is unavailable until the secured search route is migrated" />
-                <button type="button" disabled>Search</button>
-              </>}
+            : <Link href="/search" className="portal-preview-search" aria-label="Search work">Search project work</Link>}
         </div>
         <div className="crm-header-actions">
           {previewMode
