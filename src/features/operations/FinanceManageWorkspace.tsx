@@ -201,7 +201,7 @@ export function FinanceManageWorkspace({organizations,projects,invoices,receipts
      <p>This correction changes the ledger and is audited. It cannot be undone by
        editing or deleting its historical record.</p>
      <label>Correction reason (8–300 characters)<textarea rows={3} minLength={8} maxLength={300}
-        disabled={busy} value={reason} onChange={e=>{setReason(e.target.value);setConfirmed(false);}}/></label>
+        disabled={busy} value={reason} onChange={e=>{setReason(e.target.value.replace(/[\u0000-\u001f\u007f]/g,' '));setConfirmed(false);}}/></label>
      <label className="finance-manage-confirm">
        <input type="checkbox" checked={confirmed} disabled={busy}
          onChange={e=>setConfirmed(e.target.checked)}/>
