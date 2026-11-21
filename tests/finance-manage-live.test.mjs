@@ -27,5 +27,16 @@ test('finance reads and writes are fixed owner backend operations',async()=>{
  const api=await read('src/features/workspace/server-api.ts');
  assert.match(route,/approvedPublicOrigin/);assert.match(route,/validPortalSession/);
  assert.match(route,/financeWriteConfirmed/);assert.match(api,/permittedFinanceManage/);
- assert.doesNotMatch(route,/NEXT_PUBLIC_|/);
+ assert.doesNotMatch(route,/NEXT_PUBLIC_/);
+});
+
+test('owner ledger management page uses authenticated read endpoints and exact money labels',async()=>{
+ const page=await read('src/app/(workspace)/admin/finance/manage/page.tsx');
+ const ui=await read('src/features/operations/FinanceManageWorkspace.tsx');
+ assert.match(page,/parseFinanceOptions/);assert.match(page,/parseRecentFinance/);
+ assert.match(page,/portalApi\('\/api\/finance'\)/);
+ assert.match(ui,/amountToPaise/);assert.match(ui,/rupeesFromPaise/);
+ assert.match(ui,/pending.current/);assert.match(ui,/Confirm correction/);
+ assert.match(ui,/window.location.reload/);
+ assert.doesNotMatch(page+ui,/OperationsFixtures|Math.random|localStorage/);
 });
