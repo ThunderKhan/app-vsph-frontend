@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { HrAccess, PortalUser } from './contracts';
 
-const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security', '/search', '/my-work', '/admin/project-managers']);
+const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security', '/search', '/my-work', '/admin/project-managers', '/calendar']);
 
 type NavItem = { label: string; href: string; show?: boolean };
 type NavGroup = { label: string; items: NavItem[]; show?: boolean };
@@ -61,6 +61,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
     { label: 'Work', items: [
       { label: 'Projects', href: '/projects' },
       { label: 'My tasks', href: '/my-work', show: flags?.employee === true },
+      { label: 'Calendar', href: '/calendar', show: flags?.employee === true || flags?.management === true },
       { label: 'Reports', href: '/reports' },
       { label: 'Notifications', href: '/notifications' },
     ] },

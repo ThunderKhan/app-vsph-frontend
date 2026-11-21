@@ -58,6 +58,15 @@ export async function portalApi(path: string): Promise<ApiResult> {
   const ownWorkPath=/^\/api\/hrms\/me(?:\?afterTaskId=([0-9a-fA-F-]{36}))?$/.exec(path);
   const permittedMyWork=Boolean(ownWorkPath&&
     (!ownWorkPath[1]||/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ownWorkPath[1])));
+  const calendarMatch=/^\/api\/hrms\/calendar\?([^#]*)$/.exec(path);
+  let permittedCalendar=false;
+  if(calendarMatch&&calendarMatch[1].length<=250){
+    const params=new URLSearchParams(calendarMatch[1]),keys=[...params.keys()];
+    const from=params.get('from'),to=params.get('to');
+    const valid=(v:string|null)=>v!==null&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(v)&&!Number.isNaN(Date.parse(v));
+    permittedCalendar=keys.length===2&&new Set(keys).size===2&&keys.includes('from')&&keys.includes('to')&&
+      valid(from)&&valid(to)&&Date.parse(to!)>Date.parse(from!)&&Date.parse(to!)-Date.parse(from!)<=370*86400000;
+  }
   // Employee directory reads are restricted to documented, bounded filters.
   const employeePath = /^\/api\/employees\?([^#]*)$/.exec(path);
   let permittedEmployees = false;
@@ -202,7 +211,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
