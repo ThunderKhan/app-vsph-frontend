@@ -169,13 +169,41 @@ export function LiveCalendar(){
        </div>
      </div>;
     })}
-   </div>:<div className="calendar-list">
-    {filtered.filter(e=>view==='list'||view==='week'&&
-      new Date(e.startAt)>=startWeek(date)&&new Date(e.startAt)<addDays(startWeek(date),7)||
-      view==='day'&&dateKey(new Date(e.startAt))===dateKey(date)).map(e=>
-        <div className="calendar-list-group" key={e.id}>
-          <strong>{new Date(e.startAt).toLocaleString('en-IN')}</strong>{eventButton(e,true)}
+   </div>:view==='week'||view==='day'?<div className={view==='week'?'calendar-week-grid':'calendar-day-grid'}>
+    <div className="calendar-time-head">Time</div>
+    {(view==='week'?Array.from({length:7},(_,i)=>addDays(startWeek(date),i)):[date])
+      .map(day=><div key={dateKey(day)} className="calendar-time-head">
+        {day.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+      </div>)}
+    {Array.from({length:24},(_,hour)=>{
+      const days=view==='week'?Array.from({length:7},(_,i)=>addDays(startWeek(date),i)):[date];
+      return <div key={'hour:'+hour} className="calendar-hour-fragment" style={{display:'contents'}}>
+        <div className="calendar-timeline-time">{pad(hour)}:00</div>
+        {days.map(day=><div className="calendar-timeline-cell" key={dateKey(day)+':'+hour}
+          onDragOver={e=>e.preventDefault()}
+          onDrop={e=>{
+            e.preventDefault();
+            const dropped=events.find(item=>item.id===e.dataTransfer.getData('text/plain')&&item.canEdit);
+            if(!dropped)return;
+            const target=new Date(day);target.setHours(hour,0,0,0);
+            const duration=Date.parse(dropped.endAt)-Date.parse(dropped.startAt);
+            if(duration<=0)return;
+            void mutate('save',{id:dropped.id,version:dropped.version,title:dropped.title,
+              description:dropped.description,startAt:target.toISOString(),
+              endAt:new Date(target.getTime()+duration).toISOString(),category:dropped.category,
+              color:dropped.color,scope:dropped.scope,tags:dropped.tags,attendees:dropped.attendees,
+              meetUrl:dropped.meetUrl});
+          }}
+          onDoubleClick={()=>{const target=new Date(day);target.setHours(hour,0,0,0);
+            setEditor(newEditor(target));}}>
+          {selectedEvents(day).filter(e=>new Date(e.startAt).getHours()===hour).map(e=>eventButton(e,true))}
         </div>)}
+      </div>;
+    })}
+   </div>:<div className="calendar-list">
+    {filtered.map(e=><div className="calendar-list-group" key={e.id}>
+      <strong>{new Date(e.startAt).toLocaleString('en-IN')}</strong>{eventButton(e,true)}
+    </div>)}
     {!filtered.length&&<p>No events</p>}
    </div>}
   </div>}

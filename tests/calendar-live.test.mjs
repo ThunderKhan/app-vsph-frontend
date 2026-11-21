@@ -16,7 +16,7 @@ test('HRMS calendar uses scoped real legacy RPC and validates event fields',asyn
 });
 test('calendar has four views, real events, create, edit, delete, and drag/drop',async()=>{
  const ui=await read('src/features/calendar/LiveCalendar.tsx');
- for(const phrase of ['month','week','day','list','onDragStart','onDrop','calendar-editor',
+ for(const phrase of ['month','week','day','list','onDragStart','onDrop','calendar-week-grid','calendar-day-grid','calendar-editor',
    "mutate('delete'","mutate('save'","mutate(editor.version?'save':'create'"])
     assert.ok(ui.includes(phrase),phrase);
  assert.doesNotMatch(ui,/RoleDashboardFixtures|localStorage|sessionStorage/);
