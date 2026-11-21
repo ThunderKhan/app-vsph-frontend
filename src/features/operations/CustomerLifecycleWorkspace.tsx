@@ -2,16 +2,12 @@
 import Link from 'next/link';
 import {useState,type FormEvent} from 'react';
 import type {CustomerLifecycleData,CustomerEntitlement,LifecycleStatus} from './CustomerLifecycleContract';
-const readDate=(value:string|null)=>value?new Date(value).toISOString().slice(0,16):'';
-const asUtc=(value:string):string|null=>{
- if(!value)return null;
- const parsed=new Date(value);
- return Number.isFinite(parsed.getTime())?parsed.toISOString():null;
-};
+import {entitlementDateInput,entitlementDateValue} from './CustomerEntitlementDates';
 type Terms={planCode:string;subscriptionStatus:string;accessStatus:string;startsAt:string;endsAt:string};
 const fromProduct=(product:CustomerEntitlement):Terms=>({
  planCode:product.planCode||'standard',subscriptionStatus:product.subscriptionStatus||'active',
- accessStatus:product.accessStatus,startsAt:'',endsAt:readDate(product.endsAt)
+ accessStatus:product.accessStatus,startsAt:entitlementDateInput(product.startsAt),
+ endsAt:entitlementDateInput(product.endsAt)
 });
 export function CustomerLifecycleWorkspace({model}:{model:CustomerLifecycleData}){
  const {organization,products,impact}=model;
@@ -48,18 +44,19 @@ export function CustomerLifecycleWorkspace({model}:{model:CustomerLifecycleData}
  }
  function submitTerms(e:FormEvent<HTMLFormElement>){
    e.preventDefault();if(!chosen||organization.status==='closed')return;
-   const start=asUtc(terms.startsAt),end=asUtc(terms.endsAt);
-   if((terms.startsAt&&!start)||(terms.endsAt&&!end)||
-     (start&&end&&Date.parse(end)<=Date.parse(start))){
+   const start=entitlementDateValue(terms.startsAt,chosen.startsAt);
+   const end=entitlementDateValue(terms.endsAt,chosen.endsAt);
+   if(!start.valid||!end.valid||
+     (start.value&&end.value&&Date.parse(end.value)<=Date.parse(start.value))){
       setMessage('Review entitlement dates; the end must follow the start.');return;
    }
-   if(terms.subscriptionStatus==='trial'&&(!end||Date.parse(end)<=Date.now())){
+   if(terms.subscriptionStatus==='trial'&&(!end.value||Date.parse(end.value)<=Date.now())){
       setMessage('A trial requires a future ending date.');return;
    }
    if(!reviewTerms){setReviewTerms(true);return;}
    void submit({action:'entitlement',applicationId:chosen.id,
      planCode:terms.planCode,subscriptionStatus:terms.subscriptionStatus,
-     accessStatus:terms.accessStatus,startsAt:start,endsAt:end});
+     accessStatus:terms.accessStatus,startsAt:start.value,endsAt:end.value});
  }
  const currentStatus=organization.status;
  return <main className="workspace-content customer-live-workspace customer-lifecycle" id="mainContent" tabIndex={-1}>
@@ -122,7 +119,7 @@ export function CustomerLifecycleWorkspace({model}:{model:CustomerLifecycleData}
            onChange={e=>changeTerms('accessStatus',e.target.value)}>
            {['enabled','suspended','revoked'].map(x=><option key={x}>{x}</option>)}
          </select></label>
-         <label>Start date/time (blank: retain current)<input type="datetime-local" value={terms.startsAt}
+         <label>Start date/time (blank: no start date)<input type="datetime-local" value={terms.startsAt}
            disabled={busy} onChange={e=>changeTerms('startsAt',e.target.value)}/></label>
          <label>End date/time (blank: no end)<input type="datetime-local" value={terms.endsAt}
            disabled={busy} onChange={e=>changeTerms('endsAt',e.target.value)}/></label>
