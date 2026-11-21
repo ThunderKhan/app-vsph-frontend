@@ -29,3 +29,18 @@ test('employee removal UI delegates to protected mutation gateway',async()=>{
  assert.match(route,/confirmedLifecycleResult/);assert.match(table,/EmployeeRemovalPanel/);
  assert.doesNotMatch(route+table,/OperationsFixtures|NEXT_PUBLIC_|localStorage/);
 });
+
+test('archived-employee parser enforces owner-only, bounded, valid record projections',async()=>{
+ const x=await validators();
+ const row={id,full_name:'Worker One',email:'worker@example.invalid',department:'Engineering',
+  job_title:'Engineer',version:3,removed_at:'2026-11-21T08:00:00Z',removal_reason:'Verified departure'};
+ assert.equal(x.archivedWorkers({employees:[row]})?.[0].fullName,'Worker One');
+ assert.equal(x.archivedWorkers({employees:[row,row]}),null);
+ assert.equal(x.archivedWorkers({employees:[{...row,version:0}]}),null);
+ assert.equal(x.archivedWorkers({employees:Array.from({length:101},()=>row)}),null);
+ const proxy=await read('src/features/workspace/server-api.ts');
+ const page=await read('src/app/(workspace)/employees/archived/page.tsx');
+ assert.match(proxy,/permittedArchivedEmployeeRead/);
+ assert.match(page,/archivedWorkers/);
+ assert.doesNotMatch(page,/OperationsFixtures|exampleEmployees/);
+});

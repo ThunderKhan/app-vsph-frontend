@@ -96,6 +96,8 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (search === null || (search.length <= 80 && !/[\u0000-\u001f\u007f]/.test(search)));
   }
   const permittedEmployeeAccess = path === '/api/employees/access';
+  // Archived employee directory is owner-only at the backend; no arbitrary lookups.
+  const permittedArchivedEmployeeRead = path === '/api/employees/archived';
   // Scoped HR leave and attendance reads. Backend performs current HR role checks.
   const hrPath = /^\/api\/hrms\/(leave|attendance)\?([^#]*)$/.exec(path);
   let permittedHrList = false;
@@ -225,7 +227,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {

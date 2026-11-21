@@ -54,6 +54,7 @@ async function EmployeeContent({searchParams}:{searchParams:Promise<Filters>}){
      <div className="employee-live-heading-actions">
        <Link className="employee-live-action" href={employeeUrl(search,status)}>Refresh</Link>
        <Link className="employee-live-action" href="/employees/new">Onboard employee</Link>
+       {roster.role==='owner'&&<Link className="employee-live-action" href="/employees/archived">Archived employees</Link>}
      </div>
    </header>
    <section className="employee-live-summary" aria-label="Workforce summary">
