@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {portalApi} from '@/features/workspace/server-api';
 import {parseCustomerLifecycle} from '@/features/operations/CustomerLifecycleContract';
 import {CustomerLifecycleWorkspace} from '@/features/operations/CustomerLifecycleWorkspace';
+import {loadProductDirectory} from '@/features/operations/product-registry-server';
 import '../../../../customers-live.css';
 import '../../../../customer-lifecycle.css';
 export const metadata:Metadata={title:'Customer lifecycle | VSPH',robots:{index:false,follow:false}};
@@ -12,9 +13,10 @@ export default async function CustomerLifecyclePage({params}:{params:Promise<{id
  if(!uuid.test(id))return <main className="workspace-content customer-live-workspace" id="mainContent">
    <p role="alert">Invalid customer identifier.</p>
  </main>;
- const [detail,impact]=await Promise.all([
+ const [detail,impact,registry]=await Promise.all([
    portalApi('/api/admin-management/customers/'+id),
-   portalApi('/api/admin-management/customers/'+id+'/impact')
+   portalApi('/api/admin-management/customers/'+id+'/impact'),
+   loadProductDirectory(null)
  ]);
  const model=detail.kind==='ok'&&impact.kind==='ok'?
    parseCustomerLifecycle(detail.value,impact.value):null;
@@ -24,5 +26,6 @@ export default async function CustomerLifecyclePage({params}:{params:Promise<{id
      <p role="alert">Current platform-owner authority, organization version, or lifecycle preview could not be verified.</p>
      <Link href={'/admin/customers/'+id}>Back to customer</Link>
    </main>;
- return <CustomerLifecycleWorkspace model={model}/>;
+ return <CustomerLifecycleWorkspace model={model} registeredProducts={registry?.items??[]}
+     catalogIncomplete={registry===null||registry.nextCode!==null}/>;
 }
