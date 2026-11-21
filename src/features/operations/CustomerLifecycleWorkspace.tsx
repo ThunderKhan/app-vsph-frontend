@@ -10,8 +10,9 @@ const fromProduct=(product:CustomerEntitlement|undefined):Terms=>({
  accessStatus:product?.accessStatus||'enabled',startsAt:entitlementDateInput(product?.startsAt??null),
  endsAt:entitlementDateInput(product?.endsAt??null)
 });
-export function CustomerLifecycleWorkspace({model,registeredProducts,catalogIncomplete}:{
+export function CustomerLifecycleWorkspace({model,registeredProducts,catalogIncomplete,catalogAfter,catalogNextCode}:{
  model:CustomerLifecycleData;registeredProducts:ProductRow[];catalogIncomplete:boolean;
+ catalogAfter:string;catalogNextCode:string|null;
 }){
  const {organization,products,impact}=model;
  const [status,setStatus]=useState<LifecycleStatus>(organization.status);
@@ -105,7 +106,15 @@ export function CustomerLifecycleWorkspace({model,registeredProducts,catalogInco
      <p>Apply the product grant and subscription terms in one audited transaction.
        Existing product sessions are revoked. This is not invoice or payment processing.
        New grants can be created for registered products, including a first product.</p>
-     {catalogIncomplete&&<p role="status">Registered product catalog is incomplete or unavailable. Additional products must be selected through an approved registry workflow.</p>}
+     {catalogIncomplete&&<p role="status">This page does not show the complete registered product catalog.
+       Navigate catalog pages to find the product you want to grant. If the registry is unavailable,
+       existing grants can still be reviewed.</p>}
+     <nav className="customer-live-actions" aria-label="Registered product catalog pagination">
+       {catalogAfter&&<Link href={'/admin/customers/'+organization.id+'/lifecycle'}>
+         First registered products page</Link>}
+       {catalogNextCode&&<Link href={'/admin/customers/'+organization.id+'/lifecycle?catalogAfter='+encodeURIComponent(catalogNextCode)}>
+         Next registered products page</Link>}
+     </nav>
      {!options.length?<p>No eligible registered products are available.</p>:
      <form onSubmit={submitTerms} onChange={()=>setReviewTerms(false)}>
        <label>Registered product<select value={productId} disabled={busy}
