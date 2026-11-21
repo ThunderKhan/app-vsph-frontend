@@ -5,6 +5,7 @@ on:
     branches:
       - integration/projects-live-details
       - integration/ops-live-on-projects-20261119
+      - migration/remaining-frontend-parity
   workflow_dispatch:
 
 permissions:

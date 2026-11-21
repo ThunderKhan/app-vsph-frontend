@@ -52,11 +52,17 @@ jobs:
             echo "Production preview must return 404; got $preview_status"
             exit 1
           fi
-          dashboard_status=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/dashboard)
-          case "$dashboard_status" in
-            302|303|307|308) echo "Anonymous dashboard redirects: $dashboard_status" ;;
-            *) echo "Anonymous dashboard must redirect; got $dashboard_status"; exit 1 ;;
-          esac
+          # Every authenticated workspace route must redirect before streaming content.
+          for protected_path in /dashboard /applications /projects /search /my-work /admin \
+            /calendar /organizations /employment /employees /apps/music/launch \
+            /reports /notifications /account/profile /account/security /hr; do
+            status=$(curl -s -o /dev/null -w '%{http_code}' \
+              "http://127.0.0.1:3000$protected_path")
+            case "$status" in
+              302|303|307|308) echo "Anonymous $protected_path redirects: $status" ;;
+              *) echo "Anonymous $protected_path must redirect; got $status"; exit 1 ;;
+            esac
+          done
 
       - name: Verify project write gateway against isolated mock backend
         run: node scripts/projects-write-http-smoke.mjs
