@@ -47,7 +47,7 @@ export function EmploymentWorkspace({data}:{data:PersonalIdentity}){
     <p>{r.department} · {r.job_title} · expires {new Date(r.expires_at).toLocaleString()}</p>
     {r.current_roster_version!==r.roster_version?
       <p>This roster changed. Ask the issuer to renew the request before accepting.</p>:
-      current!==r.id?<button type="button" onClick={()=>{setCurrent(r.id);setPassword('');setAgreed(false);setFactors([]);}}>
+      current!==r.id?<button type="button" onClick={()=>{setCurrent(r.id);setPassword('');setTotpCode('');setFactorId('');setAgreed(false);setFactors([]);}}>
        Review account link</button>:
       <form onSubmit={e=>void accept(r,e)}>
         <label>Confirm your password<input type="password" autoComplete="current-password"
