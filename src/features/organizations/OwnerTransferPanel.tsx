@@ -63,7 +63,7 @@ export function OwnerTransferPanel({organizationId,members}:{organizationId:stri
  }
  return <div className="org-owner-transfer">
    <p>Only the current sole active owner may transfer to an accepted active administrator.
-      Your account becomes an administrator, and both users' organization sessions are revoked.
+      Your account becomes an administrator, and both users&apos; organization sessions are revoked.
       Product grants, subscriptions and project memberships are preserved.</p>
    {!eligible.length?<p>No eligible active administrator on this members page. Review the next members page
        or ask VSPH to verify the administrator account.</p>:<>
@@ -103,7 +103,7 @@ export function OwnerTransferPanel({organizationId,members}:{organizationId:stri
        <input type="checkbox" required checked={agreed} disabled={busy}
          onChange={e=>setAgreed(e.target.checked)}/>
        I confirm that I will become an administrator and that the selected active
-       administrator will become this organization's owner.
+       administrator will become this organization&apos;s owner.
      </label>
      <div className="org-actions">
        <button type="submit" disabled={busy||!agreed||!password||
