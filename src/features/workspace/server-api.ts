@@ -53,6 +53,15 @@ export async function portalApi(path: string): Promise<ApiResult> {
   const permittedManagerOverview = path === '/api/projects/manager-overview';
   const permittedProjectWorkspace=/^\/api\/projects\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/workspace$/i.test(path);
   const permittedEngineeringDelivery=/^\/api\/projects\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/delivery$/i.test(path);
+  const githubRepos=/^\/api\/projects\/([0-9a-f-]{36})\/delivery\/repositories\?([^#]*)$/i.exec(path);
+  let permittedGithubRepoDiscovery=false;
+  if(githubRepos&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(githubRepos[1])){
+    const p=new URLSearchParams(githubRepos[2]),keys=[...p.keys()],install=p.get('installationId'),page=p.get('page');
+    permittedGithubRepoDiscovery=keys.length===2&&new Set(keys).size===2&&
+      keys.includes('installationId')&&keys.includes('page')&&
+      install!==null&&/^[1-9][0-9]{0,14}$/.test(install)&&
+      page!==null&&/^[1-9][0-9]?$/.test(page)&&Number(page)<=50;
+  }
   // Project features can use their reviewed directory and key-based detail reads.
   const permittedCreationDirectory = path === '/api/projects/directory';
   const permittedByKey = /^\/api\/projects\/by-key\/[A-Z][A-Z0-9-]{1,19}$/.test(path);
@@ -234,7 +243,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig && !permittedProjectWorkspace && !permittedEngineeringDelivery)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig && !permittedProjectWorkspace && !permittedEngineeringDelivery && !permittedGithubRepoDiscovery)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {
