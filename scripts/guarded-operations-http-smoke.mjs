@@ -25,7 +25,8 @@ const backend=http.createServer(async(req,res)=>{
  try{parsed=body?JSON.parse(body):null;}
  catch{return respond(res,400,{message:'Malformed test request'});}
  upstreamCalls.push({path:req.url,method:req.method,origin:req.headers.origin,
-   cookie:req.headers.cookie,key:req.headers['idempotency-key']||null,body:parsed});
+   cookie:req.headers.cookie,key:req.headers['idempotency-key']||null,
+   stepUp:req.headers['x-vsph-step-up']||null,body:parsed});
  if(req.headers.cookie!=='vsph.portal.sid='+sid||req.headers.origin!==origin)
    return respond(res,403,{message:'Mock rejected origin or session'});
  const path=req.url;
@@ -46,6 +47,19 @@ const backend=http.createServer(async(req,res)=>{
    return respond(res,200,{saved:true});
  if(path==='/api/hrms/me/leave')
    return respond(res,200,{id,status:'pending'});
+ if(path==='/api/organizations/'+id+'/ownership/reauthenticate'){
+   if(parsed.password==='requires-authenticator')
+     return respond(res,428,{code:'MFA_REQUIRED',factors:[{id:key,name:'Authenticator'}]});
+   if(parsed.password!=='correct-current-password')
+     return respond(res,422,{code:'INVALID_CREDENTIALS'});
+   return respond(res,200,{proof:'P'.repeat(43),expiresAt:'2026-11-21T12:01:00Z'});
+ }
+ if(path==='/api/organizations/'+id+'/ownership/transfer'){
+   if(req.headers['x-vsph-step-up']!=='P'.repeat(43))
+      return respond(res,403,{message:'Invalid proof'});
+   return respond(res,200,{ownerId:key,previousOwnerRole:'admin',organizationVersion:3});
+ }
+
  return respond(res,404,{message:'Unrecognized mock path'});
 });
 await new Promise((resolve,reject)=>{
@@ -164,6 +178,40 @@ try{
    assert.equal(overflow.status,400,target+' oversized chunked body');
  }
  assert.equal(upstreamCalls.length,priorToOverflow,'Oversized chunked data must not reach backend');
+
+ // Fresh identity proof stays exclusively between the two server-to-server hops.
+ const transferInput={
+   organizationId:id,organizationVersion:2,ownerVersion:3,targetVersion:4,
+   targetUserId:key,targetName:'Approved Administrator',
+   targetEmail:'approved@example.invalid',previousOwnerRole:'admin',
+   password:'correct-current-password',confirmed:true,
+ };
+ const startTransfer=upstreamCalls.length;
+ await rejected('/api/owner-transfer-action',transferInput);
+ const invalidTransfer=await post('/api/owner-transfer-action',{...transferInput,targetVersion:0});
+ assert.equal(invalidTransfer.status,400);
+ assert.equal(upstreamCalls.length,startTransfer);
+ const completed=await post('/api/owner-transfer-action',transferInput);
+ assert.equal(completed.status,200,'Owner transfer completes with a current verified identity');
+ assert.equal(completed.data?.ok,true);
+ assert.equal(completed.data?.ownerId,key);
+ assert.ok(!('proof' in completed.data),'Step-up proof must never reach browser');
+ assert.equal(upstreamCalls.length,startTransfer+2);
+ assert.equal(upstreamCalls.at(-2).path,'/api/organizations/'+id+'/ownership/reauthenticate');
+ assert.equal(upstreamCalls.at(-1).path,'/api/organizations/'+id+'/ownership/transfer');
+ assert.equal(upstreamCalls.at(-1).stepUp,'P'.repeat(43));
+ assert.deepEqual(upstreamCalls.at(-1).body,{
+   targetUserId:key,organizationVersion:2,ownerVersion:3,targetVersion:4,confirmed:true,
+ });
+ const mfa=await post('/api/owner-transfer-action',{
+   ...transferInput,password:'requires-authenticator'
+ });
+ assert.equal(mfa.status,428,'MFA challenge is relayed without a transfer');
+ assert.equal(mfa.data?.code,'MFA_REQUIRED');
+ assert.equal(mfa.data?.factors?.[0]?.id,key);
+ assert.equal(upstreamCalls.at(-1).path,
+   '/api/organizations/'+id+'/ownership/reauthenticate',
+   'MFA-required requests must not attempt a transfer');
 
  const before=upstreamCalls.length;
  assert.equal((await post('/api/employee-lifecycle-action',{...remove,version:9})).status,409);
