@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import {redirect} from 'next/navigation';
 import { DashboardSummary } from '@/features/workspace/DashboardSummary';
 import { loadAuthorizedApps, loadProductAccess, loadWorkspaceCount } from '@/features/workspace/server-data';
 import {portalApi} from '@/features/workspace/server-api';
@@ -19,20 +20,24 @@ export const metadata: Metadata = {
 
 async function DashboardData() {
   const identity = await portalApi('/api/auth/me');
+  if(identity.kind==='unauthorized')redirect('/login');
   const current = identity.kind==='ok'?portalIdentity(identity.value):null;
   if(current?.platformRole === 'super_admin'){
     const [operations,finance] = await Promise.all([
       portalApi('/api/admin-management/dashboard'),portalApi('/api/finance/overview')
     ]);
+    if(operations.kind==='unauthorized'||finance.kind==='unauthorized')redirect('/login');
     return <LiveOwnerOverview operations={operations.kind==='ok'?parseOwnerOperations(operations.value):null}
       finance={finance.kind==='ok'?parseFinanceOverview(finance.value):null}/>;
   }
   const employeeAccess = await portalApi('/api/hrms/access');
+  if(employeeAccess.kind==='unauthorized')redirect('/login');
   const flags=employeeAccess.kind==='ok'?hrPermissions(employeeAccess.value):null;
   if(flags?.employee){
     const [own,activity]=await Promise.all([
       portalApi('/api/hrms/me'),portalApi('/api/hrms/me/activity')
     ]);
+    if(own.kind==='unauthorized'||activity.kind==='unauthorized')redirect('/login');
     const work=own.kind==='ok'?parseOwnWork(own.value):null;
     if(!work)return <p role="alert" className="feedback-state error-state">
       Your current employee identity, session or assigned work could not be verified.
