@@ -1,3 +1,4 @@
+import {readBoundedRequestText} from '@/features/workspace/BoundedRequestBody';
 import {type NextRequest,NextResponse} from 'next/server';
 import {approvedInternalOrigin} from '@/features/workspace/server-api';
 import {approvedPublicOrigin,validPortalSession} from '@/features/projects/ProjectProxySecurity';
@@ -15,7 +16,7 @@ export async function POST(request:NextRequest){
  if(!request.headers.get('content-type')?.startsWith('application/json')||
    Number(request.headers.get('content-length')||0)>4096)return fail('Invalid request.',400);
  let raw:unknown;
- try{const body=await request.text();if(body.length>4096)return fail('Request too long.',400);
+ try{const body=await readBoundedRequestText(request,4096);if(body===null||body.length>4096)return fail('Request too long.',400);
   raw=JSON.parse(body);}catch{return fail('Invalid JSON.',400);}
  const command=customerLifecycleMutation(raw);
  if(!command)return fail('Review the organization lifecycle, subscription terms and required confirmation.',400);
