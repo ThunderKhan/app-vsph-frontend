@@ -1,0 +1,148 @@
+/**
+ * Production Next.js authentication HTTP acceptance against an isolated Express-shaped
+ * identity server. No real accounts, secrets, provider sessions or hosted DB involved.
+ */
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
+import {setTimeout as sleep} from 'node:timers/promises';
+
+const port=47058,origin='http://127.0.0.1:'+port;
+const sid='p'.repeat(43),appSid='c'.repeat(43),temporarySid='t'.repeat(43);
+const id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const userId='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const calls=[];
+const respond=(res,status,data,cookie)=>{
+ res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',
+   ...(cookie?{'Set-Cookie':cookie}:{})});
+ res.end(JSON.stringify(data));
+};
+const backend=http.createServer(async(req,res)=>{
+ let body='';
+ for await(const chunk of req)body+=chunk.toString('utf8');
+ let payload=null;
+ try{payload=body?JSON.parse(body):null;}catch{return respond(res,400,{message:'Invalid JSON'});}
+ calls.push({method:req.method,path:req.url,origin:req.headers.origin||null,
+   cookie:req.headers.cookie||null,payload});
+ if(req.method==='GET'&&req.url==='/api/apps/CRM/contexts'){
+   if(req.headers.cookie!=='vsph.portal.sid='+sid)
+     return respond(res,401,{message:'Sign in first'});
+   return respond(res,200,{
+     email:'worker@example.invalid',
+     application:{code:'CRM',name:'CRM',status:'active'},
+     organizations:[{id,name:'Customer A',role:'manager'}],
+   });
+ }
+ if(req.method!=='POST'||req.headers.origin!==origin)
+   return respond(res,403,{message:'Origin denied'});
+ if(req.url==='/api/auth/login'){
+   if(payload?.email!=='worker@example.invalid')
+     return respond(res,401,{message:'Invalid credentials',code:'INVALID_CREDENTIALS'});
+   if(payload.password==='mfa')
+     return respond(res,401,{message:'Enter authenticator',code:'MFA_REQUIRED',
+       factors:[{id,name:'Authenticator'}]});
+   if(payload.password==='temporary')
+     return respond(res,200,{passwordChangeRequired:true,redirect:'/employee-password'},
+       'vsph.employee.setup='+temporarySid+'; Path=/; Max-Age=600; HttpOnly; SameSite=Lax');
+   if(payload.password==='missing-cookie')
+     return respond(res,200,{user:{id:userId,name:'Worker',email:'worker@example.invalid'}});
+   if(payload.password==='correct')
+     return respond(res,200,{user:{id:userId,name:'Worker',email:'worker@example.invalid'}},
+       'vsph.portal.sid='+sid+'; Path=/; Max-Age=14400; HttpOnly; SameSite=Lax');
+   return respond(res,401,{message:'Invalid credentials',code:'INVALID_CREDENTIALS'});
+ }
+ if(req.url==='/api/auth/app-login'){
+   if(req.headers.cookie!=='vsph.portal.sid='+sid)
+     return respond(res,401,{message:'Portal session required'});
+   if(payload?.app!=='CRM'||payload?.organizationId!==id||
+      payload?.password!=='correct')
+     return respond(res,403,{message:'Application access denied'});
+   return respond(res,200,{message:'Application signed in.',redirect:'/apps/crm/home'},
+     'vsph.crm.sid='+appSid+'; Path=/; Max-Age=14400; HttpOnly; SameSite=Lax');
+ }
+ return respond(res,404,{message:'Unsupported mock path'});
+});
+await new Promise((resolve,reject)=>{backend.once('error',reject);backend.listen(0,'127.0.0.1',resolve);});
+const address=backend.address();assert.ok(address&&typeof address!=='string');
+const upstream='http://127.0.0.1:'+address.port;
+const next=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p',String(port)],{
+ env:{...process.env,NODE_ENV:'production',VSPH_PUBLIC_ORIGIN:origin,VSPH_INTERNAL_API_ORIGIN:upstream},
+ stdio:['ignore','pipe','pipe'],
+});
+let logs='';
+next.stdout.on('data',data=>{logs+=data.toString();});
+next.stderr.on('data',data=>{logs+=data.toString();});
+async function post(path,payload,{requestOrigin=origin,cookie,site='same-origin'}={}){
+ const response=await fetch(origin+path,{method:'POST',cache:'no-store',redirect:'manual',
+  headers:{'Content-Type':'application/json',Origin:requestOrigin,'Sec-Fetch-Site':site,
+    ...(cookie?{Cookie:'vsph.portal.sid='+cookie}:{})},
+  body:JSON.stringify(payload)});
+ const json=await response.json().catch(()=>null);
+ return {status:response.status,json,cookie:response.headers.get('set-cookie'),
+   cache:response.headers.get('cache-control')};
+}
+const login={email:'worker@example.invalid',password:'correct'};
+try{
+ let ready=false;
+ for(let i=0;i<100;i++){
+  if(next.exitCode!==null)throw Error('Next exited: '+logs);
+  try{if((await fetch(origin+'/login')).status===200){ready=true;break;}}catch{}
+  await sleep(200);
+ }
+ assert.ok(ready,'Production Next did not start: '+logs);
+ const before=calls.length;
+ const originDenied=await post('/api/auth/login',login,{requestOrigin:'https://attacker.invalid'});
+ assert.equal(originDenied.status,403);
+ assert.equal((await post('/api/auth/login',{...login,platformRole:'super_admin'})).status,400);
+ assert.equal((await post('/api/auth/login',{...login,totpCode:'123456'})).status,400);
+ assert.equal(calls.length,before,'Rejected login never reached backend');
+
+ const failure=await post('/api/auth/login',{...login,password:'wrong'});
+ assert.equal(failure.status,401);assert.equal(failure.json?.code,'INVALID_CREDENTIALS');
+ assert.equal(failure.cookie,null);
+ const challenge=await post('/api/auth/login',{...login,password:'mfa'});
+ assert.equal(challenge.status,401);assert.equal(challenge.json?.code,'MFA_REQUIRED');
+ assert.equal(challenge.json?.factors?.[0].id,id);
+ assert.equal(challenge.cookie,null);
+ const untrusted=await post('/api/auth/login',{...login,password:'missing-cookie'});
+ assert.equal(untrusted.status,502);assert.equal(untrusted.cookie,null,
+   'Never invent a session cookie from an upstream success body');
+
+ const portal=await post('/api/auth/login',login);
+ assert.equal(portal.status,200);assert.match(portal.cookie||'',/vsph\.portal\.sid=/);
+ assert.match(portal.cookie||'',/httponly/i);assert.match(portal.cookie||'',/samesite=lax/i);
+ assert.equal(portal.json?.message,'Signed in.');assert.match(portal.cache||'',/no-store/);
+ const temporary=await post('/api/auth/login',{...login,password:'temporary'});
+ assert.equal(temporary.status,200);
+ assert.equal(temporary.json?.redirect,'/employee-password');
+ assert.match(temporary.cookie||'',/vsph\.employee\.setup=/);
+ assert.doesNotMatch(temporary.cookie||'',/vsph\.portal\.sid=[a-zA-Z0-9_-]{43}/);
+
+ const noContext=await fetch(origin+'/api/apps/CRM/contexts',{redirect:'manual'});
+ assert.equal(noContext.status,401);
+ const withContext=await fetch(origin+'/api/apps/crm/contexts',{
+   headers:{Cookie:'vsph.portal.sid='+sid},redirect:'manual'});
+ assert.equal(withContext.status,200);
+ const context=await withContext.json();
+ assert.equal(context.application.name,'CRM');assert.equal(context.organizations[0].id,id);
+ assert.equal(context.email,'worker@example.invalid');
+ assert.ok(!('applicationSecret' in context));
+ const noPortal=await post('/api/auth/app-login',{...login,app:'CRM',organizationId:id});
+ assert.equal(noPortal.status,401);assert.equal(noPortal.cookie,null);
+ const appLogin=await post('/api/auth/app-login',{...login,app:'CRM',organizationId:id},{cookie:sid});
+ assert.equal(appLogin.status,200);assert.equal(appLogin.json?.redirect,'/apps/crm/home');
+ assert.match(appLogin.cookie||'',/vsph\.crm\.sid=/);
+ assert.match(appLogin.cookie||'',/httponly/i);
+ assert.equal((await post('/api/auth/app-login',{...login,app:'CRM',organizationId:userId},
+  {cookie:sid})).status,403,'Unauthorized organization denied by backend');
+ assert.ok(calls.some(c=>c.path==='/api/auth/login'&&c.origin===origin));
+ assert.ok(calls.some(c=>c.path==='/api/auth/app-login'&&c.cookie==='vsph.portal.sid='+sid));
+ console.log('Verified portal, MFA, enrollment and application sign-in proxy over production HTTP with isolated backend.');
+}finally{
+ next.kill('SIGTERM');backend.close();
+ if(next.exitCode===null){
+  await Promise.race([once(next,'exit').catch(()=>{}),sleep(3000)]);
+  if(next.exitCode===null)next.kill('SIGKILL');
+ }
+}
