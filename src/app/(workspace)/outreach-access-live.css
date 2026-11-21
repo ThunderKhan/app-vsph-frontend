@@ -1,0 +1,15 @@
+.outreach-live{max-width:1120px;margin:0 auto;padding:26px 20px}
+.outreach-live header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.outreach-live h1{font-size:28px}.outreach-live .eyebrow{font-size:12px;letter-spacing:.1em;font-weight:700}
+.outreach-panel{padding:22px;border:1px solid #d6e2ee;border-radius:10px;background:white;margin:18px 0}
+.outreach-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.outreach-panel label{display:grid;gap:7px;font-weight:600}
+.outreach-panel select{padding:9px;width:100%;min-height:42px;border:1px solid #aec6dc;border-radius:6px}
+.outreach-live button{padding:9px 13px;margin:10px 8px 5px 0;border:1px solid #8fb4d8;border-radius:6px;background:white;color:#0069c8;cursor:pointer}
+.outreach-live button:disabled{opacity:.5}.outreach-table-wrap{overflow:auto}
+.outreach-table-wrap table{width:100%;min-width:640px;border-collapse:collapse}
+.outreach-table-wrap td,.outreach-table-wrap th{text-align:left;padding:11px;border-bottom:1px solid #dce6ef}
+.outreach-table-wrap small{display:block;color:#60758a}
+.outreach-section-head{display:flex;align-items:center;justify-content:space-between}
+.outreach-live :is(select,button,a,.outreach-table-wrap):focus-visible{outline:3px solid #50c0e8;outline-offset:2px}
+@media(max-width:650px){.outreach-live{padding:14px}.outreach-panel{padding:14px}.outreach-fields{grid-template-columns:1fr}}

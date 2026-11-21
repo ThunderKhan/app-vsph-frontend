@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { HrAccess, PortalUser } from './contracts';
 
-const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security']);
+const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security', '/search', '/my-work', '/admin/project-managers', '/calendar', '/organizations', '/hr/access', '/employment', '/admin/outreach-access']);
 
 type NavItem = { label: string; href: string; show?: boolean };
 type NavGroup = { label: string; items: NavItem[]; show?: boolean };
@@ -60,7 +60,8 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
   const groups: NavGroup[] = [
     { label: 'Work', items: [
       { label: 'Projects', href: '/projects' },
-      { label: 'My tasks', href: '/dashboard#employeeDashboardWork', show: flags?.employee === true },
+      { label: 'My tasks', href: '/my-work', show: flags?.employee === true },
+      { label: 'Calendar', href: '/calendar', show: flags?.employee === true || flags?.management === true },
       { label: 'Reports', href: '/reports' },
       { label: 'Notifications', href: '/notifications' },
     ] },
@@ -82,6 +83,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
         { label: 'Employee directory', href: '/employees',
           show: isOwner || flags?.management === true },
         { label: 'HR workspace', href: '/hr', show: isOwner || flags?.management === true },
+        { label: 'HR access', href: '/hr/access', show: isOwner && flags?.governHr === true },
         { label: 'Project managers', href: '/admin/project-managers',
           show: isOwner || flags?.governHr === true },
       ] },
@@ -141,11 +143,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
           {previewMode
             ? <button type="button" className="portal-preview-search"
                 onClick={() => onPreviewNavigate?.('/search')}>Search project work</button>
-            : <>
-                <input aria-label="Search work" placeholder="Search work" disabled
-                  title="Search is unavailable until the secured search route is migrated" />
-                <button type="button" disabled>Search</button>
-              </>}
+            : <Link href="/search" className="portal-preview-search" aria-label="Search work">Search project work</Link>}
         </div>
         <div className="crm-header-actions">
           {previewMode

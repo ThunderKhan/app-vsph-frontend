@@ -31,6 +31,7 @@ export default async function FinancePage(){
      <p>Manual cash receipt basis · As of {data.asOf} · INR</p></div>
      <div className="finance-live-actions">
        <Link href="/admin/finance/journal">View journal</Link>
+       <Link href="/admin/finance/manage">Manage ledger</Link>
        <Link href="/admin/finance">Refresh</Link>
      </div></header>
    <section className="finance-live-money" aria-label="Finance summary in INR">
@@ -62,7 +63,7 @@ export default async function FinancePage(){
      {!data.monthly.length&&<p>No monthly receipt data is available.</p>}
    </section>
    <p className="finance-live-footnote">This overview intentionally excludes individual invoice,
-     payment and customer references. Journal details and financial mutations are not yet
-     enabled in the migrated frontend.</p>
+     payment and customer references. Use the owner-only journal for history or
+     the reviewed Manage ledger workflows for manual entries and corrections.</p>
  </main>;
 }

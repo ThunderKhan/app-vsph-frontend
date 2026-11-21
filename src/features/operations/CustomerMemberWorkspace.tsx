@@ -67,6 +67,7 @@ export function CustomerMemberWorkspace({customer}:{customer:CustomerDetail}){
      <span aria-hidden="true">/</span><span>{organization.name}</span></nav>
    <header className="customer-live-heading"><div><h1>{organization.name}</h1>
      <p>{organization.slug} · {organization.status} · Platform-owner management</p></div>
+     <Link href={'/admin/customers/'+organization.id+'/lifecycle'}>Manage lifecycle</Link>
      <button type="button" onClick={()=>window.location.reload()}>Refresh</button>
    </header>
    <section className="customer-live-panel">

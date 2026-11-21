@@ -1,0 +1,16 @@
+.identity-live{max-width:1120px;margin:0 auto;padding:26px 20px}
+.identity-live header{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.identity-live h1{font-size:28px}.identity-live h2{font-size:22px}.identity-live h3{font-size:19px}
+.identity-live .identity-panel{padding:22px;background:#fff;border:1px solid #d2e0ec;border-radius:12px;margin:20px 0}
+.identity-live .identity-panel p{color:#52687f;line-height:1.6}
+.identity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.identity-grid article{padding:16px;border:1px solid #deebf4;border-radius:8px}
+.identity-live form label{display:grid;gap:6px;font-weight:600;margin:10px 0}
+.identity-live :is(input,select,textarea){padding:9px;width:100%;min-height:40px;border:1px solid #a1b9cc;border-radius:5px}
+.identity-live input[type=checkbox]{width:auto;min-height:initial;margin-right:9px}
+.identity-live button{padding:9px 13px;margin:7px;border:1px solid #9cb6d1;border-radius:6px;background:#fff;color:#0869b9;cursor:pointer}
+.identity-live button:disabled{opacity:.55;cursor:not-allowed}
+.identity-live .identity-confirm{border-left:3px solid #c17226;padding-left:14px}
+.identity-live .identity-history{padding:10px 0;border-bottom:1px solid #e1e8ee}
+.identity-live :is(input,select,button,a,summary):focus-visible{outline:3px solid #50c0e8;outline-offset:2px}
+@media(max-width:650px){.identity-live{padding:14px}.identity-grid{grid-template-columns:1fr}.identity-live .identity-panel{padding:14px}}

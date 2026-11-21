@@ -1,0 +1,7 @@
+.my-work-live .my-work-identity{margin-top:24px}
+.my-work-live .my-work-recent{margin-top:32px}
+.my-work-live .hr-actions{align-items:center}
+.my-work-live .hr-actions>a{color:#005ca8;min-height:44px;text-decoration:none}
+.my-work-live :is(a,input,select,textarea,button):focus-visible{outline:3px solid #50c0e8;outline-offset:2px}
+.my-work-live .hr-message[data-error=true]{color:#9e2a2a}
+@media(max-width:720px){.my-work-live .hr-actions>*{flex:1}}

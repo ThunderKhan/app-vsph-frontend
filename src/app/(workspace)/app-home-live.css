@@ -1,0 +1,17 @@
+
+.app-home-live{max-width:1080px;margin:0 auto;padding:28px;min-height:100vh}
+.app-home-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.app-home-kicker{font-size:11px;font-weight:700;letter-spacing:.12em;color:#64748b}
+.app-home-header h1{margin:.25rem 0}
+.app-home-panel{margin-top:25px;padding:26px;border-radius:16px;background:var(--surface,#fff);border:1px solid #e5eaf2}
+.app-home-panel h2{margin:0 0 12px}
+.app-home-panel p{line-height:1.6}
+.app-home-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;align-items:end;margin:20px 0}
+.app-home-form label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500}
+.app-home-form input{padding:10px;border:1px solid #dbe2ee;border-radius:8px;max-width:100%;background:#fff;color:#172033}
+.app-home-header button,.app-home-form button{background:#4338ca;color:#fff;padding:11px 16px;border-radius:9px;border:0;cursor:pointer;font-weight:600}
+.app-home-header button:disabled,.app-home-form button:disabled{opacity:.6;cursor:not-allowed}
+.app-home-records{max-width:100%;overflow-x:auto}
+.app-home-records table{border-collapse:collapse;width:100%;margin-top:16px}
+.app-home-records td,.app-home-records th{text-align:left;border-bottom:1px solid #edf1f6;padding:12px;font-size:13px}
+@media(max-width:700px){.app-home-live{padding:16px}.app-home-panel{padding:17px}.app-home-form{grid-template-columns:1fr}}

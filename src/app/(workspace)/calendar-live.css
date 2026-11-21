@@ -1,0 +1,25 @@
+/* Real calendar adapts the preserved employee calendar visual language. */
+.calendar-live-page{max-width:1300px;margin:0 auto;padding:28px 22px}
+.calendar-live-page .employee-calendar{background:#fff;border:1px solid #d7e3ed;border-radius:9px;padding:22px}
+.calendar-live-page .calendar-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.calendar-live-page .calendar-heading h1{font-size:27px;margin:0}
+.calendar-live-page button{cursor:pointer}
+.calendar-live-page button:disabled{opacity:.5;cursor:not-allowed}
+.calendar-live-page .calendar-month-cell{min-height:98px;min-width:0}
+.calendar-live-page .calendar-month-cell[data-outside=true]{opacity:.6}
+.calendar-live-page .calendar-month-cell:hover{background:#f3f8fc}
+.calendar-live-page .calendar-date-number{background:none;border:0;cursor:pointer}
+.calendar-live-page .calendar-events{display:grid;gap:4px;overflow:hidden}
+.calendar-live-page .calendar-event{display:block;max-width:100%;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calendar-live-page .calendar-list-group{padding:10px;border-bottom:1px solid #dde8ef}
+.calendar-live-page .calendar-list-group .calendar-event{margin:8px 0}
+.calendar-editor{margin:24px 0;padding:20px;border:1px solid #d1e0ed;border-radius:8px}
+.calendar-editor form label{display:grid;gap:6px;margin:9px 0}
+.calendar-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.calendar-editor input,.calendar-editor select,.calendar-editor textarea{width:100%;border:1px solid #9eb7d0;border-radius:5px;padding:8px;font:inherit}
+.calendar-form-actions{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap}
+.calendar-form-actions button{border:1px solid #075fa9;border-radius:5px;background:#fff;padding:9px 12px;color:#075fa9}
+.calendar-live-page :is(input,select,textarea,button,a):focus-visible{outline:3px solid #50c0e8;outline-offset:2px}
+@media(max-width:710px){.calendar-live-page{padding:10px}.calendar-live-page .employee-calendar{padding:12px}
+ .calendar-form-grid{grid-template-columns:1fr}.calendar-live-page .calendar-month-cell{min-height:74px}
+ .calendar-live-page .calendar-event{font-size:11px}}

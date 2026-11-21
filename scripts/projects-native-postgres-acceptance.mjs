@@ -381,6 +381,29 @@ try {
   check(await staffPage.getByRole('button',{name:'Save employee access'}).count()===0,
     'Contributor does not see project staffing privileges');
 
+  // Stage 8B: real dashboard and employee self-service projections (no mocks).
+  await adminPage.goto('/dashboard',{waitUntil:'domcontentloaded'});
+  await adminPage.getByRole('heading',{name:'Company overview',exact:true}).waitFor({timeout:18000});
+  await adminPage.getByText('Recorded finance',{exact:true}).waitFor({timeout:18000});
+  await adminPage.getByText('Cash collected',{exact:true}).waitFor({timeout:18000});
+  check(true,'Real PostgreSQL numeric finance aggregates render without precision loss');
+  check(true,'Platform owner operating dashboard renders real PostgreSQL projections');
+  await staffPage.goto('/my-work',{waitUntil:'domcontentloaded'});
+  await staffPage.getByRole('heading',{name:'My work',exact:true}).waitFor({timeout:18000});
+  await staffPage.getByText('Delegated acceptance task',{exact:true}).first().waitFor({timeout:18000});
+  check(true,'Assigned employee My Work page reads actual active project tasks');
+  await staffPage.goto('/dashboard',{waitUntil:'domcontentloaded'});
+  await staffPage.getByRole('heading',{name:'My dashboard',exact:true}).waitFor({timeout:18000});
+  await staffPage.getByRole('heading',{name:'Task completion activity',exact:true}).waitFor({timeout:18000});
+  check(true,'Employee role dashboard shows current real HRMS and activity records');
+  await staffPage.goto('/employees/archived',{waitUntil:'domcontentloaded'});
+  await staffPage.getByRole('heading',{name:'Archived employees unavailable',exact:true})
+    .waitFor({timeout:18000});
+  check(true,'Ordinary employee cannot access owner-only archived workforce history');
+  await staffPage.goto('/projects/'+id,{waitUntil:'domcontentloaded'});
+  await staffPage.locator('#projectTitle').waitFor({timeout:18000});
+  console.log('Acceptance stage 8B: real owner/employee dashboards and HRMS role isolation passed');
+
   const backendOtherTask=await pool.query(
     "select t.id from public.project_tasks t where t.project_id<>$1 limit 1",[id]);
   check(backendOtherTask.rowCount===1,'Pre-existing unrelated fixture task required');

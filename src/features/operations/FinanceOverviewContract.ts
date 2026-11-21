@@ -9,6 +9,10 @@ export type FinanceOverview=Readonly<{
 }>;
 const obj=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const money=(x:unknown):x is string=>typeof x==='string'&&/^(0|[1-9]\d{0,22})$/.test(x);
+// PostgreSQL jsonb aggregates serialize bigint amounts as JSON numbers.
+// Accept only safe integer numbers; never pretend lossy floats are exact paise.
+const normalizedMoney=(x:unknown):string|null=>money(x)?x:
+  typeof x==='number'&&Number.isSafeInteger(x)&&x>=0?String(x):null;
 const count=(x:unknown):x is number=>Number.isSafeInteger(x)&&(x as number)>=0;
 const date=(x:unknown)=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);
 export function parseFinanceOverview(input:unknown):FinanceOverview|null{
@@ -18,16 +22,16 @@ export function parseFinanceOverview(input:unknown):FinanceOverview|null{
  const s=input.summary;
  const values=['invoicedPaise','collectedPaise','outstandingPaise','pastDuePaise'] as const;
  const counts=['issuedInvoices','voidInvoices','clients','projects'] as const;
- if(values.some(k=>!money(s[k]))||counts.some(k=>!count(s[k])))return null;
+ if(values.some(k=>normalizedMoney(s[k])===null)||counts.some(k=>!count(s[k])))return null;
  const monthly:FinanceOverview['monthly'][number][]=[],seen=new Set<string>();
  for(const x of input.monthly){
    if(!obj(x)||!date(x.month_start)||!(x.month_start as string).endsWith('-01')||
-     !money(x.collected_paise)||seen.has(x.month_start as string))return null;
+     normalizedMoney(x.collected_paise)===null||seen.has(x.month_start as string))return null;
    seen.add(x.month_start as string);
-   monthly.push({monthStart:x.month_start as string,collectedPaise:x.collected_paise});
+   monthly.push({monthStart:x.month_start as string,collectedPaise:normalizedMoney(x.collected_paise)!});
  }
  const summary=Object.fromEntries(
-   [...values,...counts].map(k=>[k,s[k]])
+   [...values.map(k=>[k,normalizedMoney(s[k])!]),...counts.map(k=>[k,s[k]])]
  ) as FinanceSummary;
  return {summary,monthly,asOf:input.asOf as string,
    currency:'INR',basis:'manual_cash_receipts'};
