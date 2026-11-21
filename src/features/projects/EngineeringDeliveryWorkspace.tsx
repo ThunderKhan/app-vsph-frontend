@@ -6,7 +6,7 @@ import type {DeliveryData} from './EngineeringDeliveryContract';
 import {EngineeringDeliveryActions} from './EngineeringDeliveryActions';
 const kinds=['','commit','contributor','pull','workflow','check','release','tag'] as const;
 const time=(x:string|null)=>!x||Date.parse(x)===0?'Source time unavailable':
- new Date(x).toLocaleString('en-IN');
+ new Date(x).toLocaleString('en-IN',{timeZone:'UTC'});
 export function EngineeringDeliveryWorkspace({project,delivery,platformOwner}:{
  project:ProjectDetail;delivery:DeliveryData;platformOwner:boolean;
 }){
