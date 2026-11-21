@@ -1,3 +1,4 @@
+import {readBoundedRequestText} from '@/features/workspace/BoundedRequestBody';
 import {type NextRequest,NextResponse} from 'next/server';
 import {approvedInternalOrigin} from '@/features/workspace/server-api';
 import {approvedPublicOrigin,validPortalSession} from '@/features/projects/ProjectProxySecurity';
@@ -13,7 +14,7 @@ export async function POST(request:NextRequest){
  if(!request.headers.get('content-type')?.startsWith('application/json')||
    Number(request.headers.get('content-length')||0)>2048)return failure('Invalid body.',400);
  let raw:unknown;
- try{const text=await request.text();if(text.length>2048)return failure('Request too long.',400);raw=JSON.parse(text);}
+ try{const text=await readBoundedRequestText(request,2048);if(text===null||text.length>2048)return failure('Request too long.',400);raw=JSON.parse(text);}
  catch{return failure('Invalid JSON.',400);}
  const action=ownWorkMutation(raw);
  if(!action)return failure('Invalid employee self-service operation.',400);
