@@ -18,7 +18,7 @@ export function CustomerLifecycleWorkspace({model,registeredProducts,catalogInco
  const [reviewStatus,setReviewStatus]=useState(false);
  // Current grants plus registered active products eligible for a first entitlement.
  const options=[...products.map(p=>({id:p.id,name:p.name,code:p.code})),
-   ...registeredProducts.filter(p=>p.status==='active'&&!products.some(x=>x.id===p.id))
+   ...registeredProducts.filter(p=>p.status==='active'&&!products.some(x=>x.id.toLowerCase()===p.id.toLowerCase()))
      .map(p=>({id:p.id,name:p.name,code:p.code}))];
  const [productId,setProductId]=useState(options[0]?.id||'');
  const chosen=products.find(p=>p.id===productId);
