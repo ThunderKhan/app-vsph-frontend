@@ -15,6 +15,11 @@ The backend remains the authority for authentication, active membership, tenant/
 
 | Area | New live route or capability | Boundary |
 | --- | --- | --- |
+| Portal authentication | `/login`, `POST /api/auth/login`, `/api/auth/logout` | Same-origin, bounded credential gateway to legacy Express password/MFA verifier; browser session issued only on valid backend Set-Cookie |
+| Application sign-in | `/apps/[app]/login`, `POST /api/auth/app-login`, `GET /api/apps/[app]/contexts` | Current portal session, exact product/organization access and reauthentication; independently scoped app cookie |
+| Application workspace | `/apps/[app]/home`, `/api/apps/[app]/context`, `/records`, `/api/auth/app-logout` | Tenant-scoped backend authorization on every read/write, fixed CRM/MUSIC adapters; app-only logout |
+| Private invitations | `/api/invitations/inspect|accept`, `/api/employee-enrollment/inspect|accept` | Exact one-use invitation capability and backend-confirmed account creation; browser token remains memory-only |
+| First password change | `/api/employee-credentials/status|replace` | Temporary session cookie, same-origin password replacement, exact backend success and cookie revocation |
 | Project search | `/search`, `GET /api/search` | Literal authorized project/task/milestone matches, 25/page; no private descriptions |
 | Employee self-service | `/my-work` | Assigned task statuses, leave requests and attendance, versioned and idempotent where applicable |
 | HRMS calendar | `/calendar` | Authorized date-range reads, event create/update/delete and role enforcement |
@@ -26,8 +31,8 @@ The backend remains the authority for authentication, active membership, tenant/
 | Customer lifecycle | `/admin/customers/[id]/lifecycle` | Versioned status and product entitlement changes, previewed impact |
 | Project lifecycle | `/projects/[id]/lifecycle` | Owner-verified archive and conditional empty archived project deletion |
 | Project delivery V2 | `/projects/[id]/workspace` | Milestone checklists, risks, resource links and weekly updates |
-| Engineering delivery | `/projects/[id]/engineering` | Live server-owned GitHub observations, installation governance, repository discovery, sync and explicit work linking |
-| Music | `/apps/music/launch` | Approved SSO configuration and current authorized customer organization chooser |
+| Engineering delivery | `/projects/[id]/engineering` | Server-owned GitHub observations and grant checks, explicit work linking; sync confirmations distinguish completed, deferred, provider-failed and malformed responses |
+| Music | `/apps/music/launch`, `/apps/music/launch/start` | Approved Music SSO configuration, fresh session-bound tenant authorization on start, no arbitrary external URL or confidential client secret in React |
 | Outreach | `/apps/outreach/launch` | Server-approved SSO start, active employee and integration checks; no arbitrary redirects |
 | Role dashboards | `/dashboard` | Owner operating and finance snapshots; employee assigned work plus recorded activity heatmap; no preview fixture in real dashboard |
 
@@ -35,8 +40,8 @@ New routes are implemented in code and must still pass authenticated, tenant-spe
 
 ## Test gates
 
-- `npm ci && npm run check`: source tests, TypeScript, ESLint, production Next build and production preview guard.
-- `.github/workflows/frontend-verification.yml`: protected unauthenticated route redirects, production-HTTP smoke for guarded employee/finance/customer/project/GitHub workflows plus the owner-transfer two-hop password/TOTP ceremony, authenticated owner/employee SSR isolation, development-only preview Chromium validation.
+- `npm ci && npm run check`: source tests (including auth and invitation contracts), TypeScript, ESLint, production Next build and production preview guard.
+- `.github/workflows/frontend-verification.yml`: protected unauthenticated route redirects, production-HTTP smoke for sign-in, MFA challenges, app cookies/context/CRM records, private invitations and first-password replacement, guarded employee/finance/customer/project/GitHub workflows, Music/Outreach launch and the owner-transfer two-hop password/TOTP ceremony, authenticated owner/employee SSR isolation, development-only preview Chromium validation.
 - `.github/workflows/projects-native-postgres-acceptance.yml`: existing real project acceptance with disposable PostgreSQL 17 + pinned legacy backend. Enabled on this branch. It does not test all newly migrated modules or a hosted Supabase instance.
 - Extend tests with real approved database/role fixtures for every mutation. Include owner, HR, employee, customer, revoked users, stale versions, cross-tenant identifiers, no-Origin writes, session expiration, duplicate idempotency retries, locked records, and keyboard/mobile flows.
 
@@ -55,3 +60,18 @@ Never insert preview fixtures or synthetic owner/employee metrics in authenticat
 ## Review cleanup (2026-11-21)
 
 Four major CodeRabbit issues were repaired on this branch: streamed byte-bounded request bodies, durable invoice/receipt idempotency keys across equivalent edits, registered-product grants for customers with no prior grant, and membership/name drafts tied to original versions. The reported smaller correctness issues were reviewed and addressed across calendar editing, request/field limits, response projections, datetime validation, session 401 redirects, file/work selectors and accessibility-related messaging. Regression tests were added. Do not treat this declaration as CodeRabbit approval: rerun review on a stable head and verify accepted findings individually. Staging with actual user credentials/SSO receivers remains required before production release.
+
+## Authentication and provider integration acceptance
+
+The Next.js frontend now connects the legacy Express authentication and identity APIs instead of relying on non-existent `/api/auth/login`, `/api/auth/app-login`, product-home, or invitation routes. The server controls the external origin and forwards only approved cookies, validated fields and a bounded payload. Browser `HttpOnly` session cookies are issued only after a validated backend success response AND a correctly named opaque `Set-Cookie`. Application workspace reads and writes require both portal and product sessions; Express remains the database-backed authority. No Supabase service-role key or provider JWT is present in frontend source.
+
+Automated acceptance includes isolated production Next.js HTTP tests for successful/denied password login, MFA challenge and factors, temporary enrollment, application login and tenant-scoped records, confidential-step-up ownership transfer, provider-failed/deferred GitHub sync, and revocation-sensitive SSO start. Isolated tests are intentionally not asserted as hosted production or third-party provider verification.
+
+**Still requiring externally provisioned infrastructure, not a code-only fix:** a running approved Express backend at `VSPH_INTERNAL_API_ORIGIN` with its reviewed PostgreSQL migrations, configured Supabase Auth and sessions, a deployed and authorized GitHub App installation, and approved Music/Outreach receivers with actual confidential credentials. Do not claim that those external integrations were verified by synthetic tests. Do not modify production deployment, migration state, or credentials from this branch.
+
+### Implementation versus release
+
+- **Implementation**: fixed Next routes, client functionality, strict parsers, verified backend source contract, source tests, production HTTP fixtures and disposable PostgreSQL acceptance (in this branch).
+- **Technical acceptance dependent on a live environment**: real users and revoked roles, external GitHub App provider reads, real Music/Outreach SSO handshake, real Supabase MFA, login cookies under approved TLS domains, and browser-assisted regression against staged deployments.
+- **Maintainer/release**: upstream PR dependencies, approval gates, migration deployment, secrets, environment configuration, DNS, release and rollback. Separate from implementation and deliberately untouched.
+
