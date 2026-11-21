@@ -150,6 +150,21 @@ try{
    startOn:leave.startOn,endOn:leave.endOn,kind:'annual',reason:leave.reason,
  });
  assert.equal(upstreamCalls[5].key,key,'leave idempotency header must be forwarded');
+ // Chunked uploads without Content-Length must not be fully buffered by the route.
+ const priorToOverflow=upstreamCalls.length;
+ for(const target of ['/api/finance-command','/api/employee-lifecycle-action']){
+   const streamed=new ReadableStream({start(controller){
+      controller.enqueue(new TextEncoder().encode('{"payload":"'+ 'x'.repeat(6000)+'"}'));
+      controller.close();
+   }});
+   const overflow=await fetch(origin+target,{method:'POST',
+     headers:{Origin:origin,'Sec-Fetch-Site':'same-origin',
+       'Content-Type':'application/json',Cookie:'vsph.portal.sid='+sid},
+     body:streamed,duplex:'half',redirect:'manual'});
+   assert.equal(overflow.status,400,target+' oversized chunked body');
+ }
+ assert.equal(upstreamCalls.length,priorToOverflow,'Oversized chunked data must not reach backend');
+
  const before=upstreamCalls.length;
  assert.equal((await post('/api/employee-lifecycle-action',{...remove,version:9})).status,409);
  assert.equal((await post('/api/employee-lifecycle-action',
