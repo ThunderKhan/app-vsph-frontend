@@ -3,7 +3,7 @@ import {portalApi} from '@/features/workspace/server-api';
 import {parseOwnerTransferPreview} from '@/features/organizations/OwnerTransferContract';
 const headers={'Cache-Control':'no-store'};
 const fail=(status:number,message:string)=>NextResponse.json({message},{status,headers});
-const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Preview is always recomputed by the legacy owner-only backend. */
 export async function GET(request:NextRequest){
  const params=request.nextUrl.searchParams,keys=[...params.keys()];
