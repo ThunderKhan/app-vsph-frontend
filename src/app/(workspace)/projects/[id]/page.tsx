@@ -22,7 +22,7 @@ const title = (value: string) => value.replaceAll('_', ' ');
 const date = (value: string | null) => value || '—';
 const views = ['overview','tasks','milestones','team','applications','delivery','engineering','activity'] as const;
 
-function LiveProject({ data, workforce, actorId }: { data: ProjectDetail; workforce: ProjectWorkforce|null; actorId:string|null }) {
+function LiveProject({ data, workforce, actorId, canGovernLifecycle }: { data: ProjectDetail; workforce: ProjectWorkforce|null; actorId:string|null; canGovernLifecycle:boolean }) {
   const { project: p, role, tasks, milestones, members, products, deliverables, comments, activity } = data;
   const completed = tasks.filter(t => t.status === 'done').length;
   const active = tasks.filter(t => t.status !== 'cancelled');
@@ -43,6 +43,7 @@ function LiveProject({ data, workforce, actorId }: { data: ProjectDetail; workfo
         <p id="projectSubtitle">{p.key} · {title(p.kind)} · {title(p.status)} · Your role: {title(role)}</p>
       </div>
       {role === 'manager' && p.status !== 'archived' && <ProjectEditForm project={p} />}
+      {canGovernLifecycle && <Link className="project-live-refresh" href={'/projects/'+p.id+'/lifecycle'}>Project lifecycle</Link>}
     </header>
     <nav className="project-sections project-v2-nav" aria-label="Project views">
       {views.map(view => <a key={view} href={'#' + view}>{title(view)}</a>)}
@@ -167,11 +168,12 @@ export default async function ProjectDetailPage({
   </main>;
   const [workforceResult,identityResult] = await Promise.all([
     data.role === 'manager' ? portalApi('/api/projects/' + id + '/workforce') : Promise.resolve(null),
-    data.role === 'contributor' ? portalApi('/api/auth/me') : Promise.resolve(null),
+    portalApi('/api/auth/me'),
   ]);
   const workforce = workforceResult?.kind === 'ok' ?
     parseProjectWorkforce(workforceResult.value) : null;
   const actorId = identityResult?.kind === 'ok' ?
     portalIdentity(identityResult.value)?.id ?? null : null;
-  return <LiveProject data={data} workforce={workforce} actorId={actorId}/>;
+  const canGovernLifecycle = identityResult?.kind === 'ok' && portalIdentity(identityResult.value)?.platformRole === 'super_admin';
+  return <LiveProject data={data} workforce={workforce} actorId={actorId} canGovernLifecycle={canGovernLifecycle}/>;
 }
