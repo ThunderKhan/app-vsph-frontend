@@ -58,6 +58,13 @@ const backend=http.createServer(async(req,res)=>{
    return respond(res,200,{saved:true});
  if(path==='/api/hrms/me/leave')
    return respond(res,200,{id,status:'pending'});
+ if(path==='/api/projects/'+id+'/delivery/connections/'+id+'/sync'){
+   if(parsed.version===2)return respond(res,200,{processed:true,connectionId:id,records:4});
+   if(parsed.version===3)return respond(res,200,{processed:false});
+   if(parsed.version===4)return respond(res,200,{processed:true,connectionId:id,error:'provider_timeout'});
+   return respond(res,200,{message:'malformed provider response'});
+ }
+
  if(path==='/api/organizations/'+id+'/ownership/reauthenticate'){
    if(parsed.password==='requires-authenticator')
      return respond(res,428,{code:'MFA_REQUIRED',factors:[{id:key,name:'Authenticator'}]});
@@ -221,6 +228,22 @@ try{
    assert.equal(row.clientSecret,null,'SSO launch must never transmit a confidential receiver secret');
  }
 
+
+
+ // A successful HTTP transport response is not proof a GitHub provider page succeeded.
+ const syncPath='/api/github-delivery-action';
+ const syncInput={action:'sync',projectId:id,connectionId:id,version:2};
+ const completedPage=await post(syncPath,syncInput);
+ assert.equal(completedPage.status,200);
+ assert.equal(completedPage.data?.processed,true);
+ const deferredPage=await post(syncPath,{...syncInput,version:3});
+ assert.equal(deferredPage.status,202);
+ assert.equal(deferredPage.data?.processed,false);
+ const failedPage=await post(syncPath,{...syncInput,version:4});
+ assert.equal(failedPage.status,503);
+ assert.ok(failedPage.data?.message?.includes('failed'));
+ const malformedPage=await post(syncPath,{...syncInput,version:5});
+ assert.equal(malformedPage.status,502);
 
  // Fresh identity proof stays exclusively between the two server-to-server hops.
  const transferInput={
