@@ -63,8 +63,18 @@ test('subscription start and end instants survive unchanged local datetime field
 });
 test('customer editor shows real start/end in local datetime controls and does not clear by default',async()=>{
  const ui=await read('src/features/operations/CustomerLifecycleWorkspace.tsx');
- assert.match(ui,/startsAt:entitlementDateInput\(product.startsAt\)/);
- assert.match(ui,/endsAt:entitlementDateInput\(product.endsAt\)/);
- assert.match(ui,/entitlementDateValue\(terms.startsAt,chosen.startsAt\)/);
+ assert.match(ui,/startsAt:entitlementDateInput\(product\?\.startsAt\?\?null\)/);
+ assert.match(ui,/endsAt:entitlementDateInput\(product\?\.endsAt\?\?null\)/);
+ assert.match(ui,/entitlementDateValue\(terms.startsAt,chosen\?\.startsAt\?\?null\)/);
  assert.match(ui,/Start date\/time \(blank: no start date\)/);
+});
+
+test('first product grant offers registered catalog products even with zero linked grants',async()=>{
+ const page=await read('src/app/(workspace)/admin/customers/[id]/lifecycle/page.tsx');
+ const ui=await read('src/features/operations/CustomerLifecycleWorkspace.tsx');
+ assert.match(page,/loadProductDirectory\(null\)/);
+ assert.match(ui,/registeredProducts.filter/);
+ assert.match(ui,/No existing product grant/);
+ assert.match(ui,/applicationId:selected.id/);
+ assert.doesNotMatch(ui,/chooser includes only products currently linked/i);
 });
