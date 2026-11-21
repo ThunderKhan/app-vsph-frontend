@@ -2,6 +2,7 @@ import {type NextRequest,NextResponse} from 'next/server';
 import {approvedInternalOrigin} from '@/features/workspace/server-api';
 import {approvedPublicOrigin,validPortalSession} from '@/features/projects/ProjectProxySecurity';
 import {validateFinanceWrite,financeWriteConfirmed} from '@/features/operations/FinanceManageContract';
+import {readBoundedRequestText} from '@/features/workspace/BoundedRequestBody';
 const headers={'Cache-Control':'no-store'};
 const fail=(message:string,status:number)=>NextResponse.json({message},{status,headers});
 /** Strict owner-finance mutation gateway; the backend rechecks all authority and ledger rules. */
@@ -15,7 +16,7 @@ export async function POST(request:NextRequest){
  if(!request.headers.get('content-type')?.startsWith('application/json')||
    Number(request.headers.get('content-length')||0)>4096)return fail('Invalid request body.',400);
  let data:unknown;
- try{const raw=await request.text();if(raw.length>4096)return fail('Finance request too large.',400);data=JSON.parse(raw);}
+ try{const raw=await readBoundedRequestText(request,4096);if(raw===null)return fail('Finance request too large.',400);data=JSON.parse(raw);}
  catch{return fail('Invalid JSON.',400);}
  const mutation=validateFinanceWrite(data);
  if(!mutation)return fail('Review the finance amount, dates, reference and confirmation.',400);
