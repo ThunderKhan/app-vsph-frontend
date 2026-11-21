@@ -2,6 +2,7 @@ import {type NextRequest,NextResponse} from 'next/server';
 import {approvedInternalOrigin} from '@/features/workspace/server-api';
 import {approvedPublicOrigin,validPortalSession} from '@/features/projects/ProjectProxySecurity';
 import {calendarMutation} from '@/features/calendar/CalendarContract';
+import {readBoundedRequestText} from '@/features/workspace/BoundedRequestBody';
 const headers={'Cache-Control':'no-store'};
 const fail=(status:number,message:string)=>NextResponse.json({message},{status,headers});
 export async function POST(request:NextRequest){
@@ -12,9 +13,9 @@ export async function POST(request:NextRequest){
  const cookie=request.cookies.get('vsph.portal.sid')?.value;
  if(!validPortalSession(cookie))return fail(401,'Sign in again.');
  if(!request.headers.get('content-type')?.startsWith('application/json')||
-    Number(request.headers.get('content-length')||0)>4096)return fail(400,'Invalid calendar request.');
+    Number(request.headers.get('content-length')||0)>16384)return fail(400,'Invalid calendar request.');
  let raw:unknown;
- try{const body=await request.text();if(body.length>4096)return fail(400,'Calendar request too long.');
+ try{const body=await readBoundedRequestText(request,16384);if(body===null)return fail(400,'Calendar request too long.');
    raw=JSON.parse(body);}catch{return fail(400,'Invalid JSON.');}
  const action=calendarMutation(raw);
  if(!action)return fail(400,'Review the event fields, date range and current version.');
