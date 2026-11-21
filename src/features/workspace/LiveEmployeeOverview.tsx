@@ -30,7 +30,7 @@ function Heatmap({activity}:{activity:EmployeeActivity|null}){
      </div>
    </div>
    <p className="employee-live-muted">Most frequent authorized projects (maximum 3):</p>
-   {!activity.projects.length?<p>No task completions were recorded in this window.</p>:
+   {!activity.projects.length?<p>{activity.total===0?'No task completions were recorded in this window.':'No authorized project breakdown is available.'}</p>:
      <ul>{activity.projects.map(p=><li key={p.name}>{p.name} · {p.count} completion{p.count===1?'':'s'}</li>)}</ul>}
  </section>;
 }
