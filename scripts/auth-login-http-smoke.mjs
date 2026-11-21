@@ -26,6 +26,11 @@ const backend=http.createServer(async(req,res)=>{
  try{payload=body?JSON.parse(body):null;}catch{return respond(res,400,{message:'Invalid JSON'});}
  calls.push({method:req.method,path:req.url,origin:req.headers.origin||null,
    cookie:req.headers.cookie||null,payload});
+ if(req.method==='GET'&&req.url==='/api/employee-credentials/status'){
+   if(req.headers.cookie!=='vsph.employee.setup='+temporarySid)
+      return respond(res,401,{message:'Temporary setup expired'});
+   return respond(res,200,{name:'New Employee',email:'worker@example.invalid',privateToken:'never expose'});
+ }
  if(req.method==='GET'&&req.url==='/api/apps/CRM/contexts'){
    if(req.headers.cookie!=='vsph.portal.sid='+sid)
      return respond(res,401,{message:'Sign in first'});
@@ -56,6 +61,36 @@ const backend=http.createServer(async(req,res)=>{
  }
  if(req.method!=='POST'||req.headers.origin!==origin)
    return respond(res,403,{message:'Origin denied'});
+ if(req.url==='/api/employee-enrollment/inspect'){
+   if(payload?.id!==id||payload?.token!=='x'.repeat(43))
+      return respond(res,400,{message:'Invalid private enrollment'});
+   return respond(res,200,{name:'New Employee',email:'worker@example.invalid',
+     expiresAt:'2026-12-01T00:00:00Z',privateToken:'never expose'});
+ }
+ if(req.url==='/api/employee-enrollment/accept'){
+   if(payload?.id!==id||payload?.token!=='x'.repeat(43)||payload?.confirmed!==true)
+      return respond(res,400,{message:'Invalid employee proof'});
+   return respond(res,200,{message:'Your employee account is ready. Sign in with your work email and the password you just chose.'});
+ }
+ if(req.url==='/api/invitations/inspect'){
+   if(payload?.invitationId!==id||payload?.token!=='x'.repeat(43))
+      return respond(res,400,{message:'Invalid invitation'});
+   return respond(res,200,{newIdentity:true,email:'worker@example.invalid',privateToken:'never expose'});
+ }
+ if(req.url==='/api/invitations/accept'){
+   if(payload?.invitationId!==id||payload?.token!=='x'.repeat(43))
+      return respond(res,400,{message:'Invalid customer invitation'});
+   return respond(res,200,{message:'Invitation accepted for this customer workspace. Sign in to continue.'});
+ }
+ if(req.url==='/api/employee-credentials/replace'){
+   if(req.headers.cookie!=='vsph.employee.setup='+temporarySid)
+      return respond(res,401,{message:'Temporary setup expired'});
+   if(payload?.password==='reject-password')
+      return respond(res,400,{code:'PASSWORD_REJECTED',message:'Choose a different valid personal password.'});
+   if(payload?.password!=='new-personal-password'||payload?.confirmed!==true)
+      return respond(res,400,{message:'Invalid request'});
+   return respond(res,200,{message:'Your personal password is set. Sign in again to open your employee workspace.'});
+ }
  if(req.url==='/api/auth/login'){
    if(payload?.email!=='worker@example.invalid')
      return respond(res,401,{message:'Invalid credentials',code:'INVALID_CREDENTIALS'});
@@ -166,6 +201,55 @@ try{
  assert.match(appLogin.cookie||'',/httponly/i);
  assert.equal((await post('/api/auth/app-login',{...login,app:'CRM',organizationId:userId},
   {cookie:sid})).status,403,'Unauthorized organization denied by backend');
+
+
+ const proof={id,token:'x'.repeat(43)};
+ const beforeProof=calls.length;
+ const deniedProof=await post('/api/employee-enrollment/inspect',proof,
+   {requestOrigin:'https://attacker.invalid'});
+ assert.equal(deniedProof.status,403);
+ assert.equal((await post('/api/employee-enrollment/inspect',{...proof,actorId:userId})).status,400);
+ assert.equal(calls.length,beforeProof);
+ const inspected=await post('/api/employee-enrollment/inspect',proof);
+ assert.equal(inspected.status,200);assert.equal(inspected.json?.name,'New Employee');
+ assert.equal('privateToken' in inspected.json,false);
+ const enrolled=await post('/api/employee-enrollment/accept',{
+   ...proof,password:'enrollment-pass-phrase',confirmed:true});
+ assert.equal(enrolled.status,200);
+ assert.match(enrolled.json?.message||'',/employee account is ready/);
+ const customerProof={invitationId:id,token:'x'.repeat(43)};
+ const customerInspect=await post('/api/invitations/inspect',customerProof);
+ assert.equal(customerInspect.status,200);assert.equal(customerInspect.json?.newIdentity,true);
+ assert.equal('privateToken' in customerInspect.json,false);
+ const customerAccept=await post('/api/invitations/accept',
+   {...customerProof,password:'enrollment-pass-phrase'});
+ assert.equal(customerAccept.status,200);
+ assert.match(customerAccept.json?.message||'',/Invitation accepted/);
+ const tempBefore=await fetch(origin+'/api/employee-credentials/status',{redirect:'manual'});
+ assert.equal(tempBefore.status,401,'No temporary employee identity without setup cookie');
+ const temporaryStatus=await fetch(origin+'/api/employee-credentials/status',{
+   redirect:'manual',headers:{Cookie:'vsph.employee.setup='+temporarySid}});
+ assert.equal(temporaryStatus.status,200);
+ const temporaryProjection=await temporaryStatus.json();
+ assert.equal(temporaryProjection.name,'New Employee');
+ assert.equal('privateToken' in temporaryProjection,false);
+ const personalPassword=async(password,cookie=temporarySid)=>fetch(
+   origin+'/api/employee-credentials/replace',{
+    method:'POST',cache:'no-store',redirect:'manual',
+    headers:{Origin:origin,'Sec-Fetch-Site':'same-origin','Content-Type':'application/json',
+      Cookie:'vsph.employee.setup='+cookie},
+    body:JSON.stringify({password,confirmed:true})});
+ const rejectedPersonal=await personalPassword('reject-password');
+ assert.equal(rejectedPersonal.status,400);
+ assert.equal((await rejectedPersonal.json())?.code,'PASSWORD_REJECTED');
+ const replaced=await personalPassword('new-personal-password');
+ assert.equal(replaced.status,200);
+ assert.equal((await replaced.json())?.message,
+   'Your personal password is set. Sign in again to open your employee workspace.');
+ assert.match(replaced.headers.get('set-cookie')||'',/vsph\.employee\.setup=/);
+ assert.match(replaced.headers.get('set-cookie')||'',/expires=/i);
+ const missingCredential=await personalPassword('new-personal-password','wrong');
+ assert.equal(missingCredential.status,401);
 
  const combinedCookie='vsph.portal.sid='+sid+'; vsph.crm.sid='+appSid;
  const requestApp=async(path,{cookie=combinedCookie,method='GET',data=null,
