@@ -9,7 +9,7 @@ export function trustedMusicStartUrl(raw:string|undefined):string|null{
   const u=new URL(raw);
   const local=process.env.NODE_ENV!=='production'&&['localhost','127.0.0.1'].includes(u.hostname);
   if(u.username||u.password||u.search||u.hash||u.port&&!(local&&u.protocol==='http:')||
-    !(u.pathname.endsWith('/api/sso/start'))||!(u.protocol==='https:'||(local&&u.protocol==='http:')))
+    u.pathname!=='/api/sso/start'||!(u.protocol==='https:'||(local&&u.protocol==='http:')))
     return null;
   return u.toString();
  }catch{return null;}
