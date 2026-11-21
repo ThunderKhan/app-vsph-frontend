@@ -19,9 +19,15 @@ test('Music page is authenticated, server-read, no fixture credentials or extern
  const page=await read('src/app/(workspace)/apps/music/launch/page.tsx');
  const api=await read('src/features/workspace/server-api.ts');
  const ui=await read('src/features/music/MusicLaunchWorkspace.tsx');
+ const route=await read('src/app/(workspace)/apps/music/launch/start/route.ts');
  assert.match(page,/portalApi\('\/api\/sso\/config\/MUSIC'\)/);
  assert.match(page,/process.env.MUSIC_SSO_START_URL/);
  assert.match(api,/permittedMusicConfig/);
- assert.match(ui,/organization_id/);
- assert.doesNotMatch(page+ui,/OperationsFixtures|NEXT_PUBLIC_|localStorage|sessionStorage/);
+ assert.match(ui,/\/apps\/music\/launch\/start\?/);
+ assert.match(route,/destination.searchParams.set\('organization_id',organization.id\)/);
+ assert.match(route,/portalApi\('\/api\/sso\/config\/MUSIC'\)/);
+ assert.match(route,/parseMusicLaunch/);
+ assert.match(route,/organization.id.toLowerCase\(\)===requested.toLowerCase\(\)/);
+ assert.match(route,/NextResponse.redirect\(destination.toString\(\),303\)/);
+ assert.doesNotMatch(page+ui+route,/OperationsFixtures|NEXT_PUBLIC_|localStorage|sessionStorage|x-vsph-client-secret/);
 });
