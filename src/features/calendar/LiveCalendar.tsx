@@ -205,7 +205,10 @@ export function LiveCalendar(){
           }}
           onDoubleClick={()=>{if(busy)return;const target=new Date(day);target.setHours(hour,0,0,0);
             setEditor(newEditor(target,true));}}>
-          {selectedEvents(day).filter(e=>new Date(e.startAt).getHours()===hour).map(e=>eventButton(e,true))}
+          {selectedEvents(day).filter(e=>{
+           const dayStart=new Date(day.getFullYear(),day.getMonth(),day.getDate()).getTime();
+           return (Date.parse(e.startAt)<dayStart?0:new Date(e.startAt).getHours())===hour;
+          }).map(e=>eventButton(e,true))}
         </div>)}
       </div>;
     })}
