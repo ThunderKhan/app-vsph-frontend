@@ -3,6 +3,8 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const record=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const isId=(x:unknown):x is string=>typeof x==='string'&&uuid.test(x);
 const text=(x:unknown,max:number,min=1):x is string=>typeof x==='string'&&x.trim().length>=min&&x.length<=max&&!/[\u0000-\u001f\u007f]/.test(x);
+// User-authored weekly updates may contain line breaks and tabs, but no other control bytes.
+const prose=(x:unknown,max:number,min=1):x is string=>typeof x==='string'&&x.trim().length>=min&&x.length<=max&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(x);
 const version=(x:unknown):x is number=>Number.isSafeInteger(x)&&(x as number)>=1&&(x as number)<=999999999;
 const exact=(x:Record<string,unknown>,keys:string[])=>Object.keys(x).length===keys.length&&keys.every(k=>Object.hasOwn(x,k));
 export type WorkspaceRole='manager'|'contributor'|'viewer'|'client';
@@ -46,9 +48,9 @@ export function parseProjectWorkspace(x:unknown):ProjectWorkspaceData|null{
  }
  for(const row of x.updates){
   if(!record(row)||!isId(row.id)||!unseen('update',row.id)||
-    !text(row.summary,2500,8)||typeof row.health!=='string'||
+    !prose(row.summary,2500,8)||typeof row.health!=='string'||
     !['on_track','at_risk','off_track'].includes(row.health)||
-    typeof row.next_steps!=='string'||row.next_steps.length>1500||
+    !prose(row.next_steps,1500,0)||
     typeof row.shared!=='boolean'||typeof row.created_at!=='string'||
     Number.isNaN(Date.parse(row.created_at)))return null;
   updates.push({id:row.id,summary:row.summary,health:row.health,nextSteps:row.next_steps,
@@ -90,7 +92,7 @@ export function projectWorkspaceMutation(x:unknown):{path:string;body:Record<str
  }else if(action==='resource-archive'){keys=['version','id'];
    if(!isId(rest.id))return null;
  }else if(action==='update-publish'){keys=['version','summary','health','nextSteps','shared'];
-   if(!text(rest.summary,2500,8)||!text(rest.nextSteps,1500,0)||
+   if(!prose(rest.summary,2500,8)||!prose(rest.nextSteps,1500,0)||
      !['on_track','at_risk','off_track'].includes(String(rest.health))||
      typeof rest.shared!=='boolean')return null;
  }
