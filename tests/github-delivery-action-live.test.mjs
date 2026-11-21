@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {deliveryCommand,parseRepositoryDiscovery} from '../src/features/projects/DeliveryMutationContract.ts';
+import {deliveryCommand,parseRepositoryDiscovery,deliveryConfirmation} from '../src/features/projects/DeliveryMutationContract.ts';
 import {readFile} from 'node:fs/promises';
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 const id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -44,4 +44,22 @@ test('engineering UI wires all provider-governed commands but never embeds a Git
  assert.match(parent,/EngineeringDeliveryActions/);
  assert.match(ui,/parseRepositoryDiscovery/);
  assert.doesNotMatch(ui,/GITHUB_APP_PRIVATE_KEY|Authorization:|Bearer |NEXT_PUBLIC_/);
+});
+
+test('provider gateway distinguishes genuine mutation confirmation, deferred work and failed sync',()=>{
+ assert.equal(deliveryConfirmation({saved:true},'connect'),'confirmed');
+ assert.equal(deliveryConfirmation({message:'not confirmed'},'connect'),'invalid');
+ assert.equal(deliveryConfirmation({processed:false},'sync',id),'deferred');
+ assert.equal(deliveryConfirmation({processed:true,connectionId:id,records:13},'sync',id),'confirmed');
+ assert.equal(deliveryConfirmation({processed:true,connectionId:id,error:'provider_timeout'},'sync',id),'provider-failed');
+ assert.equal(deliveryConfirmation({processed:true,connectionId:id,records:3},'sync','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),'invalid');
+ assert.equal(deliveryConfirmation({processed:true,connectionId:id,records:101},'sync',id),'invalid');
+});
+test('GitHub backend response errors are not relabeled successful by the proxy',async()=>{
+ const src=await read('src/app/api/github-delivery-action/route.ts');
+ const ui=await read('src/features/projects/EngineeringDeliveryActions.tsx');
+ assert.match(src,/deliveryConfirmation\(result,command.action/);
+ assert.match(src,/confirmed==='provider-failed'/);
+ assert.match(src,/confirmed==='deferred'/);
+ assert.match(ui,/data.processed===false/);
 });
