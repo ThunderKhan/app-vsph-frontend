@@ -42,10 +42,10 @@ const backend=http.createServer((req,res)=>{
  if(req.url==='/api/finance/overview'){
    if(role!=='owner')return respond(res,403,{message:'Owner only'});
    return respond(res,200,{
-    summary:{invoicedPaise:'40000',collectedPaise:'10000',
-      outstandingPaise:'30000',pastDuePaise:'1000',
+    summary:{invoicedPaise:40000,collectedPaise:10000,
+      outstandingPaise:30000,pastDuePaise:1000,
       issuedInvoices:2,voidInvoices:0,clients:1,projects:0},
-    monthly:[{month_start:'2026-11-01',collected_paise:'10000'}],
+    monthly:[{month_start:'2026-11-01',collected_paise:10000}],
     asOf:'2026-11-21',currency:'INR',basis:'manual_cash_receipts',
    });
  }
@@ -112,6 +112,8 @@ try{
  assert.equal(owner.status,200,'Owner SSR should render');
  assert.match(owner.html,/Company overview/);
  assert.match(owner.html,/Cash collected/);
+ assert.match(owner.html,/₹100\.00|\u20b9100\.00/, 'Numeric Postgres totals must render as exact INR paise');
+ assert.doesNotMatch(owner.html,/Finance ledger unavailable/);
  assert.match(owner.html,/Owner Example/);
  assert.doesNotMatch(owner.html,/Worker Example|Confidential Former Employee/);
  const employee=await load('/dashboard',employeeSid);
