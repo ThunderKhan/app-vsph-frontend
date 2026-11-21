@@ -54,3 +54,25 @@ export function parseRepositoryDiscovery(raw:unknown):{
  }
  return {repositories,nextPage:raw.nextPage as number|null,truncated:raw.truncated};
 }
+
+/**
+ * The legacy RPC returns {saved:true} for five mutations.
+ * Synchronization returns a distinct, potentially failed provider-page outcome.
+ * Never turn an arbitrary HTTP 200 object into a successful application mutation.
+ */
+export type DeliveryConfirmation='confirmed'|'deferred'|'provider-failed'|'invalid';
+export function deliveryConfirmation(raw:unknown,action:string,connectionId?:string):DeliveryConfirmation{
+ if(!obj(raw))return 'invalid';
+ if(action!=='sync'){
+  return ['approve','revoke','connect','disconnect','link'].includes(action)&&
+    raw.saved===true?'confirmed':'invalid';
+ }
+ if(raw.processed===false&&Object.keys(raw).length===1)return 'deferred';
+ if(raw.processed!==true||typeof raw.connectionId!=='string'||!id(raw.connectionId)||
+    !connectionId||raw.connectionId.toLowerCase()!==connectionId.toLowerCase())return 'invalid';
+ if(typeof raw.error==='string'&&/^[a-z][a-z0-9_]{0,99}$/.test(raw.error))
+   return 'provider-failed';
+ if(raw.error!==undefined||!Number.isSafeInteger(raw.records)||
+    (raw.records as number)<0||(raw.records as number)>100)return 'invalid';
+ return 'confirmed';
+}
