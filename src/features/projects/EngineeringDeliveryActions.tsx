@@ -16,6 +16,7 @@ export function EngineeringDeliveryActions({project,delivery,platformOwner}:{
  const [discovery,setDiscovery]=useState<RepositoryDiscovery|null>(null);
  const [currentPage,setCurrentPage]=useState(1);
  const [chosenWork,setChosenWork]=useState<Record<string,string>>({});
+ const [editingLink,setEditingLink]=useState<string|null>(null);
  const manager=project.role==='manager'&&!['archived','completed'].includes(project.project.status);
  const usable=manager&&delivery.configured;
  async function action(body:Record<string,unknown>){
@@ -125,12 +126,16 @@ export function EngineeringDeliveryActions({project,delivery,platformOwner}:{
     <h3>Explicitly link GitHub evidence to project work</h3>
     <p>Only recorded pull requests and releases can be linked to an existing project task or milestone.
       No relationship is inferred from titles.</p>
-    {linkable.map(r=><form key={r.id} onSubmit={e=>{
+    {linkable.map(r=><div key={r.id} className="engineering-repository">
+      <strong>{r.title}</strong>
+      <button type="button" disabled={busy} aria-expanded={editingLink===r.id}
+        onClick={()=>setEditingLink(editingLink===r.id?null:r.id)}>
+        {editingLink===r.id?'Close link editor':'Review work link'}</button>
+      {editingLink===r.id&&<form onSubmit={e=>{
        e.preventDefault();const parts=selector(r.id).split(':');
        if(parts.length!==2)return;
        void action({action:'link',recordId:r.id,workKind:parts[0],workId:parts[1]});
      }}>
-       <strong>{r.title}</strong>
        <label>Project task or milestone
          <select value={selector(r.id)} onChange={e=>setChosenWork(v=>({...v,[r.id]:e.target.value}))}>
            <option value="">Choose task or milestone</option>
@@ -141,7 +146,7 @@ export function EngineeringDeliveryActions({project,delivery,platformOwner}:{
        </label>
        <button type="submit" disabled={busy||!selector(r.id)}>Save explicit link</button>
        {linkedIds.has(r.id)&&<small>Existing link can be replaced by a reviewed selection.</small>}
-     </form>)}
+     </form>}</div>)}
   </section>}
  </section>;
 }
