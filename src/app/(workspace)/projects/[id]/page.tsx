@@ -135,6 +135,7 @@ function LiveProject({ data, workforce, actorId, canGovernLifecycle }: { data: P
     </section>
     <section id="engineering" className="project-v2-card project-live-section" aria-labelledby="live-engineering">
       <h2 id="live-engineering">Engineering delivery</h2>
+      <p><Link className="project-live-refresh" href={'/projects/'+p.id+'/workspace'}>Open delivery workspace</Link></p>
       <p>Repository and deployment integrations are not yet connected to this frontend.</p>
     </section>
     <section id="activity" className="project-v2-card project-live-section" aria-labelledby="live-activity">

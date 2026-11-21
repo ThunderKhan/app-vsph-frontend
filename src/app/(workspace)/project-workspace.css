@@ -1,0 +1,26 @@
+.project-workspace-live{max-width:1240px;margin:0 auto;padding:27px 22px;color:#26394f}
+.project-workspace-live nav>a{color:#075fa9}
+.project-delivery-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:15px}
+.project-delivery-header h1{font-size:clamp(24px,3vw,32px);margin:12px 0 5px}
+.project-delivery-header p{color:#5a6f86;margin:5px 0}
+.project-delivery-panel{background:#fff;border:1px solid #d5e1ed;border-radius:9px;padding:20px;margin:20px 0}
+.project-delivery-panel h2{font-size:21px;margin:0 0 14px}
+.project-delivery-panel h3{font-size:17px}
+.project-delivery-record{border-top:1px solid #dce5ed;padding:13px 0;display:flex;
+ align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;overflow-wrap:anywhere}
+.project-delivery-record p{margin:5px 0;color:#596e85}
+.project-delivery-record a{color:#075fa9}
+.project-delivery-panel form{padding:16px 0;margin-top:12px;border-top:1px solid #dce5ed;display:grid;gap:12px}
+.project-delivery-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.project-delivery-panel label{display:grid;gap:7px;font-weight:650;font-size:13px}
+.project-delivery-panel :is(input,textarea,select){width:100%;border:1px solid #aabfd3;
+ background:#fff;border-radius:6px;min-height:42px;padding:9px;font:inherit;color:#20364e}
+.project-delivery-panel .project-delivery-check{display:flex;align-items:center;gap:9px}
+.project-delivery-panel .project-delivery-check input{width:18px;height:18px;min-height:18px}
+.project-workspace-live button{min-height:41px;padding:9px 14px;border:1px solid #075fa9;
+ border-radius:6px;background:#fff;color:#075fa9;font:inherit;font-weight:650;cursor:pointer}
+.project-workspace-live button:disabled{opacity:.55;cursor:not-allowed}
+.project-delivery-error{color:#9d2929}
+.project-workspace-live :is(button,a,input,select,textarea):focus-visible{outline:3px solid #5ac8ed;outline-offset:2px}
+@media(max-width:700px){.project-workspace-live{padding:15px}
+ .project-delivery-panel{padding:15px}.project-delivery-fields{grid-template-columns:1fr}}

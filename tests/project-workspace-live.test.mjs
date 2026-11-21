@@ -41,3 +41,15 @@ test('project workspace mutations use fixed paths and backend authorization',asy
  assert.match(proxy,/validPortalSession/);
  assert.doesNotMatch(proxy,/NEXT_PUBLIC_|OperationsFixtures|ProjectFixtures/);
 });
+
+test('delivery screen uses only backend-authorized project detail and workspace records',async()=>{
+ const page=await read('src/app/(workspace)/projects/[id]/workspace/page.tsx');
+ const ui=await read('src/features/projects/ProjectWorkspaceLive.tsx');
+ assert.match(page,/parseProjectDetail/);
+ assert.match(page,/parseProjectWorkspace/);
+ assert.match(page,/workspace.role!==project.role/);
+ for(const action of ['checklist-add','checklist-toggle','risk-add','risk-resolve',
+   'resource-add','resource-archive','update-publish'])assert.ok(ui.includes(action),action);
+ assert.match(ui,/assigneeId===actorId/);
+ assert.doesNotMatch(page+ui,/ProjectFixtures|OperationsFixtures|localStorage|sessionStorage/);
+});
