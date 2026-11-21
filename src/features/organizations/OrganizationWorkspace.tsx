@@ -104,6 +104,7 @@ export function OrganizationWorkspace({organizations,current,members,invitations
    if(!inviteConfirm){setInviteConfirm(true);return;}
    const products=current.products.filter(p=>p.effective&&p.can_assign&&inviteRoles[p.id])
      .map(p=>({applicationId:p.id,role:inviteRoles[p.id]}));
+   if(products.length>12){setMessage('Choose no more than 12 product roles.');setInviteConfirm(false);return;}
    void mutate({action:'invite',...invite,products},true);
  };
  const nextAfter=organizations.length===100?organizations[99].id:null;
@@ -148,7 +149,7 @@ export function OrganizationWorkspace({organizations,current,members,invitations
   </section>
   <section className="org-panel"><h2>Members and access</h2>
     <p>Owners manage administrators and ordinary members. Administrators manage ordinary members. Owner changes use the separate transfer workflow. Self and platform-account edits are unavailable here. Invited members must accept their invitation.</p>
-    {members.map(m=><MemberCard key={m.user_id} member={m} current={current} busy={busy}
+    {members.map(m=><MemberCard key={m.user_id+':'+m.version} member={m} current={current} busy={busy}
        mutate={action=>mutate(action)}/>)}
     {!members.length&&<p>No members on this page.</p>}
     <div className="org-actions">{memberAfter&&<Link href={path(current.organization.id,organizationAfter)}>
