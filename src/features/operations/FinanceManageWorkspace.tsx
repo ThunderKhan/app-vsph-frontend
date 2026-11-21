@@ -7,8 +7,8 @@ const today=()=>new Date().toISOString().slice(0,10);
 function amountToPaise(value:string):number|null{
  if(!/^[0-9]{1,10}(?:\.[0-9]{1,2})?$/.test(value))return null;
  const [whole,dec='']=value.split('.');
- const paise=BigInt(whole)*100n+BigInt(dec.padEnd(2,'0'));
- return paise>0n&&paise<=1000000000000n?Number(paise):null;
+ const paise=BigInt(whole)*BigInt(100)+BigInt(dec.padEnd(2,'0'));
+ return paise>BigInt(0)&&paise<=BigInt(1000000000000)?Number(paise):null;
 }
 type Intent='invoice'|'receipt';
 type Correction={action:'void'|'reverse';id:string;reference:string;version?:number};
@@ -172,7 +172,7 @@ export function FinanceManageWorkspace({organizations,projects,invoices,receipts
            <td><strong>{i.reference}</strong><small>Due {i.dueOn}</small></td>
            <td>{i.organizationName}<small>{i.projectName||'No linked project'}</small></td>
            <td>{rupeesFromPaise(i.amountPaise)}</td><td>{rupeesFromPaise(i.collectedPaise)}</td>
-           <td>{i.status}</td><td>{i.status==='issued'&&BigInt(i.collectedPaise)===0n?
+           <td>{i.status}</td><td>{i.status==='issued'&&BigInt(i.collectedPaise)===BigInt(0)?
              <button type="button" disabled={busy} onClick={()=>openCorrection({action:'void',
                id:i.id,reference:i.reference,version:i.version})}>Void</button>:'—'}</td>
          </tr>)}</tbody>
