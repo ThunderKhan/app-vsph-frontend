@@ -32,7 +32,7 @@ export function EmployeeRemovalPanel({employee,onClose}:{employee:RosterEmployee
    {error&&<p role="alert">{error}</p>}
    <form onSubmit={submit}>
      <label>Removal reason (8–500 characters)<textarea required minLength={8} maxLength={500}
-       rows={3} disabled={busy} value={reason} onChange={e=>{setReason(e.target.value);setConfirmed(false);}}/></label>
+       rows={3} disabled={busy} value={reason} onChange={e=>{setReason(e.target.value.replace(/[\u0000-\u001f\u007f]/g,' '));setConfirmed(false);}}/></label>
      <label className="employee-live-confirm">
        <input type="checkbox" checked={confirmed} disabled={busy}
          onChange={e=>setConfirmed(e.target.checked)}/>
