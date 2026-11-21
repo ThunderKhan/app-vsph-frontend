@@ -46,7 +46,8 @@ export function parseProjectWorkspace(x:unknown):ProjectWorkspaceData|null{
  }
  for(const row of x.updates){
   if(!record(row)||!isId(row.id)||!unseen('update',row.id)||
-    !text(row.summary,2500,8)||!['on_track','at_risk','off_track'].includes(String(row.health))||
+    !text(row.summary,2500,8)||typeof row.health!=='string'||
+    !['on_track','at_risk','off_track'].includes(row.health)||
     typeof row.next_steps!=='string'||row.next_steps.length>1500||
     typeof row.shared!=='boolean'||typeof row.created_at!=='string'||
     Number.isNaN(Date.parse(row.created_at)))return null;
