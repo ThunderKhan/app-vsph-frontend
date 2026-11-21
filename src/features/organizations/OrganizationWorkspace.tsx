@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import {useRef,useState,type FormEvent} from 'react';
 import type {OrgSummary,OrgDetail,OrgMember,OrgInvite} from './OrganizationContract';
+import {OwnerTransferPanel} from './OwnerTransferPanel';
 const path=(org:string,after?:string,memberAfter?:string)=>{
  const params=new URLSearchParams({org});if(after)params.set('afterId',after);
  if(memberAfter)params.set('memberAfter',memberAfter);
@@ -204,7 +205,7 @@ export function OrganizationWorkspace({organizations,current,members,invitations
   </section>
   {current.actorRole==='owner'&&<section className="org-panel">
    <h2>Transfer organization ownership</h2>
-   <p>Ownership transfer requires a fresh password/MFA step-up and a reviewed server-side proof. It is not available through the current migrated interface.</p>
+   <OwnerTransferPanel organizationId={current.organization.id} members={members}/>
   </section>}
   <section className="org-panel"><h2>Recent organization changes</h2>
     {current.activity.map((a,i)=><p key={a.action+':'+i}>{a.created_at} · {a.action}</p>)}
