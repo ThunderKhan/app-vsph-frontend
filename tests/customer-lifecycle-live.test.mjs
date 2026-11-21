@@ -30,3 +30,21 @@ test('lifecycle proxy remains same-origin and legacy-owner only',async()=>{
  assert.match(proxy,/customerLifecycleConfirmed/);assert.match(api,/permittedCustomerImpact/);
  assert.doesNotMatch(proxy,/NEXT_PUBLIC_|OperationsFixtures/);
 });
+
+test('customer lifecycle page shows live, version-matched impact before changes',async()=>{
+ const page=await read('src/app/(workspace)/admin/customers/[id]/lifecycle/page.tsx');
+ const ui=await read('src/features/operations/CustomerLifecycleWorkspace.tsx');
+ const model=await parser(),data=model.parseCustomerLifecycle({
+  organization:{id,name:'Example customer',status:'active',version:2},
+  products:[{id,code:'MUSIC',name:'Music',access_status:'enabled',subscription_status:'active',
+    plan_code:'standard',starts_at:'2026-11-21T03:00:00+00:00',ends_at:null}]
+ },{version:2,status:'active',impact:{activeMembers:2,productSessions:1,pendingInvitations:3}});
+ assert.equal(data?.impact.productSessions,1);
+ assert.equal(model.parseCustomerLifecycle({
+   organization:{id,name:'Example',status:'active',version:3},products:[]
+ },{version:2,status:'active',impact:{activeMembers:0,productSessions:0,pendingInvitations:0}}),null);
+ assert.match(page,/parseCustomerLifecycle/);
+ assert.match(ui,/Review entitlement change/);
+ assert.match(ui,/Confirm lifecycle change/);
+ assert.doesNotMatch(page+ui,/OperationsFixtures|localStorage|Math.random/);
+});

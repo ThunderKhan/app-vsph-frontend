@@ -8,6 +8,8 @@ const text=(v:unknown,max=150):v is string=>typeof v==='string'&&!!v.trim()&&v.l
  !/[\u0000-\u001f\u007f]/.test(v);
 const iso=(v:unknown):v is string=>typeof v==='string'&&v.length<=35&&
  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(v)&&!Number.isNaN(Date.parse(v));
+const dbTime=(v:unknown):v is string=>typeof v==='string'&&
+ /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(v)&&!Number.isNaN(Date.parse(v));
 const exact=(v:Record<string,unknown>,keys:string[])=>Object.keys(v).length===keys.length&&keys.every(k=>Object.hasOwn(v,k));
 export type LifecycleStatus='active'|'suspended'|'closed';
 export type CustomerEntitlement=ReadOnlyProduct;
@@ -32,8 +34,8 @@ export function parseCustomerLifecycle(detail:unknown,preview:unknown):CustomerL
      !['enabled','suspended','revoked'].includes(String(p.access_status))||
      !(p.subscription_status===null||['trial','active','past_due','cancelled','expired'].includes(String(p.subscription_status)))||
      !(p.plan_code===null||typeof p.plan_code==='string'&&p.plan_code.length<=60)||
-     !(p.starts_at===null||iso(p.starts_at))||
-     !(p.ends_at===null||iso(p.ends_at)))return null;
+     !(p.starts_at===null||dbTime(p.starts_at))||
+     !(p.ends_at===null||dbTime(p.ends_at)))return null;
   seen.add(p.id.toLowerCase());
   products.push({id:p.id,name:p.name,code:p.code,accessStatus:p.access_status,
     subscriptionStatus:p.subscription_status as string|null,

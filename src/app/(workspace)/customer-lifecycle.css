@@ -1,0 +1,15 @@
+.customer-lifecycle{max-width:1150px;margin:0 auto}
+.customer-lifecycle-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.customer-lifecycle-stats>div{padding:16px;border:1px solid #d6e2ec;border-radius:8px}
+.customer-lifecycle-stats dt{font-size:13px;color:#61758b}
+.customer-lifecycle-stats dd{font-size:24px;font-weight:700;margin:8px 0 0}
+.customer-lifecycle form{display:grid;gap:14px;max-width:850px}
+.customer-lifecycle form label{display:grid;gap:7px;font-size:13px;font-weight:650}
+.customer-lifecycle form :is(input,select){width:100%;min-height:42px;border:1px solid #a8bfd2;
+ border-radius:6px;padding:9px;color:#24384f;background:#fff;font:inherit}
+.customer-lifecycle button{background:#075fa9;color:#fff;border:1px solid #075fa9;
+ border-radius:6px;padding:10px 14px;font:inherit;font-weight:650;cursor:pointer;min-height:42px;width:max-content}
+.customer-lifecycle button:disabled{opacity:.55;cursor:not-allowed}
+.customer-lifecycle-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.customer-lifecycle :is(a,input,button,select):focus-visible{outline:3px solid #5ac8ed;outline-offset:2px}
+@media(max-width:700px){.customer-lifecycle-grid,.customer-lifecycle-stats{grid-template-columns:1fr}}
