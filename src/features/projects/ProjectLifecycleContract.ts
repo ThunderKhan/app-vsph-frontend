@@ -1,5 +1,5 @@
 /** Verified legacy owner-only project archive/deletion contract. */
-const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const key=/^[A-Z][A-Z0-9-]{1,19}$/;
 const object=(value:unknown):value is Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 export type ProjectLifecycleAction='archive'|'delete';
