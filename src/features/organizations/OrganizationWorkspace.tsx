@@ -205,7 +205,7 @@ export function OrganizationWorkspace({organizations,current,members,invitations
   </section>
   {current.actorRole==='owner'&&<section className="org-panel">
    <h2>Transfer organization ownership</h2>
-   <OwnerTransferPanel organizationId={current.organization.id} members={members}/>
+   <OwnerTransferPanel key={memberAfter+':'+members.map(m=>m.user_id+':'+m.version).join(',')} organizationId={current.organization.id} members={members}/>
   </section>}
   <section className="org-panel"><h2>Recent organization changes</h2>
     {current.activity.map((a,i)=><p key={a.action+':'+i}>{a.created_at} · {a.action}</p>)}
