@@ -60,6 +60,11 @@ export async function POST(request: NextRequest) {
     });
     // Only a confirmed backend revocation can produce a success response.
     if (response.status !== 200) throw new Error('Backend revocation failed');
+    const confirmation: unknown = await response.json().catch(() => null);
+    if (!confirmation || typeof confirmation !== 'object' || Array.isArray(confirmation) ||
+        !('message' in confirmation) || confirmation.message !== 'Signed out.') {
+      throw new Error('Backend logout confirmation invalid');
+    }
     const signedOut = NextResponse.json({ message: 'Signed out.' }, { headers });
     for (const cookie of allowedCookies) {
       signedOut.cookies.set({

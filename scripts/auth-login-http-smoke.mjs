@@ -13,7 +13,7 @@ const sid='p'.repeat(43),appSid='c'.repeat(43),temporarySid='t'.repeat(43);
 const id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const userId='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const calls=[];
-let appEnabled=true;
+let appEnabled=true,logoutConfirmed=false;
 const respond=(res,status,data,cookie)=>{
  res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',
    ...(cookie?{'Set-Cookie':cookie}:{})});
@@ -112,6 +112,11 @@ const backend=http.createServer(async(req,res)=>{
   if(!appEnabled)return respond(res,403,{message:'Revoked application role'});
   if(!payload||payload.name!=='New Contact'||payload.email!=='new@example.invalid')return respond(res,400,{message:'Invalid contact'});
   return respond(res,201,{record:{id:userId,...payload}});
+ }
+ if(req.url==='/api/auth/logout'){
+  if(!req.headers.cookie?.includes('vsph.portal.sid='+sid))
+    return respond(res,401,{message:'Sign in first'});
+  return respond(res,200,{message:logoutConfirmed?'Signed out.':'Revocation not confirmed.'});
  }
  if(req.url==='/api/auth/app-logout'){
   if(!req.headers.cookie?.includes('vsph.portal.sid='+sid))return respond(res,401,{message:'Sign in first'});
@@ -297,9 +302,21 @@ try{
  assert.doesNotMatch(done.cookies||'',/vsph\.portal\.sid=/,'App logout must not clear portal session');
  assert.ok(calls.some(c=>c.path==='/api/apps/CRM/context'&&c.cookie===combinedCookie));
 
+ // A 200 response alone cannot certify durable portal-session revocation.
+ const falseLogout=await requestApp('/api/auth/logout',{method:'POST',data:{}});
+ assert.equal(falseLogout.status,503);
+ assert.equal(falseLogout.cookies,null,'Unconfirmed logout cannot clear the browser identity');
+ logoutConfirmed=true;
+ const realLogout=await requestApp('/api/auth/logout',{method:'POST',data:{}});
+ assert.equal(realLogout.status,200);
+ assert.equal(realLogout.body?.message,'Signed out.');
+ assert.match(realLogout.cookies||'',/vsph\.portal\.sid=/);
+ assert.match(realLogout.cookies||'',/vsph\.crm\.sid=/);
+ assert.ok(calls.some(c=>c.path==='/api/auth/logout'&&c.cookie===combinedCookie));
+
  assert.ok(calls.some(c=>c.path==='/api/auth/login'&&c.origin===origin));
  assert.ok(calls.some(c=>c.path==='/api/auth/app-login'&&c.cookie==='vsph.portal.sid='+sid));
- console.log('Verified portal, MFA, enrollment and application sign-in proxy over production HTTP with isolated backend.');
+ console.log('Verified portal, MFA, enrollment, application sign-in and confirmed logout over production HTTP with isolated backend.');
 }finally{
  next.kill('SIGTERM');backend.close();
  if(next.exitCode===null){
