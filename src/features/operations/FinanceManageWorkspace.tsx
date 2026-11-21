@@ -24,8 +24,8 @@ export function FinanceManageWorkspace({organizations,projects,invoices,receipts
  const [reason,setReason]=useState(''),[confirmed,setConfirmed]=useState(false);
  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const pending=useRef<Record<Intent,Pending|null>>({invoice:null,receipt:null});
- const resetInvoice=()=>{setInvoiceReview(false);pending.current.invoice=null;};
- const resetReceipt=()=>{setReceiptReview(false);pending.current.receipt=null;};
+ const resetInvoice=()=>{setInvoiceReview(false);};
+ const resetReceipt=()=>{setReceiptReview(false);};
  const outstanding=invoices.filter(i=>i.status==='issued'&&BigInt(i.amountPaise)>BigInt(i.collectedPaise));
  const selectedInvoice=outstanding.find(i=>i.id===receipt.invoiceId);
  const changeInvoice=(key:keyof typeof invoice,value:string)=>{
