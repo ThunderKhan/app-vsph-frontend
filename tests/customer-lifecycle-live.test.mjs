@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';import vm from 'node:vm';import ts from 'typescript';
 import {readFile} from 'node:fs/promises';
+import {entitlementDateInput,entitlementDateValue} from '../src/features/operations/CustomerEntitlementDates.ts';
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 const id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 async function parser(){
@@ -47,4 +48,23 @@ test('customer lifecycle page shows live, version-matched impact before changes'
  assert.match(ui,/Review entitlement change/);
  assert.match(ui,/Confirm lifecycle change/);
  assert.doesNotMatch(page+ui,/OperationsFixtures|localStorage|Math.random/);
+});
+
+test('subscription start and end instants survive unchanged local datetime fields',()=>{
+ const original='2026-11-21T08:05:42.123456+00:00';
+ const visible=entitlementDateInput(original);
+ assert.match(visible,/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+ assert.equal(entitlementDateValue(visible,original).value,'2026-11-21T08:05:42.123Z');
+ assert.deepEqual(entitlementDateValue('',original),{valid:true,value:null});
+ assert.equal(entitlementDateValue('2026-02-30T09:00',null).valid,false);
+ assert.equal(entitlementDateValue('garbage',null).valid,false);
+ const changed='2026-11-23T12:30';
+ assert.equal(entitlementDateValue(changed,original).value,new Date(changed).toISOString());
+});
+test('customer editor shows real start/end in local datetime controls and does not clear by default',async()=>{
+ const ui=await read('src/features/operations/CustomerLifecycleWorkspace.tsx');
+ assert.match(ui,/startsAt:entitlementDateInput\(product.startsAt\)/);
+ assert.match(ui,/endsAt:entitlementDateInput\(product.endsAt\)/);
+ assert.match(ui,/entitlementDateValue\(terms.startsAt,chosen.startsAt\)/);
+ assert.match(ui,/Start date\/time \(blank: no start date\)/);
 });
