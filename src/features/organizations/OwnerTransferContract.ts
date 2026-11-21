@@ -1,5 +1,5 @@
 /** Organization ownership: backend authorizes only current sole owner -> active admin. */
-const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const obj=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const version=(v:unknown):v is number=>Number.isSafeInteger(v)&&(v as number)>0&&(v as number)<=2147483647;
 export type OwnerTransferPreview={
