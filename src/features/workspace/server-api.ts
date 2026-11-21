@@ -76,6 +76,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
     (orgDetails&&validOrgUuid(orgDetails[1])&&
       (!orgDetails[3]||(orgDetails[2]==='members'&&validOrgUuid(orgDetails[3]))))
   );
+  const permittedHrGovernanceAccess = path === '/api/hrms/access';
   // Employee directory reads are restricted to documented, bounded filters.
   const employeePath = /^\/api\/employees\?([^#]*)$/.exec(path);
   let permittedEmployees = false;
@@ -220,7 +221,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { HrAccess, PortalUser } from './contracts';
 
-const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security', '/search', '/my-work', '/admin/project-managers', '/calendar', '/organizations']);
+const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security', '/search', '/my-work', '/admin/project-managers', '/calendar', '/organizations', '/hr/access']);
 
 type NavItem = { label: string; href: string; show?: boolean };
 type NavGroup = { label: string; items: NavItem[]; show?: boolean };
@@ -83,6 +83,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
         { label: 'Employee directory', href: '/employees',
           show: isOwner || flags?.management === true },
         { label: 'HR workspace', href: '/hr', show: isOwner || flags?.management === true },
+        { label: 'HR access', href: '/hr/access', show: isOwner && flags?.governHr === true },
         { label: 'Project managers', href: '/admin/project-managers',
           show: isOwner || flags?.governHr === true },
       ] },
