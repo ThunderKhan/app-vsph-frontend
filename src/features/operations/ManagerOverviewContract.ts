@@ -18,10 +18,10 @@ export function parseManagerOverview(value:unknown):ManagerRecord[]|null{
      !(row.department===null||row.department===undefined||
        (typeof row.department==='string'&&row.department.length<=100))||
      typeof row.account_status!=='string'||row.account_status.length>100||
-     typeof row.accountable_owner!=='boolean')return null;
+     typeof row.accountable_owner!=='boolean'||typeof row.linked_employee!=='boolean')return null;
    rows.push({project_id:row.project_id,project_name:row.project_name,project_status:row.project_status,
      manager_name:row.manager_name,department:typeof row.department==='string'?row.department:null,
-     account_status:row.account_status,linked_employee:Boolean(row.linked_employee),accountable_owner:row.accountable_owner});
+     account_status:row.account_status,linked_employee:row.linked_employee as boolean,accountable_owner:row.accountable_owner});
  }
  return rows;
 }
