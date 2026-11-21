@@ -27,7 +27,7 @@ test('Music page is authenticated, server-read, no fixture credentials or extern
  assert.match(route,/destination.searchParams.set\('organization_id',organization.id\)/);
  assert.match(route,/portalApi\('\/api\/sso\/config\/MUSIC'\)/);
  assert.match(route,/parseMusicLaunch/);
- assert.match(route,/organization.id.toLowerCase\(\)===requested.toLowerCase\(\)/);
+ assert.match(route,/o.id.toLowerCase\(\)===requested.toLowerCase\(\)/);
  assert.match(route,/NextResponse.redirect\(destination.toString\(\),303\)/);
  assert.doesNotMatch(page+ui+route,/OperationsFixtures|NEXT_PUBLIC_|localStorage|sessionStorage|x-vsph-client-secret/);
 });
