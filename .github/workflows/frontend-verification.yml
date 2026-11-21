@@ -70,6 +70,9 @@ jobs:
       - name: Verify high-impact migration gateways over production HTTP
         run: node scripts/guarded-operations-http-smoke.mjs
 
+      - name: Verify authenticated owner and employee SSR isolation
+        run: node scripts/authenticated-roles-http-smoke.mjs
+
   browser-preview:
     needs: check
     # Playwright 1.56 Chromium does not support the newer ubuntu-26.04 runner.
