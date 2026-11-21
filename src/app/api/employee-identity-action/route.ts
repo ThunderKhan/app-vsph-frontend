@@ -1,3 +1,4 @@
+import {readBoundedRequestText} from '@/features/workspace/BoundedRequestBody';
 import {type NextRequest,NextResponse} from 'next/server';
 import {approvedInternalOrigin} from '@/features/workspace/server-api';
 import {approvedPublicOrigin,validPortalSession} from '@/features/projects/ProjectProxySecurity';
@@ -15,7 +16,7 @@ export async function POST(request:NextRequest){
  if(!request.headers.get('content-type')?.startsWith('application/json')||
     Number(request.headers.get('content-length')||0)>8192)return fail(400,'Invalid account-link request.');
  let raw:unknown;
- try{const value=await request.text();if(value.length>8192)return fail(400,'Invalid account-link request.');
+ try{const value=await readBoundedRequestText(request,8192);if(value===null||value.length>8192)return fail(400,'Invalid account-link request.');
   raw=JSON.parse(value);}catch{return fail(400,'Invalid JSON.');}
  const action=identityMutation(raw);
  if(!action)return fail(400,'Review and confirm current employee identity details.');
