@@ -18,5 +18,5 @@ export default async function MusicLaunchPage(){
       <Link href="/applications">Back to applications</Link>
     </section>
  </main>;
- return <MusicLaunchWorkspace config={config}/>;
+ return <MusicLaunchWorkspace organizations={config.organizations}/>;
 }
