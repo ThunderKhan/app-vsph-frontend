@@ -8,7 +8,7 @@ export function employeeLifecycleMutation(input:unknown):{
 }|null{
  if(!obj(input)||Object.keys(input).length!==5||
     !['operation','id','version','reason','confirmed'].every(k=>Object.hasOwn(input,k))||
-    !['remove','restore'].includes(String(input.operation))||
+    typeof input.operation!=='string'||!['remove','restore'].includes(input.operation)||
     typeof input.id!=='string'||!uuid.test(input.id)||
     !Number.isSafeInteger(input.version)||(input.version as number)<1||
     (input.version as number)>(input.operation==='restore'?999999999:2147483647)||
