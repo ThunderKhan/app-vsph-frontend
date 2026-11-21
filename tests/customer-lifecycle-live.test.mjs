@@ -72,8 +72,11 @@ test('customer editor shows real start/end in local datetime controls and does n
 test('first product grant offers registered catalog products even with zero linked grants',async()=>{
  const page=await read('src/app/(workspace)/admin/customers/[id]/lifecycle/page.tsx');
  const ui=await read('src/features/operations/CustomerLifecycleWorkspace.tsx');
- assert.match(page,/loadProductDirectory\(null\)/);
+ assert.match(page,/loadProductDirectory\(catalogAfter\|\|null\)/);
+ assert.match(page,/productCode\(rawCursor\)/);
  assert.match(ui,/registeredProducts.filter/);
+ assert.match(ui,/x.id.toLowerCase\(\)===p.id.toLowerCase\(\)/);
+ assert.match(ui,/Next registered products page/);
  assert.match(ui,/No existing product grant/);
  assert.match(ui,/applicationId:selected.id/);
  assert.doesNotMatch(ui,/chooser includes only products currently linked/i);
