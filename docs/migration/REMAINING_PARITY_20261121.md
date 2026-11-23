@@ -18,8 +18,8 @@ The backend remains the authority for authentication, active membership, tenant/
 | Portal authentication | `/login`, `POST /api/auth/login`, `/api/auth/logout` | Same-origin, bounded credential gateway to legacy Express password/MFA verifier; browser session issued only on valid backend Set-Cookie |
 | Application sign-in | `/apps/[app]/login`, `POST /api/auth/app-login`, `GET /api/apps/[app]/contexts` | Current portal session, exact product/organization access and reauthentication; independently scoped app cookie |
 | Application workspace | `/apps/[app]/home`, `/api/apps/[app]/context`, `/records`, `/api/auth/app-logout` | Tenant-scoped backend authorization on every read/write, fixed CRM/MUSIC adapters; app-only logout |
-| Private invitations | `/api/invitations/inspect\\|accept`, `/api/employee-enrollment/inspect\\|accept` | Exact one-use invitation capability and backend-confirmed account creation; browser token remains memory-only |
-| First password change | `/api/employee-credentials/status\\|replace` | Temporary session cookie, same-origin password replacement, exact backend success and cookie revocation |
+| Private invitations | `/api/invitations/inspect\|accept`, `/api/employee-enrollment/inspect\|accept` | Exact one-use invitation capability and backend-confirmed account creation; browser token remains memory-only |
+| First password change | `/api/employee-credentials/status\|replace` | Temporary session cookie, same-origin password replacement, exact backend success and cookie revocation |
 | Project search | `/search`, `GET /api/search` | Literal authorized project/task/milestone matches, 25/page; no private descriptions |
 | Employee self-service | `/my-work` | Assigned task statuses, leave requests and attendance, versioned and idempotent where applicable |
 | HRMS calendar | `/calendar` | Authorized date-range reads, event create/update/delete and role enforcement |

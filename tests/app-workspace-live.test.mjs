@@ -72,4 +72,5 @@ test('record form cannot post before initial records settle and checks the displ
  assert.match(home,/current\.organization\.id\.toLowerCase\(\)!==context\.organization\.id\.toLowerCase\(\)/);
  assert.match(home,/current\.canCreateRecords!==true/);
  assert.match(home,/setContext\(null\);setRecords\(\[\]\)/);
+ assert.match(home,/if\(active\)\{\s*setContext\(null\);setRecords\(\[\]\)/);
 });

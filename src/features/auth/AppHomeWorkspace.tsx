@@ -46,7 +46,10 @@ export function AppHomeWorkspace({code}:{code:string}){
       setRecords(contents.records as AppRecord[]);
     }
     setMessage('Application access verified. Every record is scoped by the backend.');
-   }catch(err){if(active)setMessage(err instanceof Error?err.message:'Application unavailable.');}
+   }catch(err){if(active){
+     setContext(null);setRecords([]);
+     setMessage(err instanceof Error?err.message:'Application unavailable.');
+   }}
    finally{if(active)setLoading(false);}
   })();
   return ()=>{active=false;};
