@@ -81,3 +81,9 @@ test('first product grant offers registered catalog products even with zero link
  assert.match(ui,/applicationId:selected.id/);
  assert.doesNotMatch(ui,/chooser includes only products currently linked/i);
 });
+
+
+test('catalog pagination remounts the terms editor to avoid carrying a previous product draft',async()=>{
+ const page=await read('src/app/(workspace)/admin/customers/[id]/lifecycle/page.tsx');
+ assert.match(page,/<CustomerLifecycleWorkspace key=\{catalogAfter\}/);
+});

@@ -18,8 +18,8 @@ The backend remains the authority for authentication, active membership, tenant/
 | Portal authentication | `/login`, `POST /api/auth/login`, `/api/auth/logout` | Same-origin, bounded credential gateway to legacy Express password/MFA verifier; browser session issued only on valid backend Set-Cookie |
 | Application sign-in | `/apps/[app]/login`, `POST /api/auth/app-login`, `GET /api/apps/[app]/contexts` | Current portal session, exact product/organization access and reauthentication; independently scoped app cookie |
 | Application workspace | `/apps/[app]/home`, `/api/apps/[app]/context`, `/records`, `/api/auth/app-logout` | Tenant-scoped backend authorization on every read/write, fixed CRM/MUSIC adapters; app-only logout |
-| Private invitations | `/api/invitations/inspect|accept`, `/api/employee-enrollment/inspect|accept` | Exact one-use invitation capability and backend-confirmed account creation; browser token remains memory-only |
-| First password change | `/api/employee-credentials/status|replace` | Temporary session cookie, same-origin password replacement, exact backend success and cookie revocation |
+| Private invitations | `/api/invitations/inspect\\|accept`, `/api/employee-enrollment/inspect\\|accept` | Exact one-use invitation capability and backend-confirmed account creation; browser token remains memory-only |
+| First password change | `/api/employee-credentials/status\\|replace` | Temporary session cookie, same-origin password replacement, exact backend success and cookie revocation |
 | Project search | `/search`, `GET /api/search` | Literal authorized project/task/milestone matches, 25/page; no private descriptions |
 | Employee self-service | `/my-work` | Assigned task statuses, leave requests and attendance, versioned and idempotent where applicable |
 | HRMS calendar | `/calendar` | Authorized date-range reads, event create/update/delete and role enforcement |
@@ -52,6 +52,12 @@ New routes are implemented in code and must still pass authenticated, tenant-spe
 3. **Provider and deployment acceptance**: real GitHub App, Music and Outreach receivers, approved environment secrets, rollout routes and rollback. These are deferred, not enabled.
 4. **Integration and upstream rebase**: compare the long-lived branch to the latest organization `dev` after PR #11. Resolve conflicting files and rerun all checks before proposing the next organization PR.
 5. **Separate architecture migration**: Fastify 5 + Prisma 7 backend remains an independent project; do not claim the frontend work replaced Express.
+
+## Verified legacy app-record contract gaps (not resolved by frontend checks)
+
+The pinned Express source (`ThunderKhan/vsph-control-center` at `3b3a1535873aa0517aea41da32a407f3d9680547`, `routes/apps.js`) inserts CRM/Music records using the organization from `req.appContext`. It does **not** check an expected organization ID supplied with the POST and does **not** implement durable per-attempt idempotency. Changing an app login in another tab can therefore change which customer the session targets; a response lost after a successful insert can lead to a duplicate on retry.
+
+The Next app-home form now rechecks customer ID and write permission immediately before submission and blocks writes while initial records load. This reduces stale-form accidents but is **not an atomic tenant binding**: a concurrent app-session change can still occur after the preflight. Before calling app-record creation fully accepted, update and deploy the authoritative backend to reject writes whose expected organization ID differs from its current app session, and implement durable idempotency keyed by the authenticated user/tenant/product and request digest. Only then should the frontend proxy require and forward the reviewed expected-customer and idempotency inputs. Confirm cross-tab and lost-response behavior in hosted end-to-end tests. Do not misrepresent a frontend-only idempotency header as backend duplicate protection.
 
 ## Safety / audit requirements
 

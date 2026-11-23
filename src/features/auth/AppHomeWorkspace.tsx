@@ -54,11 +54,27 @@ export function AppHomeWorkspace({code}:{code:string}){
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[code]);
  async function submit(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();if(!context?.canCreateRecords||busy)return;
+  e.preventDefault();if(!context?.canCreateRecords||busy||loading)return;
   const body=code==='CRM'?{name:one,email:two,company:three}:
     {song_title:one,artist:two};
   setBusy(true);setMessage('Saving authorized record…');
   try{
+    // Another browser tab can reauthenticate this product for a different
+    // customer. Recheck the currently selected customer before creating.
+    // Backend enforcement of the original customer ID is still required to
+    // close the race between this check and the mutation.
+    const latestResponse=await fetch(base+'/context',{
+      credentials:'same-origin',cache:'no-store'});
+    if(latestResponse.status===401){window.location.assign(appLogin);return;}
+    if(!latestResponse.ok)throw Error('Current application access could not be verified.');
+    const latest:unknown=await latestResponse.json().catch(()=>null);
+    const current=latest as Partial<AppWorkspaceContext>|null;
+    if(!current||current.application?.code!==code||!current.organization?.id||
+      current.organization.id.toLowerCase()!==context.organization.id.toLowerCase()||
+      current.canCreateRecords!==true){
+      setContext(null);setRecords([]);
+      throw Error('Your customer or product role changed. Reload this workspace before creating a record.');
+    }
     const response=await fetch(base+'/records',{method:'POST',
      credentials:'same-origin',cache:'no-store',
      headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -112,7 +128,7 @@ export function AppHomeWorkspace({code}:{code:string}){
         onChange={e=>setTwo(e.target.value)}/></label>
       {code==='CRM'&&<label>Company
        <input maxLength={150} value={three} disabled={busy} onChange={e=>setThree(e.target.value)}/></label>}
-      <button type="submit" disabled={busy||!one.trim()}>{busy?'Saving…':'Add record'}</button>
+      <button type="submit" disabled={busy||loading||!one.trim()}>{busy?'Saving…':'Add record'}</button>
      </form>:<p>View-only access for this product role.</p>}
     <div role="region" tabIndex={0} aria-label="Product records, horizontally scrollable"
       className="app-home-records">

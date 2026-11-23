@@ -37,7 +37,7 @@ export default async function CustomerLifecyclePage({params,searchParams}:{
      <p role="alert">Current platform-owner authority, organization version, or lifecycle preview could not be verified.</p>
      <Link href={'/admin/customers/'+id}>Back to customer</Link>
    </main>;
- return <CustomerLifecycleWorkspace model={model} registeredProducts={registry?.items??[]}
+ return <CustomerLifecycleWorkspace key={catalogAfter} model={model} registeredProducts={registry?.items??[]}
      catalogIncomplete={registry===null||registry.nextCode!==null||Boolean(catalogAfter)}
      catalogAfter={catalogAfter} catalogNextCode={registry?.nextCode??null}/>;
 }

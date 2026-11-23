@@ -60,3 +60,16 @@ test('application routes guard both cookies and original backend authority',asyn
  assert.match(recordsRoute,/postAppRecord/);
  assert.doesNotMatch(gateway+home+page,/GITHUB_APP_PRIVATE_KEY|NEXT_PUBLIC_|x-vsph-client-secret|localStorage/);
 });
+
+
+test('record form cannot post before initial records settle and checks the displayed customer before writing',async()=>{
+ const home=await read('src/features/auth/AppHomeWorkspace.tsx');
+ assert.match(home,/if\(!context\?\.canCreateRecords\|\|busy\|\|loading\)return/);
+ assert.match(home,/disabled=\{busy\|\|loading\|\|!one\.trim\(\)\}/);
+ const preflight=home.indexOf("const latestResponse=await fetch(base+'/context'");
+ const mutation=home.indexOf("const response=await fetch(base+'/records',{method:'POST'");
+ assert.ok(preflight>=0&&mutation>preflight,'fresh context must be read before a record mutation');
+ assert.match(home,/current\.organization\.id\.toLowerCase\(\)!==context\.organization\.id\.toLowerCase\(\)/);
+ assert.match(home,/current\.canCreateRecords!==true/);
+ assert.match(home,/setContext\(null\);setRecords\(\[\]\)/);
+});
