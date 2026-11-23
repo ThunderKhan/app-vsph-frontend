@@ -14,13 +14,13 @@ export default async function ReportsPage({searchParams}:{searchParams:Promise<F
  const extra=Object.keys(raw).filter(k=>!['status','from','to'].includes(k));
  const filters={status,from,to};
  if(extra.length||!validReportFilters(filters))return <main
-   className="workspace-content report-live-workspace" id="mainContent">
+   className="workspace-content report-live-workspace" id="mainContent" tabIndex={-1}>
      <h1>Invalid report filters</h1>
      <p role="alert">Use a supported project state and valid date range.</p>
      <Link href="/reports">Reset report</Link>
    </main>;
  const report=await loadProjectReport(filters);
- if(!report)return <main className="workspace-content report-live-workspace" id="mainContent">
+ if(!report)return <main className="workspace-content report-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Project report unavailable</h1>
    <p role="alert">Your project access or the reporting service could not be verified.</p>
    <Link href="/dashboard">Return to dashboard</Link>

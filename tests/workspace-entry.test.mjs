@@ -76,3 +76,19 @@ test('organization Next/React/Tailwind stack and login routes remain intact', as
   assert.match(await load('src/app/(workspace)/layout.tsx'), /href="\/fonts\.css"/);
   assert.match(await load('src/app/(workspace)/workspace-overrides.css'), /data-mobile-open="true"/);
 });
+
+test('every workspace page branch has an accessible skip-link focus target', async () => {
+ const { glob } = await import('node:fs/promises');
+ for await (const path of glob('src/app/(workspace)/**/page.tsx')) {
+  const source=await load(path);
+  const mains=[...source.matchAll(/<main\b[^>]*>/gs)].map(m=>m[0]);
+  for (const main of mains) {
+   assert.match(main,/id="mainContent"/,'missing mainContent target in '+path);
+   assert.match(main,/tabIndex=\{-1\}/,'not focusable via skip-link in '+path);
+  }
+ }
+ const appHome=await load('src/features/auth/AppHomeWorkspace.tsx');
+ const search=await load('src/features/search/LiveSearch.tsx');
+ assert.match(appHome,/<main[^>]+id="mainContent" tabIndex=\{-1\}/);
+ assert.match(search,/<main[^>]+id="mainContent" tabIndex=\{-1\}/);
+});
