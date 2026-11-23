@@ -107,6 +107,54 @@ try {
     await page.close();
     console.log(`Chromium UI preview passed at ${viewport.width}px.`);
   }
+
+  // Real entry screens, including their unavailable states, must remain
+  // keyboard reachable and free from horizontal overflow on narrow devices.
+  for (const [path, selector] of [
+    ['/login','#authForm'],
+    ['/accept-invite','#inviteInstructions'],
+    ['/employee-enrollment','#enrollmentInfo'],
+    ['/employee-password','#passwordSetupInfo'],
+  ]) {
+    const page=await browser.newPage({viewport:{width:320,height:740}});
+    page.on('pageerror',error=>errors.push(path+': '+error.message));
+    await page.goto(origin+path);
+    await page.locator(selector).waitFor({state:'attached'});
+    const overflow=await page.evaluate(() =>
+      Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-
+        document.documentElement.clientWidth);
+    assert.ok(overflow<=2,path+' horizontal overflow: '+overflow);
+    assert.equal(await page.locator('h1').count(),1,path+' needs one primary heading');
+    await page.close();
+  }
+  const auth=await browser.newPage({viewport:{width:390,height:844}});
+  auth.on('pageerror',error=>errors.push('MFA: '+error.message));
+  await auth.route('**/api/auth/login',route=>route.fulfill({
+    status:401,contentType:'application/json',
+    body:JSON.stringify({code:'MFA_REQUIRED',message:'Authenticator required.',
+      factors:[{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',name:'Authenticator'}]}),
+  }));
+  await auth.goto(origin+'/login');
+  await auth.waitForFunction(() => Object.keys(document.querySelector('#authForm')||{})
+    .some(key=>key.startsWith('__reactProps
+  console.log('All synthetic-role and responsive smoke checks passed.');
+} finally {
+  await browser?.close();
+  server.kill('SIGTERM');
+}
+)));
+  await auth.locator('#email').fill('worker@example.invalid');
+  await auth.locator('#password').fill('first-credential');
+  await auth.locator('#authSubmit').click();
+  await auth.locator('#mfaField').waitFor({state:'visible'});
+  assert.equal(await auth.locator('#authSubmit').isDisabled(),true);
+  await auth.locator('#totpCode').fill('123456');
+  assert.equal(await auth.locator('#authSubmit').isEnabled(),true);
+  await auth.locator('#password').fill('second-credential');
+  await auth.locator('#mfaField').waitFor({state:'hidden'});
+  assert.equal(await auth.locator('#totpCode').inputValue(),'');
+  await auth.close();
+  console.log('Public entry accessibility and stale-MFA Chromium checks passed.');
   assert.deepEqual(errors, [], 'Uncaught browser errors in the development preview');
   console.log('All synthetic-role and responsive smoke checks passed.');
 } finally {
