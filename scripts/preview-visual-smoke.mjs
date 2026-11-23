@@ -152,6 +152,11 @@ try {
   // authenticator factor must invalidate the previous code in the real UI.
   const app=await browser.newPage({viewport:{width:390,height:844}});
   app.on('pageerror',error=>errors.push('app MFA: '+error.message));
+  // The production proxy requires a portal cookie before app-login navigation.
+  // This disposable browser value passes only that syntactic gate; the client
+  // context and MFA responses below remain fully isolated Playwright fixtures.
+  await app.context().addCookies([{name:'vsph.portal.sid',value:'p'.repeat(43),
+    url:origin,httpOnly:true,sameSite:'Lax'}]);
   const customerA='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
   const customerB='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
   await app.route('**/api/apps/CRM/contexts',route=>route.fulfill({
