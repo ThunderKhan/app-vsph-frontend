@@ -8,7 +8,7 @@ export const metadata:Metadata={
 };
 export default async function NotificationsPage(){
  const data=await loadNotifications();
- if(!data)return <main className="workspace-content notice-live-workspace" id="mainContent">
+ if(!data)return <main className="workspace-content notice-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Notifications unavailable</h1>
    <p role="alert">Your session, preferences or project inbox could not be verified.
      No previous notification records are displayed.</p>

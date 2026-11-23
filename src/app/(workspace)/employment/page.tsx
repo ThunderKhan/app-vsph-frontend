@@ -8,7 +8,7 @@ export const metadata:Metadata={title:'My employment | VSPH',robots:{index:false
 export default async function EmploymentPage(){
  const data=await portalApi('/api/employee-identity/mine');
  const model=data.kind==='ok'?parsePersonalIdentity(data.value):null;
- if(!model)return <main className="workspace-content identity-live" id="mainContent">
+ if(!model)return <main className="workspace-content identity-live" id="mainContent" tabIndex={-1}>
   <h1>My employment</h1><p role="alert">Your current employment or account-link requests could not be verified.</p>
   <Link href="/dashboard">Return to dashboard</Link>
  </main>;

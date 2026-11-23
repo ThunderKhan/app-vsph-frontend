@@ -19,7 +19,7 @@ export default async function ProjectWorkspacePage({params}:{params:Promise<{id:
  const workspace=records.kind==='ok'?parseProjectWorkspace(records.value):null;
  const actor=identity.kind==='ok'?portalIdentity(identity.value):null;
  if(!project||!workspace||!actor||workspace.role!==project.role)
-   return <main className="workspace-content project-workspace-live" id="mainContent">
+   return <main className="workspace-content project-workspace-live" id="mainContent" tabIndex={-1}>
      <h1>Project delivery unavailable</h1>
      <p role="alert">Current project access, delivery data, or account session could not be verified.</p>
      <Link href="/projects">Return to Projects</Link>

@@ -14,7 +14,7 @@ export default async function EmployeeOnboardPage(){
    !Array.isArray(result.value)?result.value as Record<string,unknown>:null;
  if(!value||!['owner','hr'].includes(String(value.role))||
    typeof value.canManageHr!=='boolean')return <main className="workspace-content employee-live-workspace"
-   id="mainContent">
+   id="mainContent" tabIndex={-1}>
      <h1>Employee onboarding unavailable</h1>
      <p role="alert">Your current workforce management permission could not be verified.</p>
      <Link href="/employees">Return to employee directory</Link>

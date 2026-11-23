@@ -19,7 +19,7 @@ export default async function EngineeringDeliveryPage({params}:{params:Promise<{
  const records=delivery.kind==='ok'?parseDeliveryData(delivery.value):null;
  const actor=identity.kind==='ok'?portalIdentity(identity.value):null;
  if(!project||!records||!actor||project.role==='client')
-   return <main className="workspace-content engineering-delivery" id="mainContent">
+   return <main className="workspace-content engineering-delivery" id="mainContent" tabIndex={-1}>
      <h1>Engineering delivery unavailable</h1>
      <p role="alert">Your current project role or GitHub delivery records could not be verified.</p>
      <Link href="/projects">Back to Projects</Link>

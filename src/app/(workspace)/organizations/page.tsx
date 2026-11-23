@@ -11,12 +11,12 @@ export default async function OrganizationsPage({searchParams}:{searchParams:Pro
  const query=await searchParams;
  if([query.org,query.afterId,query.memberAfter].some(v=>Array.isArray(v)||
    (typeof v==='string'&&!uuid.test(v))))
-   return <main className="workspace-content org-live" id="mainContent"><p role="alert">Invalid organization filter.</p></main>;
+   return <main className="workspace-content org-live" id="mainContent" tabIndex={-1}><p role="alert">Invalid organization filter.</p></main>;
  const org=(query.org||'') as string,after=(query.afterId||'') as string,
    memberAfter=(query.memberAfter||'') as string;
  const listing=await portalApi('/api/organizations'+(after?'?afterId='+after:''));
  const organizations=listing.kind==='ok'?parseOrgList(listing.value):null;
- if(!organizations)return <main className="workspace-content org-live" id="mainContent">
+ if(!organizations)return <main className="workspace-content org-live" id="mainContent" tabIndex={-1}>
    <h1>My organizations</h1><p role="alert">Your organization administration permission or the service could not be verified.</p>
    <Link href="/dashboard">Return to dashboard</Link>
  </main>;
@@ -24,7 +24,7 @@ export default async function OrganizationsPage({searchParams}:{searchParams:Pro
  if(active&&!organizations.some(o=>o.id===active) && !after){
   // The backend detail endpoint still independently checks membership for deep links.
  }
- if(!active)return <main className="workspace-content org-live" id="mainContent">
+ if(!active)return <main className="workspace-content org-live" id="mainContent" tabIndex={-1}>
    <h1>My organizations</h1>
    <p>No active organization administrator memberships are available. Ask your platform administrator to review your membership.</p>
  </main>;
@@ -37,7 +37,7 @@ export default async function OrganizationsPage({searchParams}:{searchParams:Pro
  const memberRows=members.kind==='ok'?parseOrgMembers(members.value):null;
  const inviteRows=invites.kind==='ok'?parseOrgInvites(invites.value):null;
  if(!model||!memberRows||!inviteRows||model.organization.id!==active)
-   return <main className="workspace-content org-live" id="mainContent"><h1>My organizations</h1>
+   return <main className="workspace-content org-live" id="mainContent" tabIndex={-1}><h1>My organizations</h1>
      <p role="alert">The selected organization is unavailable or its current access could not be verified.</p>
      <Link href="/organizations">Return to organizations</Link>
    </main>;

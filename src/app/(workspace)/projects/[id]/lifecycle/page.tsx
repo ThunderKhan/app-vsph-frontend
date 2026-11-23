@@ -16,7 +16,7 @@ export default async function ProjectLifecyclePage({params}:{params:Promise<{id:
  const actor=identity.kind==='ok'?portalIdentity(identity.value):null;
  const project=details.kind==='ok'?parseProjectDetail(details.value,id):null;
  if(!actor||actor.platformRole!=='super_admin'||!project)
-   return <main className="workspace-content project-workspace" id="mainContent">
+   return <main className="workspace-content project-workspace" id="mainContent" tabIndex={-1}>
      <h1>Project lifecycle unavailable</h1>
      <p role="alert">Your platform-owner permission or current project data could not be verified.</p>
      <Link href="/projects">Back to Projects</Link>

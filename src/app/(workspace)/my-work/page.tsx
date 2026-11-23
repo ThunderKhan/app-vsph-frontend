@@ -11,10 +11,10 @@ export default async function MyWorkPage({searchParams}:{searchParams:Promise<{a
  const params=await searchParams;
  const cursor=params.afterTaskId;
  if(cursor!==undefined&&(typeof cursor!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cursor)))
-   return <main className="workspace-content hr-page" id="mainContent"><p role="alert">Invalid task cursor.</p></main>;
+   return <main className="workspace-content hr-page" id="mainContent" tabIndex={-1}><p role="alert">Invalid task cursor.</p></main>;
  const result=await portalApi('/api/hrms/me'+(cursor?'?afterTaskId='+cursor:''));
  const model=result.kind==='ok'?parseOwnWork(result.value):null;
- if(!model)return <main className="workspace-content hr-page" id="mainContent">
+ if(!model)return <main className="workspace-content hr-page" id="mainContent" tabIndex={-1}>
    <h1>My work unavailable</h1><p role="alert">Your current employee identity, session, or workforce service could not be verified.</p>
    <Link href="/dashboard">Return to dashboard</Link>
  </main>;

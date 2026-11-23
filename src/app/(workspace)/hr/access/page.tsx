@@ -15,15 +15,15 @@ export default async function HrAccessPage({searchParams}:{searchParams:Promise<
  const search=query.search||'',after=query.afterId||'';
  if(typeof search!=='string'||search.length>80||/[\u0000-\u001f\u007f]/.test(search)||
    typeof after!=='string'||(after&&!uuid.test(after)))
-   return <main className="workspace-content hr-page" id="mainContent"><p role="alert">Invalid employee access filters.</p></main>;
+   return <main className="workspace-content hr-page" id="mainContent" tabIndex={-1}><p role="alert">Invalid employee access filters.</p></main>;
  const access=await portalApi('/api/hrms/access');
  const flags=access.kind==='ok'?hrPermissions(access.value):null;
- if(!flags||!flags.governHr)return <main className="workspace-content hr-page" id="mainContent">
+ if(!flags||!flags.governHr)return <main className="workspace-content hr-page" id="mainContent" tabIndex={-1}>
    <h1>HR access governance</h1><p role="alert">Current platform-owner HR governance permission could not be verified.</p>
    <Link href="/dashboard">Return to dashboard</Link>
  </main>;
  const roster=await loadEmployeeRoster({status:'all',search,afterId:after||null});
- if(!roster||roster.role!=='owner')return <main className="workspace-content hr-page" id="mainContent">
+ if(!roster||roster.role!=='owner')return <main className="workspace-content hr-page" id="mainContent" tabIndex={-1}>
    <p role="alert">Employee access records are unavailable. No previous roster records are displayed.</p>
  </main>;
  return <HrAccessWorkspace employees={roster.employees} hasMore={roster.hasMore}
