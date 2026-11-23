@@ -182,7 +182,8 @@ export function AcceptInvitePage() {
           <p id="inviteError" className="error" role="alert" hidden={!errorMessage}>
             {errorMessage}
           </p>
-          <div id="inviteSuccess" hidden={stage !== 'accepted'} className="success">
+          <div id="inviteSuccess" hidden={stage !== 'accepted'} className="success"
+            role="status" aria-live="polite">
             <strong>Account activated.</strong>
             <p>Your invitation has been accepted. You can now sign in to VSPH Control Center
               using your email and new password.</p>

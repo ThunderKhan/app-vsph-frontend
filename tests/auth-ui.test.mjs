@@ -12,3 +12,15 @@ test('invitation route is integrated and accessible from the sign-in page', asyn
  assert.match(page, /Sign-in service is not connected in this environment/);
  assert.match(layout, /auth-overrides\.css/);
 });
+
+test('MFA challenge is scoped to the current credentials and customer, with accessible status', async () => {
+ const page = await read('src/features/auth/AuthPage.tsx');
+ assert.match(page, /function resetMfaChallenge\(\)/);
+ assert.match(page, /setEmail\(event\.target\.value\); resetMfaChallenge\(\)/);
+ assert.match(page, /setPassword\(event\.target\.value\); resetMfaChallenge\(\)/);
+ assert.match(page, /setOrganizationId\(event\.target\.value\); resetMfaChallenge\(\)/);
+ assert.match(page, /setTotpCode\(event\.target\.value\.replace\(\/\\D\/g, ''\)\.slice\(0, 6\)\)/);
+ assert.match(page, /mfaVisible && \(!totpFactorId \|\| totpCode\.length !== 6\)/);
+ assert.match(page, /problem\.factors\.length > 0/);
+ assert.match(page, /aria-busy=\{busy\}/);
+});

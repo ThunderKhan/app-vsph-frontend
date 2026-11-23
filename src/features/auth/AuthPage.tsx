@@ -36,7 +36,8 @@ async function requestLogin(endpoint: string, payload: Record<string, string>) {
 
 /** Structure, IDs, accessibility attributes and copy mirror views/auth.html.
  * Exact source CSS is imported globally; shadcn/Tailwind must not restyle it.
- * Server-authenticated page gating is NOT migrated; do not deploy to users.
+ * Authentication and product access are verified by the Next server gateways
+ * and the existing Express identity service, never by client-side state.
  */
 export function AuthPage({ appCode }: AuthPageProps) {
   const isApplicationLogin = Boolean(appCode);
@@ -54,6 +55,16 @@ export function AuthPage({ appCode }: AuthPageProps) {
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const copy = DEFAULT_AUTH_COPY;
+
+  // TOTP challenges are specific to the submitted identity and selected
+  // customer. Editing either invalidates the current factors and code.
+  function resetMfaChallenge() {
+    setMfaVisible(false);
+    setFactors([]);
+    setTotpFactorId('');
+    setTotpCode('');
+    setErrorMessage('');
+  }
 
   useEffect(() => {
     document.body.classList.toggle('app-auth', isApplicationLogin);
@@ -117,7 +128,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
 
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || !contextReady) return;
+    if (busy || !contextReady || (mfaVisible && (!totpFactorId || !/^\d{6}$/.test(totpCode)))) return;
     setErrorMessage('');
     setBusy(true);
 
@@ -148,13 +159,18 @@ export function AuthPage({ appCode }: AuthPageProps) {
       }
     } catch (error) {
       const problem = error as ApiError;
-      if (problem.code === 'MFA_REQUIRED' && Array.isArray(problem.factors)) {
+      if (problem.code === 'MFA_REQUIRED' && Array.isArray(problem.factors) && problem.factors.length > 0) {
         setFactors(problem.factors);
         setTotpFactorId(problem.factors[0]?.id ?? '');
         setMfaVisible(true);
         requestAnimationFrame(() => {
           document.getElementById('totpCode')?.focus();
         });
+      } else {
+        // An ordinary login failure is not a reusable MFA challenge.
+        setMfaVisible(false);
+        setFactors([]);
+        setTotpFactorId('');
       }
       setErrorMessage(problem.message || 'Cannot connect. Please try again.');
     } finally {
@@ -198,7 +214,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
             <div className="card-kicker" id="cardKicker">{copy.cardKicker}</div>
             <h2 id="authHeading">{copy.formHeading}</h2>
             <p className="form-description" id="formDescription">{description}</p>
-            <form id="authForm" className="auth-form" method="post"
+            <form id="authForm" className="auth-form" aria-busy={busy} method="post"
               action={isApplicationLogin ? '/api/auth/app-login' : '/api/auth/login'}
               onSubmit={(event) => void submitForm(event)}>
               <label htmlFor="email">Work email</label>
@@ -206,13 +222,13 @@ export function AuthPage({ appCode }: AuthPageProps) {
                 inputMode="email" maxLength={254}
                 placeholder={isApplicationLogin ? 'Work email' : 'name@company.com'}
                 required autoFocus={!isApplicationLogin} readOnly={isApplicationLogin}
-                value={email} onChange={(event) => setEmail(event.target.value)} />
+                value={email} onChange={(event) => { setEmail(event.target.value); resetMfaChallenge(); }} />
 
               <div id="organizationField" className="organization-field"
                 hidden={!isApplicationLogin}>
                 <label htmlFor="organizationId">Customer organization</label>
                 <select id="organizationId" name="organizationId"
-                  value={organizationId} onChange={(event) => setOrganizationId(event.target.value)}
+                  value={organizationId} onChange={(event) => { setOrganizationId(event.target.value); resetMfaChallenge(); }}
                   required={isApplicationLogin} disabled={!contextReady}>
                   {organizations.length === 0 &&
                     <option value="">Loading organizations…</option>}
@@ -229,7 +245,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
                 <input id="password" name="password" type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   placeholder={isApplicationLogin ? 'Confirm your password' : 'Enter your password'}
-                  required value={password} onChange={(event) => setPassword(event.target.value)} />
+                  required value={password} onChange={(event) => { setPassword(event.target.value); resetMfaChallenge(); }} />
                 <button type="button" className="reveal" data-password-toggle="password"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   aria-controls="password" aria-pressed={showPassword}
@@ -260,7 +276,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
                   inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}"
                   maxLength={6} aria-describedby="mfaDescription"
                   required={mfaVisible} value={totpCode}
-                  onChange={(event) => setTotpCode(event.target.value)} />
+                  onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, '').slice(0, 6))} />
                 <p id="mfaDescription" className="form-description">
                   Use the current six-digit code from your enrolled authenticator.
                 </p>
@@ -268,7 +284,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
                   hidden={factors.length <= 1}>
                   <label htmlFor="totpFactorId">Authenticator</label>
                   <select id="totpFactorId" name="totpFactorId" value={totpFactorId}
-                    onChange={(event) => setTotpFactorId(event.target.value)}>
+                    onChange={(event) => { setTotpFactorId(event.target.value); setTotpCode(''); }}>
                     {factors.map((factor) => (
                       <option key={factor.id} value={factor.id}>{factor.name}</option>
                     ))}
@@ -279,7 +295,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
               <p id="authError" className="form-error" role="alert" aria-live="polite"
                 hidden={!errorMessage}>{errorMessage}</p>
               <button id="authSubmit" className="auth-submit" type="submit"
-                disabled={busy || !contextReady}>
+                disabled={busy || !contextReady || (mfaVisible && (!totpFactorId || totpCode.length !== 6))}>
                 <span className="submit-label">
                   {busy ? (isApplicationLogin ? 'Verifying access…' : 'Signing in…') : 'Sign in'}
                 </span>

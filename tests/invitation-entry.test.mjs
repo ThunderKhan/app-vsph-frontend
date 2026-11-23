@@ -48,3 +48,9 @@ test('invitation flow preserves fragment-only proof and backend inspection', asy
   assert.equal(packages.dependencies.react, '19.3.0');
   assert.equal(packages.devDependencies.tailwindcss, '4.3.3');
 });
+
+test('invite activation is announced after a server-confirmed acceptance', async () => {
+ const page = await load('src/features/invitations/AcceptInvitePage.tsx');
+ assert.match(page, /id="inviteSuccess"[\s\S]*?role="status" aria-live="polite"/);
+ assert.match(page, /proofRef\.current = null/);
+});
