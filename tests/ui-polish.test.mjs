@@ -13,7 +13,7 @@ test('preview navigation does not stretch the overview link across the desktop b
  assert.match(preview, /previewActiveHref=\{activePreviewHref\}/);
  assert.match(header, /accountRef = useRef<HTMLDetailsElement>/);
  assert.match(header, /navigationRef\.current\?\.querySelectorAll\('details'\)/);
- assert.match(header, /aria-current=\{pathname === href \? 'page' : undefined\}/);
+ assert.match(header, /aria-current=\{isNavActive\(pathname, href\) \? 'page' : undefined\}/);
 });
 
 test('no real application opens a nonexistent launch destination', async () => {
@@ -89,4 +89,11 @@ test('owner audit navigation preserves a live filtered route instead of renderin
  assert.match(admin, /one\(options\.tab\)==='audit'/);
  assert.match(admin, /one\(options\.view\)==='removals'/);
  assert.match(admin, /href="\/admin\?tab=audit&view=removals"/);
+});
+
+test('nested workspace detail pages retain a specific parent navigation highlight', async () => {
+ const header=await read('src/features/workspace/WorkspaceHeader.tsx');
+ assert.match(header, /pathname\.startsWith\(base \+ '\/'\)/);
+ assert.match(header, /base !== '\/admin'/);
+ assert.match(header, /const hasActive = group\.items\.some\(item => isNavActive\(activePath, item\.href\)\)/);
 });
