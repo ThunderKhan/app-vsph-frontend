@@ -115,7 +115,7 @@ try{
  assert.match(owner.html,/₹100\.00|\u20b9100\.00/, 'Numeric Postgres totals must render as exact INR paise');
  assert.doesNotMatch(owner.html,/Finance ledger unavailable/);
  assert.match(owner.html,/Owner Example/);
- assert.match(owner.html,/href="\/admin\?tab=audit(?:&amp;|&)view=removals"/,
+ assert.match(owner.html,/href="\/admin\?tab=audit"/,
    'Owner audit logs menu must be a working server-rendered link');
  assert.doesNotMatch(owner.html,/Worker Example|Confidential Former Employee/);
  const employee=await load('/dashboard',employeeSid);
