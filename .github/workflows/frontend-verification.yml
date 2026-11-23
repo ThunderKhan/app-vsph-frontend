@@ -55,7 +55,16 @@ jobs:
           # Every authenticated workspace route must redirect before streaming content.
           for protected_path in /dashboard /applications /projects /search /my-work /admin \
             /calendar /organizations /employment /employees /apps/music/launch \
-            /reports /notifications /account/profile /account/security /hr; do
+            /reports /notifications /account/profile /account/security /hr \
+            /admin/customers /admin/customers/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa \
+            /admin/customers/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/lifecycle /admin/finance /admin/finance/manage \
+            /admin/finance/journal /admin/onboarding /admin/outreach-access \
+            /admin/permissions /admin/products /admin/products/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa \
+            /admin/products/new /admin/project-managers /admin/provisioning \
+            /employees/new /employees/archived /employees/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/account-link \
+            /hr/access /projects/new /projects/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa /projects/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/engineering \
+            /projects/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/lifecycle /projects/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/workspace \
+            /apps/crm/home; do
             status=$(curl -s -o /dev/null -w '%{http_code}' \
               "http://127.0.0.1:3000$protected_path")
             case "$status" in

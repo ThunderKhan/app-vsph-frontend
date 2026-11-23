@@ -92,3 +92,17 @@ test('every workspace page branch has an accessible skip-link focus target', asy
  assert.match(appHome,/<main[^>]+id="mainContent" tabIndex=\{-1\}/);
  assert.match(search,/<main[^>]+id="mainContent" tabIndex=\{-1\}/);
 });
+
+test('anonymous production redirect verification covers every workspace route',async()=>{
+ const {glob}=await import('node:fs/promises');
+ const workflow=await load('.github/workflows/frontend-verification.yml');
+ const match=/for protected_path in([\s\S]*?); do/.exec(workflow);
+ assert.ok(match,'production protection loop must exist');
+ const covered=new Set(match[1].replace(/\\\n/g,' ').trim().split(/\s+/));
+ const uuid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ for await(const page of glob('src/app/(workspace)/**/page.tsx')){
+   const route='/'+page.slice('src/app/(workspace)/'.length,-'/page.tsx'.length)
+     .replaceAll('[id]',uuid).replaceAll('[app]','crm');
+   assert.ok(covered.has(route),'Missing anonymous redirect coverage: '+route);
+ }
+});
