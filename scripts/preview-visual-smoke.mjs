@@ -107,7 +107,6 @@ try {
     await page.close();
     console.log(`Chromium UI preview passed at ${viewport.width}px.`);
   }
-
   // Real entry screens, including their unavailable states, must remain
   // keyboard reachable and free from horizontal overflow on narrow devices.
   for (const [path, selector] of [
@@ -136,13 +135,7 @@ try {
   }));
   await auth.goto(origin+'/login');
   await auth.waitForFunction(() => Object.keys(document.querySelector('#authForm')||{})
-    .some(key=>key.startsWith('__reactProps
-  console.log('All synthetic-role and responsive smoke checks passed.');
-} finally {
-  await browser?.close();
-  server.kill('SIGTERM');
-}
-)));
+    .some(key=>key.startsWith('__reactProps$')));
   await auth.locator('#email').fill('worker@example.invalid');
   await auth.locator('#password').fill('first-credential');
   await auth.locator('#authSubmit').click();
