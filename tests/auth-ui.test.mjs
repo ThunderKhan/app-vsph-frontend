@@ -24,3 +24,12 @@ test('MFA challenge is scoped to the current credentials and customer, with acce
  assert.match(page, /problem\.factors\.length > 0/);
  assert.match(page, /aria-busy=\{busy\}/);
 });
+
+test('pending authentication prevents credential edits that could reuse a stale MFA challenge', async()=>{
+ const page=await read('src/features/auth/AuthPage.tsx');
+ assert.match(page,/readOnly=\{isApplicationLogin\} disabled=\{busy\}/);
+ assert.match(page,/disabled=\{busy \|\| !contextReady\}/);
+ assert.match(page,/required disabled=\{busy\} value=\{password\}/);
+ assert.match(page,/required=\{mfaVisible\} disabled=\{busy\}/);
+ assert.match(page,/name="totpFactorId" disabled=\{busy\}/);
+});

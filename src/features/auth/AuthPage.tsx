@@ -221,7 +221,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
               <input id="email" name="email" type="email" autoComplete="username"
                 inputMode="email" maxLength={254}
                 placeholder={isApplicationLogin ? 'Work email' : 'name@company.com'}
-                required autoFocus={!isApplicationLogin} readOnly={isApplicationLogin}
+                required autoFocus={!isApplicationLogin} readOnly={isApplicationLogin} disabled={busy}
                 value={email} onChange={(event) => { setEmail(event.target.value); resetMfaChallenge(); }} />
 
               <div id="organizationField" className="organization-field"
@@ -229,7 +229,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
                 <label htmlFor="organizationId">Customer organization</label>
                 <select id="organizationId" name="organizationId"
                   value={organizationId} onChange={(event) => { setOrganizationId(event.target.value); resetMfaChallenge(); }}
-                  required={isApplicationLogin} disabled={!contextReady}>
+                  required={isApplicationLogin} disabled={busy || !contextReady}>
                   {organizations.length === 0 &&
                     <option value="">Loading organizations…</option>}
                   {organizations.map((org) => (
@@ -245,7 +245,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
                 <input id="password" name="password" type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   placeholder={isApplicationLogin ? 'Confirm your password' : 'Enter your password'}
-                  required value={password} onChange={(event) => { setPassword(event.target.value); resetMfaChallenge(); }} />
+                  required disabled={busy} value={password} onChange={(event) => { setPassword(event.target.value); resetMfaChallenge(); }} />
                 <button type="button" className="reveal" data-password-toggle="password"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   aria-controls="password" aria-pressed={showPassword}
@@ -275,7 +275,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
                 <input id="totpCode" name="totpCode" type="text"
                   inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}"
                   maxLength={6} aria-describedby="mfaDescription"
-                  required={mfaVisible} value={totpCode}
+                  required={mfaVisible} disabled={busy} value={totpCode}
                   onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, '').slice(0, 6))} />
                 <p id="mfaDescription" className="form-description">
                   Use the current six-digit code from your enrolled authenticator.
@@ -283,7 +283,7 @@ export function AuthPage({ appCode }: AuthPageProps) {
                 <div id="mfaFactorField" className="organization-field"
                   hidden={factors.length <= 1}>
                   <label htmlFor="totpFactorId">Authenticator</label>
-                  <select id="totpFactorId" name="totpFactorId" value={totpFactorId}
+                  <select id="totpFactorId" name="totpFactorId" disabled={busy} value={totpFactorId}
                     onChange={(event) => { setTotpFactorId(event.target.value); setTotpCode(''); }}>
                     {factors.map((factor) => (
                       <option key={factor.id} value={factor.id}>{factor.name}</option>
