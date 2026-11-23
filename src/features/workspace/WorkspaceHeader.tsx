@@ -26,7 +26,9 @@ function NavItemLink({ label, href, onActivate, pathname, previewMode,
       aria-current={pathname === href ? 'page' : undefined}
       onClick={() => { onPreviewNavigate(href); onActivate(); }}>{label}</button>;
   }
-  if (previewMode || !activePages.has(href)) {
+  // Match the migrated pathname while keeping a fixed navigation query intact.
+  // These destinations are application-defined, never supplied by users.
+  if (previewMode || !activePages.has(href.split('?')[0])) {
     // Do not provide a working link to a not-yet-ported protected page.
     return <span className="portal-link portal-pending" aria-disabled="true" title="Page migration pending">{label}</span>;
   }

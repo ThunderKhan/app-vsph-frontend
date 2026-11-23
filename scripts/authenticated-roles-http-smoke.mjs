@@ -115,6 +115,8 @@ try{
  assert.match(owner.html,/₹100\.00|\u20b9100\.00/, 'Numeric Postgres totals must render as exact INR paise');
  assert.doesNotMatch(owner.html,/Finance ledger unavailable/);
  assert.match(owner.html,/Owner Example/);
+ assert.match(owner.html,/href="\/admin\?tab=audit(?:&amp;|&)view=removals"/,
+   'Owner audit logs menu must be a working server-rendered link');
  assert.doesNotMatch(owner.html,/Worker Example|Confidential Former Employee/);
  const employee=await load('/dashboard',employeeSid);
  assert.equal(employee.status,200,'Employee SSR should render');
@@ -122,6 +124,8 @@ try{
  assert.match(employee.html,/Review release plan/);
  assert.match(employee.html,/Task completion activity/);
  assert.doesNotMatch(employee.html,/Owner Example|Cash collected|Confidential Former Employee/);
+ assert.doesNotMatch(employee.html,/href="\/admin\?tab=audit/,
+   'Audit navigation must not be exposed to an ordinary employee');
  const restricted=await load('/employees/archived',employeeSid);
  assert.doesNotMatch(restricted.html,/Confidential Former Employee|former@example.invalid/);
  const archived=await load('/employees/archived',ownerSid);

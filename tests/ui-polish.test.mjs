@@ -78,3 +78,14 @@ test('long employee identity text wraps without creating horizontal page overflo
  assert.match(css, /overflow-wrap:anywhere/);
  assert.match(css, /@media\(max-width:360px\)/);
 });
+
+
+test('owner audit navigation preserves a live filtered route instead of rendering a pending label', async () => {
+ const header = await read('src/features/workspace/WorkspaceHeader.tsx');
+ const admin = await read('src/app/(workspace)/admin/page.tsx');
+ assert.match(header, /label: 'Audit logs', href: '\/admin\?tab=audit&view=removals'/);
+ assert.match(header, /activePages\.has\(href\.split\('\?'\)\[0\]\)/);
+ assert.match(header, /href=\{href\} onClick=\{onActivate\}/);
+ assert.match(admin, /one\(options\.tab\)==='audit'/);
+ assert.match(admin, /one\(options\.view\)==='removals'/);
+});
