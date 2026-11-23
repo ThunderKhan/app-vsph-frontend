@@ -8,11 +8,11 @@ export const metadata:Metadata={title:'Employee account & access | VSPH',robots:
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export default async function EmployeeAccountLinkPage({params}:{params:Promise<{id:string}>}){
  const {id}=await params;
- if(!uuid.test(id))return <main className="workspace-content identity-live" id="mainContent">
+ if(!uuid.test(id))return <main className="workspace-content identity-live" id="mainContent" tabIndex={-1}>
   <p role="alert">Invalid employee identifier.</p></main>;
  const response=await portalApi('/api/employee-identity/employees/'+id);
  const data=response.kind==='ok'?parseManagerLink(response.value):null;
- if(!data||data.employee.id!==id)return <main className="workspace-content identity-live" id="mainContent">
+ if(!data||data.employee.id!==id)return <main className="workspace-content identity-live" id="mainContent" tabIndex={-1}>
    <h1>Employee account &amp; access</h1>
    <p role="alert">Current workforce authority or employee identity status could not be verified.</p>
    <Link href="/employees">Return to employees</Link>

@@ -9,7 +9,7 @@ export const metadata:Metadata={title:'Archived employees | VSPH',robots:{index:
 export default async function ArchivedEmployeesPage(){
  const result=await portalApi('/api/employees/archived');
  const records=result.kind==='ok'?archivedWorkers(result.value):null;
- if(records===null)return <main className="workspace-content employee-live-workspace" id="mainContent">
+ if(records===null)return <main className="workspace-content employee-live-workspace" id="mainContent" tabIndex={-1}>
   <h1>Archived employees unavailable</h1>
   <p role="alert">Current platform-owner authorization or the archived employee directory could not be verified.</p>
   <Link href="/employees">Return to employee management</Link>

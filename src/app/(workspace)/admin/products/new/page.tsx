@@ -8,7 +8,7 @@ export const metadata:Metadata={title:'Register product | VSPH Control Center',
 export default async function NewProductPage(){
  // Reuse exact platform-owner entitlement check; never expose a write-only admin page.
  const records=await loadProductDirectory(null);
- if(!records)return <main className="workspace-content product-live-workspace" id="mainContent">
+ if(!records)return <main className="workspace-content product-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Product registration unavailable</h1>
    <p role="alert">Your platform-owner permission or product registry could not be verified.</p>
    <Link href="/admin/products">Return to product registry</Link>

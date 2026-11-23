@@ -10,7 +10,7 @@ export const metadata:Metadata={
 };
 export default async function ProvisioningPage(){
  const jobs=await loadProvisioningQueue();
- if(jobs===null)return <main className="workspace-content admin-live-workspace" id="mainContent">
+ if(jobs===null)return <main className="workspace-content admin-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Provisioning recovery unavailable</h1>
    <p role="alert">Your platform owner access or provisioning queue could not be verified.</p>
    <Link href="/admin">Back to administration</Link>
