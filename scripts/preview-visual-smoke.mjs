@@ -180,6 +180,27 @@ try {
   await app.locator('#organizationId').selectOption(customerB);
   await app.locator('#mfaField').waitFor({state:'hidden'});
   await app.close();
+
+  // Frontend-only first-password completion with a controlled server result.
+  const setup=await browser.newPage({viewport:{width:390,height:844}});
+  setup.on('pageerror',error=>errors.push('employee setup: '+error.message));
+  await setup.route('**/api/employee-credentials/status',route=>route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify({name:'Example Worker',email:'worker@example.invalid'}),
+  }));
+  await setup.route('**/api/employee-credentials/replace',route=>route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify({message:'Your personal password is set. Sign in again to open your employee workspace.'}),
+  }));
+  await setup.goto(origin+'/employee-password');
+  await setup.locator('#passwordSetupForm').waitFor({state:'visible'});
+  await setup.locator('#personalPassword').fill('unique-passphrase');
+  await setup.locator('#personalPasswordConfirm').fill('unique-passphrase');
+  await setup.locator('#personalPasswordConsent').check();
+  await setup.locator('#savePersonalPassword').click();
+  await setup.waitForFunction(()=>document.querySelector('#passwordSetupMessage')
+    ?.textContent?.includes('Your personal password is set.'));
+  await setup.close();
   console.log('Public entry accessibility and stale-MFA Chromium checks passed.');
   assert.deepEqual(errors, [], 'Uncaught browser errors in the development preview');
   console.log('All synthetic-role and responsive smoke checks passed.');
