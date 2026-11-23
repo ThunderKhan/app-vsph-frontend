@@ -107,6 +107,106 @@ try {
     await page.close();
     console.log(`Chromium UI preview passed at ${viewport.width}px.`);
   }
+  // Real entry screens, including their unavailable states, must remain
+  // keyboard reachable and free from horizontal overflow on narrow devices.
+  for (const [path, selector] of [
+    ['/login','#authForm'],
+    ['/accept-invite','#inviteInstructions'],
+    ['/employee-enrollment','#enrollmentInfo'],
+    ['/employee-password','#passwordSetupInfo'],
+  ]) {
+    const page=await browser.newPage({viewport:{width:320,height:740}});
+    page.on('pageerror',error=>errors.push(path+': '+error.message));
+    await page.goto(origin+path);
+    await page.locator(selector).waitFor({state:'attached'});
+    const overflow=await page.evaluate(() =>
+      Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)-
+        document.documentElement.clientWidth);
+    assert.ok(overflow<=2,path+' horizontal overflow: '+overflow);
+    assert.equal(await page.locator('h1').count(),1,path+' needs one primary heading');
+    await page.close();
+  }
+  const auth=await browser.newPage({viewport:{width:390,height:844}});
+  auth.on('pageerror',error=>errors.push('MFA: '+error.message));
+  await auth.route('**/api/auth/login',route=>route.fulfill({
+    status:401,contentType:'application/json',
+    body:JSON.stringify({code:'MFA_REQUIRED',message:'Authenticator required.',
+      factors:[{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',name:'Authenticator'}]}),
+  }));
+  await auth.goto(origin+'/login');
+  await auth.waitForFunction(() => Object.keys(document.querySelector('#authForm')||{})
+    .some(key=>key.startsWith('__reactProps$')));
+  await auth.locator('#email').fill('worker@example.invalid');
+  await auth.locator('#password').fill('first-credential');
+  await auth.locator('#authSubmit').click();
+  await auth.locator('#mfaField').waitFor({state:'visible'});
+  assert.equal(await auth.locator('#authSubmit').isDisabled(),true);
+  await auth.locator('#totpCode').fill('123456');
+  assert.equal(await auth.locator('#authSubmit').isEnabled(),true);
+  await auth.locator('#password').fill('second-credential');
+  await auth.locator('#mfaField').waitFor({state:'hidden'});
+  assert.equal(await auth.locator('#totpCode').inputValue(),'');
+  await auth.close();
+
+  // Application MFA is tied to a selected tenant. Changing customer or
+  // authenticator factor must invalidate the previous code in the real UI.
+  const app=await browser.newPage({viewport:{width:390,height:844}});
+  app.on('pageerror',error=>errors.push('app MFA: '+error.message));
+  // The production proxy requires a portal cookie before app-login navigation.
+  // This disposable browser value passes only that syntactic gate; the client
+  // context and MFA responses below remain fully isolated Playwright fixtures.
+  await app.context().addCookies([{name:'vsph.portal.sid',value:'p'.repeat(43),
+    url:origin,httpOnly:true,sameSite:'Lax'}]);
+  const customerA='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const customerB='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  await app.route('**/api/apps/CRM/contexts',route=>route.fulfill({
+    status:200,contentType:'application/json',body:JSON.stringify({
+      email:'worker@example.invalid',application:{code:'CRM',name:'CRM',status:'active'},
+      organizations:[{id:customerA,name:'Customer A',role:'manager'},
+        {id:customerB,name:'Customer B',role:'viewer'}],
+    }),
+  }));
+  await app.route('**/api/auth/app-login',route=>route.fulfill({
+    status:401,contentType:'application/json',body:JSON.stringify({
+      code:'MFA_REQUIRED',message:'Authenticator required.',
+      factors:[{id:customerA,name:'Primary'},{id:customerB,name:'Secondary'}],
+    }),
+  }));
+  await app.goto(origin+'/apps/crm/login');
+  await app.waitForFunction(() => Object.keys(document.querySelector('#authForm')||{})
+    .some(key=>key.startsWith('__reactProps$')));
+  await app.locator('#organizationId').waitFor({state:'visible'});
+  await app.locator('#password').fill('some-credential');
+  await app.locator('#authSubmit').click();
+  await app.locator('#mfaField').waitFor({state:'visible'});
+  await app.locator('#totpCode').fill('123456');
+  await app.locator('#totpFactorId').selectOption(customerB);
+  assert.equal(await app.locator('#totpCode').inputValue(),'');
+  await app.locator('#organizationId').selectOption(customerB);
+  await app.locator('#mfaField').waitFor({state:'hidden'});
+  await app.close();
+
+  // Frontend-only first-password completion with a controlled server result.
+  const setup=await browser.newPage({viewport:{width:390,height:844}});
+  setup.on('pageerror',error=>errors.push('employee setup: '+error.message));
+  await setup.route('**/api/employee-credentials/status',route=>route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify({name:'Example Worker',email:'worker@example.invalid'}),
+  }));
+  await setup.route('**/api/employee-credentials/replace',route=>route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify({message:'Your personal password is set. Sign in again to open your employee workspace.'}),
+  }));
+  await setup.goto(origin+'/employee-password');
+  await setup.locator('#passwordSetupForm').waitFor({state:'visible'});
+  await setup.locator('#personalPassword').fill('unique-passphrase');
+  await setup.locator('#personalPasswordConfirm').fill('unique-passphrase');
+  await setup.locator('#personalPasswordConsent').check();
+  await setup.locator('#savePersonalPassword').click();
+  await setup.waitForFunction(()=>document.querySelector('#passwordSetupMessage')
+    ?.textContent?.includes('Your personal password is set.'));
+  await setup.close();
+  console.log('Public entry accessibility and stale-MFA Chromium checks passed.');
   assert.deepEqual(errors, [], 'Uncaught browser errors in the development preview');
   console.log('All synthetic-role and responsive smoke checks passed.');
 } finally {

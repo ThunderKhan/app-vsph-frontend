@@ -45,7 +45,7 @@ test('preview uses only synthetic UI fixtures with no credentials or backend API
   assert.doesNotMatch(preview, /fetch\(|localStorage|sessionStorage|\/api\/|document\.cookie/);
   const header = await read('src/features/workspace/WorkspaceHeader.tsx');
   assert.match(header, /if \(logoutBusy \|\| previewMode\) return/);
-  assert.match(header, /previewMode \|\| !activePages\.has\(href\)/);
+  assert.match(header, /previewMode \|\| !activePages\.has\(href\.split\('\?'\)\[0\]\)/);
   assert.match(header, /Sign out unavailable in preview/);
   assert.match(header, /previewMode=\{previewMode\}/);
   const applications = await read('src/features/workspace/ApplicationsLibrary.tsx');

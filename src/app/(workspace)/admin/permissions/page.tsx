@@ -18,11 +18,11 @@ export default async function PermissionsPage({searchParams}:{
  if(typeof id!=='string'||typeof afterId!=='string'||
    (id!==''&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))||
    (afterId!==''&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(afterId)))
-   return <main className="workspace-content permission-live-workspace" id="mainContent">
+   return <main className="workspace-content permission-live-workspace" id="mainContent" tabIndex={-1}>
      <h1>Invalid organization filter</h1><Link href="/admin/permissions">Reset</Link>
    </main>;
  const loaded=await loadPermissionDirectory(afterId||null,id||null);
- if(!loaded)return <main className="workspace-content permission-live-workspace" id="mainContent">
+ if(!loaded)return <main className="workspace-content permission-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Permissions unavailable</h1>
    <p role="alert">Active platform-owner authorization or the organization role data could not be verified.</p>
    <Link href="/admin">Back to administration</Link>

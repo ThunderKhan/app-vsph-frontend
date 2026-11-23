@@ -5,8 +5,16 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { HrAccess, PortalUser } from './contracts';
 
-const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security']);
+const activePages = new Set(['/dashboard', '/applications', '/projects', '/reports', '/notifications', '/employees', '/hr', '/admin/customers', '/admin/finance', '/admin/finance/journal', '/admin', '/admin/provisioning', '/admin/onboarding', '/admin/products', '/admin/permissions', '/account/profile', '/account/security', '/search', '/my-work', '/admin/project-managers', '/calendar', '/organizations', '/hr/access', '/employment', '/admin/outreach-access']);
 
+// Highlight the appropriate parent for nested customer, employee and project
+// screens without treating the platform admin root as every /admin child.
+// Query-specific destinations remain exact so they cannot highlight a wrong tab.
+function isNavActive(pathname: string, href: string) {
+  const base = href.split('?')[0];
+  if (href.includes('?')) return pathname === href;
+  return pathname === base || (base !== '/admin' && pathname.startsWith(base + '/'));
+}
 type NavItem = { label: string; href: string; show?: boolean };
 type NavGroup = { label: string; items: NavItem[]; show?: boolean };
 
@@ -22,16 +30,18 @@ function NavItemLink({ label, href, onActivate, pathname, previewMode,
 }) {
   if (previewMode && onPreviewNavigate && canPreviewNavigate?.(href) !== false) {
     return <button type="button" className={'portal-link portal-preview-link' +
-      (pathname === href ? ' is-active' : '')}
-      aria-current={pathname === href ? 'page' : undefined}
+      (isNavActive(pathname, href) ? ' is-active' : '')}
+      aria-current={isNavActive(pathname, href) ? 'page' : undefined}
       onClick={() => { onPreviewNavigate(href); onActivate(); }}>{label}</button>;
   }
-  if (previewMode || !activePages.has(href)) {
+  // Match the migrated pathname while keeping a fixed navigation query intact.
+  // These destinations are application-defined, never supplied by users.
+  if (previewMode || !activePages.has(href.split('?')[0])) {
     // Do not provide a working link to a not-yet-ported protected page.
     return <span className="portal-link portal-pending" aria-disabled="true" title="Page migration pending">{label}</span>;
   }
-  return <Link className={'portal-link' + (pathname === href ? ' is-active' : '')}
-    aria-current={pathname === href ? 'page' : undefined}
+  return <Link className={'portal-link' + (isNavActive(pathname, href) ? ' is-active' : '')}
+    aria-current={isNavActive(pathname, href) ? 'page' : undefined}
     href={href} onClick={onActivate}>{label}</Link>;
 }
 
@@ -60,7 +70,8 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
   const groups: NavGroup[] = [
     { label: 'Work', items: [
       { label: 'Projects', href: '/projects' },
-      { label: 'My tasks', href: '/dashboard#employeeDashboardWork', show: flags?.employee === true },
+      { label: 'My tasks', href: '/my-work', show: flags?.employee === true },
+      { label: 'Calendar', href: '/calendar', show: flags?.employee === true || flags?.management === true },
       { label: 'Reports', href: '/reports' },
       { label: 'Notifications', href: '/notifications' },
     ] },
@@ -82,6 +93,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
         { label: 'Employee directory', href: '/employees',
           show: isOwner || flags?.management === true },
         { label: 'HR workspace', href: '/hr', show: isOwner || flags?.management === true },
+        { label: 'HR access', href: '/hr/access', show: isOwner && flags?.governHr === true },
         { label: 'Project managers', href: '/admin/project-managers',
           show: isOwner || flags?.governHr === true },
       ] },
@@ -92,7 +104,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
       { label: 'Finance', href: '/admin/finance' },
       { label: 'Finance journal', href: '/admin/finance/journal' },
       { label: 'Outreach access', href: '/admin/outreach-access' },
-      { label: 'Audit logs', href: '/admin?tab=audit&view=removals' },
+      { label: 'Audit logs', href: '/admin?tab=audit' },
     ] },
   ];
 
@@ -141,11 +153,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
           {previewMode
             ? <button type="button" className="portal-preview-search"
                 onClick={() => onPreviewNavigate?.('/search')}>Search project work</button>
-            : <>
-                <input aria-label="Search work" placeholder="Search work" disabled
-                  title="Search is unavailable until the secured search route is migrated" />
-                <button type="button" disabled>Search</button>
-              </>}
+            : <Link href="/search" className="portal-preview-search" aria-label="Search work">Search project work</Link>}
         </div>
         <div className="crm-header-actions">
           {previewMode
@@ -210,7 +218,7 @@ export function WorkspaceHeader({ user, flags, accessFailed, previewMode = false
               aria-current={pathname === '/dashboard' ? 'page' : undefined}
               href="/dashboard" onClick={closeMenu}>Overview</Link>}
         {groups.filter(group => group.show !== false).map(group => {
-          const hasActive = group.items.some(item => item.href === activePath);
+          const hasActive = group.items.some(item => isNavActive(activePath, item.href));
           return (
             <details className={'portal-disclosure' + (hasActive ? ' has-active-page' : '')}
               key={group.label}>

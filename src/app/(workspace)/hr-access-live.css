@@ -1,0 +1,5 @@
+.hr-access-live .hr-panel{margin-top:22px}
+.hr-access-live .hr-access-refresh{display:inline-flex;padding:9px 12px;border:1px solid #98acbf;border-radius:7px;color:#0069c8;text-decoration:none}
+.hr-access-search{max-width:500px}.hr-access-search label{margin:14px 0}.hr-access-search button{margin-bottom:20px}
+.hr-access-confirm{border-left:3px solid #a33;padding-left:12px}
+.hr-access-live :is(a,button,input):focus-visible{outline:3px solid #50c0e8;outline-offset:2px}

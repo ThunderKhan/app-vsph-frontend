@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 async function ApplicationsData() {
   const apps = await loadAuthorizedApps();
-  if (!apps) return <main className="workspace-content" id="mainContent">
+  if (!apps) return <main className="workspace-content" id="mainContent" tabIndex={-1}>
     <p className="feedback-state error-state" role="alert">
       The application library could not be loaded. Please refresh and try again.
     </p>
@@ -19,7 +19,7 @@ async function ApplicationsData() {
 
 export default function ApplicationsPage() {
   return (
-    <Suspense fallback={<main className="workspace-content" id="mainContent">
+    <Suspense fallback={<main className="workspace-content" id="mainContent" tabIndex={-1}>
       <p className="loading-state" role="status">Checking your applications…</p>
     </main>}>
       <ApplicationsData />

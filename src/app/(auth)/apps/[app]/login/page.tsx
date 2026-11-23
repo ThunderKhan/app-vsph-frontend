@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound,redirect } from 'next/navigation';
 import { AuthPage } from '@/features/auth/AuthPage';
 
 export const metadata: Metadata = { title: 'Sign in | VSPH Control Center' };
@@ -14,9 +14,9 @@ type Props = { params: Promise<{ app: string }> };
 export default async function ApplicationLoginPage({ params }: Props) {
   const { app } = await params;
   if (!/^[a-z][a-z0-9_-]*$/i.test(app)) notFound();
+  if(app.toUpperCase()==='OUTREACH')redirect('/apps/outreach/launch');
 
-  // This page is NOT authorized by route rendering. The legacy backend
-  // required a live portal session and an allowed product before serving it.
-  // Its Fastify equivalent must enforce both before this route is released.
+  // The server-side application-context endpoint enforces the current portal session
+  // and product grants; successful app login is a separate backend-issued cookie.
   return <AuthPage key={app.toUpperCase()} appCode={app.toUpperCase()} />;
 }

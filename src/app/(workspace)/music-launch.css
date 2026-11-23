@@ -1,0 +1,15 @@
+.music-launch{display:grid;place-items:center;min-height:75vh;padding:24px}
+.music-launch-card{width:min(100%,620px);background:white;border:1px solid #d2dfec;
+ border-radius:13px;padding:36px}
+.music-launch-card h1{font-size:28px}
+.music-launch-card p{color:#5b6f87;line-height:1.55}
+.music-launch-card form{display:grid;gap:16px;margin-top:26px}
+.music-launch-card label{display:grid;gap:8px;font-weight:650}
+.music-launch-card select{min-height:44px;width:100%;border:1px solid #a6bfd5;
+ border-radius:7px;padding:9px 12px;background:white;color:#20344b;font:inherit}
+.music-launch-card button{width:max-content;min-height:44px;border:1px solid #075fa9;
+ border-radius:7px;padding:10px 18px;background:#075fa9;color:white;font-weight:650;cursor:pointer}
+.music-launch-card button:disabled{opacity:.55;cursor:not-allowed}
+.music-launch-card .music-security{font-size:13px;margin-top:24px}
+.music-launch-card :is(button,select,a):focus-visible{outline:3px solid #50c0e8;outline-offset:2px}
+@media(max-width:650px){.music-launch{padding:12px}.music-launch-card{padding:18px}}

@@ -11,7 +11,7 @@ export default async function AdminPage({searchParams}:{
  searchParams:Promise<Params>;
 }){
  const options=await searchParams,admin=await loadAdminWorkspace();
- if(!admin)return <main className="workspace-content admin-live-workspace" id="mainContent">
+ if(!admin)return <main className="workspace-content admin-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Administration unavailable</h1>
    <p role="alert">An active platform-owner session is required to access these records.</p>
    <Link href="/dashboard">Return to dashboard</Link>

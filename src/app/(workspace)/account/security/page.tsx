@@ -7,7 +7,7 @@ export const metadata:Metadata={title:'Account security | VSPH Control Center',
  robots:{index:false,follow:false}};
 export default async function AccountSecurityPage(){
  const sessions=await loadOwnSessions();
- if(!sessions)return <main className="workspace-content account-live-workspace" id="mainContent">
+ if(!sessions)return <main className="workspace-content account-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Your sessions are unavailable</h1>
    <p role="alert">Your active session or current session list could not be verified.</p>
    <Link href="/dashboard">Return to dashboard</Link>

@@ -55,7 +55,7 @@ test('workspace routes are private, backend-verified and fail closed by default'
   assert.match(header, /flags\?\.employee === true/);
   assert.match(header, /flags\?\.management === true/);
   assert.match(header, /<nav ref=\{navigationRef\} id="workspaceNavigation"/);
-  assert.match(header, /disabled.*Search/);
+  assert.ok(header.includes('href="/search"'));
   assert.match(header, /fetch\('\/api\/auth\/logout'/);
   assert.match(dashboard, /loadAuthorizedApps\(/);
   assert.match(dashboard, /loadWorkspaceCount\(/);
@@ -75,4 +75,34 @@ test('organization Next/React/Tailwind stack and login routes remain intact', as
   assert.match(await load('src/app/(auth)/login/page.tsx'), /<AuthPage/);
   assert.match(await load('src/app/(workspace)/layout.tsx'), /href="\/fonts\.css"/);
   assert.match(await load('src/app/(workspace)/workspace-overrides.css'), /data-mobile-open="true"/);
+});
+
+test('every workspace page branch has an accessible skip-link focus target', async () => {
+ const { glob } = await import('node:fs/promises');
+ for await (const path of glob('src/app/(workspace)/**/page.tsx')) {
+  const source=await load(path);
+  const mains=[...source.matchAll(/<main\b[^>]*>/gs)].map(m=>m[0]);
+  for (const main of mains) {
+   assert.match(main,/id="mainContent"/,'missing mainContent target in '+path);
+   assert.match(main,/tabIndex=\{-1\}/,'not focusable via skip-link in '+path);
+  }
+ }
+ const appHome=await load('src/features/auth/AppHomeWorkspace.tsx');
+ const search=await load('src/features/search/LiveSearch.tsx');
+ assert.match(appHome,/<main[^>]+id="mainContent" tabIndex=\{-1\}/);
+ assert.match(search,/<main[^>]+id="mainContent" tabIndex=\{-1\}/);
+});
+
+test('anonymous production redirect verification covers every workspace route',async()=>{
+ const {glob}=await import('node:fs/promises');
+ const workflow=await load('.github/workflows/frontend-verification.yml');
+ const match=/for protected_path in([\s\S]*?); do/.exec(workflow);
+ assert.ok(match,'production protection loop must exist');
+ const covered=new Set(match[1].replace(/\\\n/g,' ').trim().split(/\s+/));
+ const uuid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ for await(const page of glob('src/app/(workspace)/**/page.tsx')){
+   const route='/'+page.slice('src/app/(workspace)/'.length,-'/page.tsx'.length)
+     .replaceAll('[id]',uuid).replaceAll('[app]','crm');
+   assert.ok(covered.has(route),'Missing anonymous redirect coverage: '+route);
+ }
 });

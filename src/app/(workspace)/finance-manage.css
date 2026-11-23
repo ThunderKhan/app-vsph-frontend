@@ -1,0 +1,22 @@
+.finance-manage{max-width:1240px;margin:0 auto}
+.finance-manage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.finance-manage form{display:grid;gap:12px;margin-top:12px}
+.finance-manage label{display:grid;gap:6px;font-size:13px;font-weight:650}
+.finance-manage :is(input,select,textarea){font:inherit;color:#23364d;min-height:43px;width:100%;
+ padding:9px 10px;border:1px solid #a8bfd3;border-radius:7px;background:#fff}
+.finance-manage button{font:inherit;padding:9px 13px;min-height:42px;border:1px solid #075fa9;
+ border-radius:7px;background:#fff;color:#075fa9;font-weight:650;cursor:pointer}
+.finance-manage button[type=submit]{background:#075fa9;color:white}
+.finance-manage button:disabled{opacity:.55;cursor:not-allowed}
+.finance-manage .finance-manage-table{overflow-x:auto}
+.finance-manage .finance-manage-table table{width:100%;min-width:800px;border-collapse:collapse}
+.finance-manage .finance-manage-table th,.finance-manage .finance-manage-table td{
+ padding:11px;border-bottom:1px solid #dbe6ed;text-align:left;vertical-align:top}
+.finance-manage .finance-manage-table small{display:block;font-size:12px;color:#657a90}
+.finance-manage-message{padding:12px;border-left:3px solid #db8c37;background:#fff8ed}
+.finance-manage-correction{margin:16px 0}
+.finance-manage .finance-manage-confirm{display:flex;align-items:flex-start;gap:9px;margin:12px 0}
+.finance-manage .finance-manage-confirm input{width:18px;min-height:18px;height:18px}
+.finance-manage :is(input,select,button,a,textarea):focus-visible,
+.finance-manage-table:focus-visible{outline:3px solid #50c0e8;outline-offset:2px}
+@media(max-width:800px){.finance-manage-grid{grid-template-columns:1fr}}

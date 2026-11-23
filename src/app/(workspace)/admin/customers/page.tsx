@@ -11,11 +11,11 @@ export default async function CustomersPage({searchParams}:{searchParams:Promise
  const params=await searchParams;
  const afterId=params.afterId===undefined?'':params.afterId;
  if(typeof afterId!=='string'||(afterId!==''&&!uuid.test(afterId)))
-   return <main className="workspace-content customer-live-workspace">
+   return <main className="workspace-content customer-live-workspace" id="mainContent" tabIndex={-1}>
      <h1>Invalid directory cursor</h1><Link href="/admin/customers">Reset</Link>
    </main>;
  const page=await loadCustomerList(afterId||null);
- if(!page)return <main className="workspace-content customer-live-workspace" id="mainContent">
+ if(!page)return <main className="workspace-content customer-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Customers unavailable</h1><p role="alert">
      Your platform administration permission or customer service could not be verified.</p>
    <Link href="/dashboard">Return to dashboard</Link>

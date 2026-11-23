@@ -50,9 +50,52 @@ export async function portalApi(path: string): Promise<ApiResult> {
       status !== null && ['', 'planned', 'active', 'paused', 'completed', 'archived'].includes(status) &&
       (cursor === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cursor));
   }
+  const permittedManagerOverview = path === '/api/projects/manager-overview';
+  const permittedProjectWorkspace=/^\/api\/projects\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/workspace$/i.test(path);
+  const permittedEngineeringDelivery=/^\/api\/projects\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/delivery$/i.test(path);
+  const githubRepos=/^\/api\/projects\/([0-9a-f-]{36})\/delivery\/repositories\?([^#]*)$/i.exec(path);
+  let permittedGithubRepoDiscovery=false;
+  if(githubRepos&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(githubRepos[1])){
+    const p=new URLSearchParams(githubRepos[2]),keys=[...p.keys()],install=p.get('installationId'),page=p.get('page');
+    permittedGithubRepoDiscovery=keys.length===2&&new Set(keys).size===2&&
+      keys.includes('installationId')&&keys.includes('page')&&
+      install!==null&&/^[1-9][0-9]{0,14}$/.test(install)&&
+      page!==null&&/^[1-9][0-9]?$/.test(page)&&Number(page)<=50;
+  }
   // Project features can use their reviewed directory and key-based detail reads.
   const permittedCreationDirectory = path === '/api/projects/directory';
   const permittedByKey = /^\/api\/projects\/by-key\/[A-Z][A-Z0-9-]{1,19}$/.test(path);
+  // Own HRMS self-service is bound to the current employee, never arbitrary IDs.
+  const ownWorkPath=/^\/api\/hrms\/me(?:\?afterTaskId=([0-9a-fA-F-]{36}))?$/.exec(path);
+  const permittedOwnActivity=path==='/api/hrms/me/activity';
+  const permittedMyWork=Boolean(ownWorkPath&&
+    (!ownWorkPath[1]||/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ownWorkPath[1])));
+  const calendarMatch=/^\/api\/hrms\/calendar\?([^#]*)$/.exec(path);
+  let permittedCalendar=false;
+  if(calendarMatch&&calendarMatch[1].length<=250){
+    const params=new URLSearchParams(calendarMatch[1]),keys=[...params.keys()];
+    const from=params.get('from'),to=params.get('to');
+    const valid=(v:string|null)=>v!==null&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(v)&&!Number.isNaN(Date.parse(v));
+    permittedCalendar=keys.length===2&&new Set(keys).size===2&&keys.includes('from')&&keys.includes('to')&&
+      valid(from)&&valid(to)&&Date.parse(to!)>Date.parse(from!)&&Date.parse(to!)-Date.parse(from!)<=370*86400000;
+  }
+  // Narrow customer-admin organization read paths, never arbitrary tenant API forwarding.
+  const orgList=/^\/api\/organizations(?:\?afterId=([0-9a-f-]{36}))?$/.exec(path);
+  const orgDetails=/^\/api\/organizations\/([0-9a-f-]{36})(?:\/(members|invitations))?(?:\?afterId=([0-9a-f-]{36}))?$/.exec(path);
+  const validOrgUuid=(v:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+  // Current-session ownership preview; exact organization and candidate UUIDs only.
+  const ownershipQuery=/^\/api\/organizations\/([0-9a-f-]{36})\/ownership\/preview\?targetUserId=([0-9a-f-]{36})$/i.exec(path);
+  const ownerUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const permittedOwnerTransferPreview=Boolean(ownershipQuery&&
+    ownerUuid.test(ownershipQuery[1])&&ownerUuid.test(ownershipQuery[2]));
+  const permittedOrgRead=Boolean(
+    (orgList&&(!orgList[1]||validOrgUuid(orgList[1])))||
+    (orgDetails&&validOrgUuid(orgDetails[1])&&
+      (!orgDetails[3]||(orgDetails[2]==='members'&&validOrgUuid(orgDetails[3]))))
+  );
+  const permittedHrGovernanceAccess = path === '/api/hrms/access';
+  const permittedIdentityRead=path==='/api/employee-identity/mine'||
+    /^\/api\/employee-identity\/employees\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path);
   // Employee directory reads are restricted to documented, bounded filters.
   const employeePath = /^\/api\/employees\?([^#]*)$/.exec(path);
   let permittedEmployees = false;
@@ -70,6 +113,8 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (search === null || (search.length <= 80 && !/[\u0000-\u001f\u007f]/.test(search)));
   }
   const permittedEmployeeAccess = path === '/api/employees/access';
+  // Archived employee directory is owner-only at the backend; no arbitrary lookups.
+  const permittedArchivedEmployeeRead = path === '/api/employees/archived';
   // Scoped HR leave and attendance reads. Backend performs current HR role checks.
   const hrPath = /^\/api\/hrms\/(leave|attendance)\?([^#]*)$/.exec(path);
   let permittedHrList = false;
@@ -95,8 +140,11 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (cursor === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cursor));
   }
   const permittedCustomerDetail = /^\/api\/admin-management\/customers\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path);
+  const permittedCustomerImpact = /^\/api\/admin-management\/customers\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/impact$/i.test(path);
   // Deliberately bounded, owner-only financial summary: never public invoice records.
   const permittedFinanceOverview = path === '/api/finance/overview';
+  // Owner-only latest ledger and fixed bounded customer/project picker; no tenant paths.
+  const permittedFinanceManage = path === '/api/finance' || path === '/api/finance/options';
   // Finance journal: immutable owner-only ledger reads with scoped cursor checks.
   const journalPath = /^\/api\/finance\/journal\?([^#]*)$/.exec(path);
   let permittedFinanceJournal = false;
@@ -153,7 +201,11 @@ export async function portalApi(path: string): Promise<ApiResult> {
   }
   // Platform owner-only administration; backend rechecks active super_admin on every read.
   const permittedAdminOverview = path === '/api/admin-management/overview';
+  // Current platform owner operating snapshot; backend enforces live owner session.
+  const permittedOwnerSnapshot = path === '/api/admin-management/dashboard';
   const permittedAdminAudit = path === '/api/admin-management/audit-logs';
+  const permittedOutreachAccess = path === '/api/admin-management/outreach-access';
+  const permittedAdminUsers = path === '/api/admin-management/users';
   const permittedProvisioningList = path === '/api/admin-management/onboardings';
   const permittedOnboardingLookups = path === '/api/admin-management/lookups';
   // Fixed, authenticated current-account profile and session reads.
@@ -168,6 +220,28 @@ export async function portalApi(path: string): Promise<ApiResult> {
       (afterCode===null||/^[A-Z][A-Z0-9_]{1,39}$/.test(afterCode));
   }
   const permittedProductItem=/^\/api\/admin-management\/product-registry\/item\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path);
+  // Literal project work search: fixed keys, bounded query and opaque position cursor.
+  const searchMatch=/^\/api\/search\?([^#]*)$/.exec(path);
+  let permittedWorkSearch=false;
+  if(searchMatch && searchMatch[1].length<=2048){
+    const query=new URLSearchParams(searchMatch[1]);
+    const keys=[...query.keys()];
+    const q=query.get('q'),kind=query.get('kind'),assignee=query.get('assigneeId'),after=query.get('after');
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const date=(v:string)=>/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0,10)===v;
+    permittedWorkSearch=keys.length>=1 && keys.length<=9 && new Set(keys).size===keys.length &&
+      keys.every(k=>['q','kind','status','projectId','organizationId','assigneeId','from','to','after'].includes(k)) &&
+      q!==null && q.trim().length>=2 && q.trim().length<=100 && !/[\u0000-\u001f\u007f]/.test(q) &&
+      (kind===null||['all','project','task','milestone'].includes(kind)) &&
+      (!assignee||kind==='task') &&
+      (query.get('status')===null||['','planned','active','paused','completed','archived','todo','in_progress','blocked','in_review','done','cancelled'].includes(query.get('status')!)) &&
+      ['projectId','organizationId','assigneeId'].every(k=>!query.get(k)||uuid.test(query.get(k)!)) &&
+      ['from','to'].every(k=>!query.get(k)||date(query.get(k)!)) &&
+      (!query.get('from')||!query.get('to')||query.get('from')!<=query.get('to')!) &&
+      (!after||/^[123]:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(after));
+  }
+  // Current session-bound Music SSO configuration; never expose secrets.
+  const permittedMusicConfig=path==='/api/sso/config/MUSIC';
   // Inbox and preference reads are always scoped to the current backend session.
   const permittedNotifications = path === '/api/notifications' || path === '/api/notifications/preferences';
 
@@ -177,7 +251,7 @@ export async function portalApi(path: string): Promise<ApiResult> {
       !permittedCustomerDetail && !permittedFinanceOverview && !permittedFinanceJournal &&
       !permittedProjectReport && !permittedNotifications && !permittedAdminOverview &&
       !permittedAdminAudit && !permittedProvisioningList && !permittedOnboardingLookups &&
-      !permittedProductList && !permittedProductItem && !permittedAccountSelfService)
+      !permittedProductList && !permittedProductItem && !permittedAccountSelfService && !permittedWorkSearch && !permittedMyWork && !permittedManagerOverview && !permittedCalendar && !permittedOrgRead && !permittedHrGovernanceAccess && !permittedIdentityRead && !permittedOutreachAccess && !permittedAdminUsers && !permittedArchivedEmployeeRead && !permittedFinanceManage && !permittedCustomerImpact && !permittedMusicConfig && !permittedProjectWorkspace && !permittedEngineeringDelivery && !permittedGithubRepoDiscovery && !permittedOwnerSnapshot && !permittedOwnActivity && !permittedOwnerTransferPreview)
     return { kind: 'unavailable' };
   const portalCookie = (await cookies()).get('vsph.portal.sid')?.value;
   if (!portalCookie || !/^[A-Za-z0-9_-]{32,128}$/.test(portalCookie)) {

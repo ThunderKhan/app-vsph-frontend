@@ -10,7 +10,7 @@ export default async function ProductDetailPage({params}:{
 }){
  const {id}=await params;
  const product=await loadProductDetail(id);
- if(!product)return <main className="workspace-content product-live-workspace" id="mainContent">
+ if(!product)return <main className="workspace-content product-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Product unavailable</h1>
    <p role="alert">Your owner access or this product record could not be verified.</p>
    <Link href="/admin/products">Back to product registry</Link>

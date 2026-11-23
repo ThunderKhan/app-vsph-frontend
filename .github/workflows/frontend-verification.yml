@@ -5,6 +5,7 @@ on:
       - migration/operations-ui-port
       - integration/projects-live-details
       - integration/ops-live-on-projects-20261119
+      - migration/remaining-frontend-parity
   pull_request:
     branches:
       - main
@@ -51,14 +52,38 @@ jobs:
             echo "Production preview must return 404; got $preview_status"
             exit 1
           fi
-          dashboard_status=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/dashboard)
-          case "$dashboard_status" in
-            302|303|307|308) echo "Anonymous dashboard redirects: $dashboard_status" ;;
-            *) echo "Anonymous dashboard must redirect; got $dashboard_status"; exit 1 ;;
-          esac
+          # Every authenticated workspace route must redirect before streaming content.
+          for protected_path in /dashboard /applications /projects /search /my-work /admin \
+            /calendar /organizations /employment /employees /apps/music/launch \
+            /reports /notifications /account/profile /account/security /hr \
+            /admin/customers /admin/customers/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa \
+            /admin/customers/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/lifecycle /admin/finance /admin/finance/manage \
+            /admin/finance/journal /admin/onboarding /admin/outreach-access \
+            /admin/permissions /admin/products /admin/products/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa \
+            /admin/products/new /admin/project-managers /admin/provisioning \
+            /employees/new /employees/archived /employees/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/account-link \
+            /hr/access /projects/new /projects/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa /projects/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/engineering \
+            /projects/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/lifecycle /projects/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/workspace \
+            /apps/crm/home; do
+            status=$(curl -s -o /dev/null -w '%{http_code}' \
+              "http://127.0.0.1:3000$protected_path")
+            case "$status" in
+              302|303|307|308) echo "Anonymous $protected_path redirects: $status" ;;
+              *) echo "Anonymous $protected_path must redirect; got $status"; exit 1 ;;
+            esac
+          done
+
+      - name: Verify credential and application login through isolated backend
+        run: node scripts/auth-login-http-smoke.mjs
 
       - name: Verify project write gateway against isolated mock backend
         run: node scripts/projects-write-http-smoke.mjs
+
+      - name: Verify high-impact migration gateways over production HTTP
+        run: node scripts/guarded-operations-http-smoke.mjs
+
+      - name: Verify authenticated owner and employee SSR isolation
+        run: node scripts/authenticated-roles-http-smoke.mjs
 
   browser-preview:
     needs: check

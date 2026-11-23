@@ -25,6 +25,17 @@ test('INR overview preserves exact paise strings and rejects unsafe amounts',asy
  const good={summary,monthly:[{month_start:'2026-11-01',collected_paise:'0'}],
    asOf:'2026-11-17',currency:'INR',basis:'manual_cash_receipts'};
  assert.equal(parseFinanceOverview(good)?.summary.invoicedPaise,summary.invoicedPaise);
+ const numeric={...good,summary:{...summary,invoicedPaise:40000,collectedPaise:10000,
+   outstandingPaise:30000,pastDuePaise:1000},
+   monthly:[{month_start:'2026-11-01',collected_paise:10000}]};
+ const normalized=parseFinanceOverview(numeric);
+ assert.equal(normalized?.summary.collectedPaise,'10000');
+ assert.equal(normalized?.summary.invoicedPaise,'40000');
+ assert.equal(normalized?.monthly[0].collectedPaise,'10000');
+ assert.equal(rupeesFromPaise(normalized?.summary.collectedPaise),'₹100.00');
+ assert.equal(parseFinanceOverview({...numeric,summary:{...numeric.summary,collectedPaise:12.5}}),null);
+ assert.equal(parseFinanceOverview({...numeric,summary:{...numeric.summary,collectedPaise:Number.MAX_SAFE_INTEGER+2}}),null);
+ assert.equal(parseFinanceOverview({...numeric,monthly:[{month_start:'2026-11-01',collected_paise:-1}]}),null);
  assert.equal(rupeesFromPaise('123456'),'₹1,234.56');
  assert.equal(rupeesFromPaise('1.5'),'—');
  assert.equal(parseFinanceOverview({...good,summary:{...summary,collectedPaise:25.5}}),null);
@@ -39,6 +50,12 @@ test('finance journal enforces exact record shape, cursor precision and filterin
  const page={items:[row],nextCursor:cursor};
  assert.equal(parseJournalCursor(cursor)?.at,stamp);
  assert.equal(parseFinanceJournal(page,'invoices')?.invoices[0].amountPaise,'12500');
+ const numericInvoice={...row,amount_paise:12500,collected_paise:5000};
+ const parsedNumericInvoice=parseFinanceJournal({items:[numericInvoice],nextCursor:cursor},'invoices');
+ assert.equal(parsedNumericInvoice?.invoices[0].amountPaise,'12500');
+ assert.equal(parsedNumericInvoice?.invoices[0].collectedPaise,'5000');
+ assert.equal(parseFinanceJournal({items:[{...row,amount_paise:12500.5}],nextCursor:null},'invoices'),null);
+ assert.equal(parseFinanceJournal({items:[{...row,amount_paise:Number.MAX_SAFE_INTEGER+2}],nextCursor:null},'invoices'),null);
  assert.equal(parseFinanceJournal({...page,items:[row,row]},'invoices'),null);
  assert.equal(parseFinanceJournal({...page,items:[{...row,amount_paise:125.05}]},'invoices'),null);
  assert.equal(parseFinanceJournal({...page,nextCursor:{...cursor,scope:'zz'}},'invoices'),null);
@@ -46,6 +63,9 @@ test('finance journal enforces exact record shape, cursor precision and filterin
    organization_name:'Example customer',project_name:null,amount_paise:'5000',
    received_on:'2026-11-17',recorded_at:stamp,reversed:false};
  assert.equal(parseFinanceJournal({items:[receipt],nextCursor:null},'receipts')?.receipts[0].reversed,false);
+ assert.equal(parseFinanceJournal({items:[{...receipt,amount_paise:5000}],nextCursor:null},
+   'receipts')?.receipts[0].amountPaise,'5000');
+ assert.equal(parseFinanceJournal({items:[{...receipt,amount_paise:50.2}],nextCursor:null},'receipts'),null);
  assert.equal(parseFinanceJournal({items:[{...receipt,reversed:'false'}],nextCursor:null},'receipts'),null);
 });
 test('owner journal queries remain server-side and expose no mutation actions',async()=>{

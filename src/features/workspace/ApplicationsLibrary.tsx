@@ -75,7 +75,10 @@ export function ApplicationsLibrary({ apps, previewMode = false }: { apps: Porta
               <p className="app-description">{display.description}</p>
               {previewMode
                 ? <span className="app-open" aria-disabled="true">Preview only</span>
-                : <span className="app-open app-open-unavailable" aria-disabled="true"
+                : (app.code==='MUSIC'||app.code==='OUTREACH')
+                  ? <Link className="app-open" href={app.code==='MUSIC'?'/apps/music/launch':'/apps/outreach/launch'}>
+                      Open application</Link>
+                  : <span className="app-open app-open-unavailable" aria-disabled="true"
                     title="Application launching requires the approved SSO route">Launch not connected</span>}
             </article>;
           })}
@@ -141,8 +144,11 @@ export function AccessOverview({ entries, previewMode = false }: {
               {!failed && (internalRole || organizations.length > 0) ?
                 (previewMode
                   ? <span className="access-unavailable" aria-disabled="true">Preview only</span>
-                  : <span className="access-unavailable" aria-disabled="true"
-                      title="Application launch requires the approved SSO integration">Launch pending</span>) :
+                  : (app.code==='MUSIC'||app.code==='OUTREACH')
+                    ? <Link className="access-unavailable access-enabled"
+                        href={app.code==='MUSIC'?'/apps/music/launch':'/apps/outreach/launch'}>Open application</Link>
+                    : <span className="access-unavailable" aria-disabled="true"
+                        title="Application launch requires the approved SSO integration">Launch pending</span>) :
                 <span className="access-unavailable">Unavailable</span>}
             </article>
           );

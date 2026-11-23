@@ -12,11 +12,11 @@ export default async function ProductRegistryPage({searchParams}:{
  const afterCode=raw.afterCode===undefined?'':raw.afterCode;
  if(typeof afterCode!=='string'||(afterCode!==''&&
    !/^[A-Z][A-Z0-9_]{1,39}$/.test(afterCode)))
-   return <main className="workspace-content product-live-workspace" id="mainContent">
+   return <main className="workspace-content product-live-workspace" id="mainContent" tabIndex={-1}>
      <h1>Invalid registry cursor</h1><Link href="/admin/products">First page</Link>
    </main>;
  const data=await loadProductDirectory(afterCode||null);
- if(!data)return <main className="workspace-content product-live-workspace" id="mainContent">
+ if(!data)return <main className="workspace-content product-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Product registry unavailable</h1>
    <p role="alert">Your active platform-owner access or the registry backend could not be verified.</p>
    <Link href="/admin">Return to administration</Link>
