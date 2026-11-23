@@ -31,7 +31,7 @@ export default async function FinanceJournalPage({searchParams}:{
    search.length>100||/[\u0000-\u001f\u007f\uD800-\uDFFF]/u.test(search)||
    !date(from)||!date(to)||(from!==''&&to!==''&&from>to)||
    (cursorRaw!==''&&(cursorRaw===null||cursorRaw.length>500||!cursor));
- if(invalid)return <main className="workspace-content finance-live-workspace" id="mainContent">
+ if(invalid)return <main className="workspace-content finance-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Invalid journal filters</h1>
    <p role="alert">Clear the filters and try again. Old journal cursors cannot be reused
      with different search settings.</p>
@@ -41,7 +41,7 @@ export default async function FinanceJournalPage({searchParams}:{
    kind:kind as JournalFilters['kind'],status,search,from,to,cursor
  };
  const result=await loadFinanceJournal(filters);
- if(!result)return <main className="workspace-content finance-live-workspace" id="mainContent">
+ if(!result)return <main className="workspace-content finance-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Finance journal unavailable</h1>
    <p role="alert">Your owner permission, finance backend, or selected cursor could not
      be verified. No records were displayed.</p>

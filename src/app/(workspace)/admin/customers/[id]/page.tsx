@@ -8,7 +8,7 @@ export const metadata:Metadata={
 };
 export default async function CustomerPage({params}:{params:Promise<{id:string}>}){
  const {id}=await params,detail=await loadCustomerDetail(id);
- if(!detail)return <main className="workspace-content customer-live-workspace" id="mainContent">
+ if(!detail)return <main className="workspace-content customer-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Customer unavailable</h1><p role="alert">
      Your permission or this organization could not be verified.</p>
    <Link href="/admin/customers">Back to customer directory</Link>

@@ -8,7 +8,7 @@ export const metadata:Metadata={
 };
 export default async function FinancePage(){
  const data=await loadFinanceOverview();
- if(!data)return <main className="workspace-content finance-live-workspace" id="mainContent">
+ if(!data)return <main className="workspace-content finance-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Finance unavailable</h1><p role="alert">
      Your platform-owner permission or finance service could not be verified.</p>
    <Link href="/dashboard">Return to dashboard</Link>

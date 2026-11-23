@@ -9,7 +9,7 @@ export const metadata:Metadata={
 };
 export default async function ClientOnboardingPage(){
  const products=await loadClientOnboardingCatalog();
- if(!products)return <main className="workspace-content admin-live-workspace" id="mainContent">
+ if(!products)return <main className="workspace-content admin-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Client onboarding unavailable</h1>
    <p role="alert">Your platform owner permission or live product catalog
      could not be verified. No organization data was created.</p>

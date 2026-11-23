@@ -16,12 +16,12 @@ export default async function CustomerLifecyclePage({params,searchParams}:{
  const filters=await searchParams;
  const rawCursor=filters.catalogAfter;
  if(Array.isArray(rawCursor)||typeof rawCursor==='string'&&rawCursor!==''&&!productCode(rawCursor))
-   return <main className="workspace-content customer-live-workspace" id="mainContent">
+   return <main className="workspace-content customer-live-workspace" id="mainContent" tabIndex={-1}>
      <h1>Invalid product catalog cursor</h1>
      <Link href={'/admin/customers/'+id+'/lifecycle'}>First product page</Link>
    </main>;
  const catalogAfter=typeof rawCursor==='string'?rawCursor:'';
- if(!uuid.test(id))return <main className="workspace-content customer-live-workspace" id="mainContent">
+ if(!uuid.test(id))return <main className="workspace-content customer-live-workspace" id="mainContent" tabIndex={-1}>
    <p role="alert">Invalid customer identifier.</p>
  </main>;
  const [detail,impact,registry]=await Promise.all([
@@ -32,7 +32,7 @@ export default async function CustomerLifecyclePage({params,searchParams}:{
  const model=detail.kind==='ok'&&impact.kind==='ok'?
    parseCustomerLifecycle(detail.value,impact.value):null;
  if(!model||model.organization.id.toLowerCase()!==id.toLowerCase())
-   return <main className="workspace-content customer-live-workspace" id="mainContent">
+   return <main className="workspace-content customer-live-workspace" id="mainContent" tabIndex={-1}>
      <h1>Customer lifecycle unavailable</h1>
      <p role="alert">Current platform-owner authority, organization version, or lifecycle preview could not be verified.</p>
      <Link href={'/admin/customers/'+id}>Back to customer</Link>

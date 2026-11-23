@@ -12,7 +12,7 @@ export default async function FinanceManagePage(){
  ]);
  const ledger=report.kind==='ok'?parseRecentFinance(report.value):null;
  const selections=options.kind==='ok'?parseFinanceOptions(options.value):null;
- if(!ledger||!selections)return <main className="workspace-content finance-live-workspace" id="mainContent">
+ if(!ledger||!selections)return <main className="workspace-content finance-live-workspace" id="mainContent" tabIndex={-1}>
    <h1>Finance management unavailable</h1>
    <p role="alert">Current platform owner permission, the ledger or available customer records could not be verified.</p>
    <Link href="/admin/finance">Return to finance overview</Link>
