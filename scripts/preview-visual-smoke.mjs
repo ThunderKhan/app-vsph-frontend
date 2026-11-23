@@ -147,6 +147,39 @@ try {
   await auth.locator('#mfaField').waitFor({state:'hidden'});
   assert.equal(await auth.locator('#totpCode').inputValue(),'');
   await auth.close();
+
+  // Application MFA is tied to a selected tenant. Changing customer or
+  // authenticator factor must invalidate the previous code in the real UI.
+  const app=await browser.newPage({viewport:{width:390,height:844}});
+  app.on('pageerror',error=>errors.push('app MFA: '+error.message));
+  const customerA='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const customerB='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  await app.route('**/api/apps/CRM/contexts',route=>route.fulfill({
+    status:200,contentType:'application/json',body:JSON.stringify({
+      email:'worker@example.invalid',application:{code:'CRM',name:'CRM',status:'active'},
+      organizations:[{id:customerA,name:'Customer A',role:'manager'},
+        {id:customerB,name:'Customer B',role:'viewer'}],
+    }),
+  }));
+  await app.route('**/api/auth/app-login',route=>route.fulfill({
+    status:401,contentType:'application/json',body:JSON.stringify({
+      code:'MFA_REQUIRED',message:'Authenticator required.',
+      factors:[{id:customerA,name:'Primary'},{id:customerB,name:'Secondary'}],
+    }),
+  }));
+  await app.goto(origin+'/apps/crm/login');
+  await app.waitForFunction(() => Object.keys(document.querySelector('#authForm')||{})
+    .some(key=>key.startsWith('__reactProps$')));
+  await app.locator('#organizationId').waitFor({state:'visible'});
+  await app.locator('#password').fill('some-credential');
+  await app.locator('#authSubmit').click();
+  await app.locator('#mfaField').waitFor({state:'visible'});
+  await app.locator('#totpCode').fill('123456');
+  await app.locator('#totpFactorId').selectOption(customerB);
+  assert.equal(await app.locator('#totpCode').inputValue(),'');
+  await app.locator('#organizationId').selectOption(customerB);
+  await app.locator('#mfaField').waitFor({state:'hidden'});
+  await app.close();
   console.log('Public entry accessibility and stale-MFA Chromium checks passed.');
   assert.deepEqual(errors, [], 'Uncaught browser errors in the development preview');
   console.log('All synthetic-role and responsive smoke checks passed.');
